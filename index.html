@@ -646,14 +646,14 @@ function set3DColor(i){setTimeout(sumUI,0);if(!COLORS[i][1])return;
 function close3D(){V.on=false;const s=$("#v3dStage");if(s)s.hidden=true;const p=$("#pv");if(p)p.style.visibility="";const b=$("#v3dOpen");if(b){b.setAttribute("aria-pressed","false");b.innerHTML="<span>3D</span>"}}
 /* ---------- owners only: shown on phones that have the RAX3D invoicing app (same site) or after opening /?owner=1 once.
    The box holds no secrets: print time + 3MF live in the private repo and open in the app after the PIN. ---------- */
-const OWNER_FILES=["vase","vase2","vase3","ks1","ks2","ks3","chips","clips","pringles","monk","ghost","abst","w1","w2","w3","w4","w5"];
+const OWNER_FILES=["vase","vase2","vase3","ks1","ks2","ks3","chips","clips","pringles","monk","ghost","abst","w1","w2","w3","w4","w5","ltr","d2","d4","d5","d6","skel","hood"];
 try{if(new URLSearchParams(location.search).get("owner")==="1"){localStorage.setItem("rax3d_owner","1");history.replaceState(null,"",location.pathname)}}catch(_){}
 function isOwnerDevice(){try{const d=JSON.parse(localStorage.getItem("rax3d_db")||"null");return !!(d&&d.role)||localStorage.getItem("rax3d_owner")==="1"}catch(_){return false}}
 function ownPanel(id){const box=$("#own");if(!box||!isOwnerDevice())return;
  const has=OWNER_FILES.includes(id);
  box.innerHTML=`<div class="own-hd"><b>للمالك فقط</b><small>العميل ما يشوف هذا القسم</small></div>
  <p class="dmsg">${has?"وقت الطباعة وإعدادات P2S وملف 3MF داخل برنامج الفواتير، ويطلب رمزك.":"ما انرفع ملف طباعة لهذي القطعة بعد."}</p>
- ${has?`<a class="btn alt" href="/?piece=${id}">🖨️ فتح ملف الطباعة</a>`:""}`;box.hidden=false}
+ ${has?`<a class="btn alt" href="https://rax3dsa.github.io/?piece=${id}">🖨️ فتح ملف الطباعة</a>`:""}`;box.hidden=false}
 /* wholesale threshold by piece weight: <100 g → 12 pcs, ≥100 g → 6 pcs (unknown weight → 12) */
 const WQ=id=>{const it=ITEMS.find(i=>i.id===id);return it&&it.g>=100?6:12};
 const isW=o=>o.qty>=WQ(o.id);
