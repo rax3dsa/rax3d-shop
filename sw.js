@@ -1,7 +1,7 @@
 // RAX3D shop: network first (always fresh), falls back to cache when offline.
 // v38: points.json is network-only (never cached), old caches are deleted on activate,
 // and 3D models (models/) are capped to the last 8 used so phones don't fill up.
-const C = 'rax3d-shop-v95', M = 'rax3d-models-v93', MAX_MODELS = 8;
+const C = 'rax3d-shop-v96', M = 'rax3d-models-v93', MAX_MODELS = 8;
 self.addEventListener('install', e => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil(
   caches.keys().then(ks => Promise.all(ks.filter(k => k !== C && k !== M).map(k => caches.delete(k)))).then(() => self.clients.claim())
@@ -16,7 +16,7 @@ self.addEventListener('fetch', e => {
   if (/\/points\.json$/.test(u.pathname)) return;               // network-only: loyalty balances must always be live
   const isModel = /\/models\//.test(u.pathname), name = isModel ? M : C;
   const key = isModel ? u.origin + u.pathname : r;               // ignore ?query on models so each is stored once
-  e.respondWith(fetch(r).then(res => {
+  e.respondWith(fetch(r, r.mode === 'navigate' || /\.(html|js)$/.test(u.pathname) ? { cache: 'no-cache' } : undefined).then(res => {
     if (res.ok && !u.search || res.ok && isModel) {
       const cp = res.clone();
       e.waitUntil(caches.open(name).then(c => c.delete(key).then(() => c.put(key, cp))).then(() => isModel ? trimModels() : 0));
