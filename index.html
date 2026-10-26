@@ -451,7 +451,7 @@ function setMeta(sel,val){let e=document.querySelector(sel);if(!e){e=document.cr
 function ldSet(o){const e=document.getElementById("ldPage");if(e)e.textContent=o?JSON.stringify(o):""}
 function setCanon(u){let e=document.querySelector('link[rel="canonical"]');if(!e){e=document.createElement("link");e.rel="canonical";document.head.appendChild(e)}e.href=u}
 function seoFor(id){   // روابط القطع تنشر بصورتها واسمها في واتساب وانستقرام، وبيانات منظمة لمحركات البحث
-  const base=location.origin+location.pathname.replace(/[^/]*$/,''), it=id&&ITEMS.find(i=>i.id===id);
+  const base='https://rax3d.com/', it=id&&ITEMS.find(i=>i.id===id);
   const T0='RAX3D | متجر طباعة ثلاثية الأبعاد في السعودية',D0='ديكور وهدايا وإكسسوارات مطبوعة ثلاثية الأبعاد. اختر القطعة واللون والمقاس وشوفها قبل الطلب.';
   if(!it){document.title=LANG==="en"?"RAX3D | Order your piece":T0;setMeta('meta[name="description"]',D0);setMeta('meta[property="og:title"]',T0);setMeta('meta[property="og:description"]',D0);setMeta('meta[property="og:image"]',base+'icon-512.png');setMeta('meta[property="og:url"]',base);setMeta('meta[name="twitter:title"]',T0);setMeta('meta[name="twitter:description"]',D0);setMeta('meta[name="twitter:image"]',base+'icon-512.png');setCanon(base);
    ldSet({"@context":"https://schema.org","@type":"ItemList","name":"قطع RAX3D","itemListElement":ITEMS.map((i,n)=>({"@type":"ListItem","position":n+1,"url":base+"?p="+encodeURIComponent(i.id),"name":i.name}))});return}
@@ -751,7 +751,7 @@ function toggleFav(id){if(!CUST){toastMsg("سجّل الدخول عشان تحف
  toastMsg(had?"انحذفت من المفضلة":"انضافت للمفضلة ♥");render(false)}
 function favView(){const l=favs().map(id=>ITEMS.find(i=>i.id===id)).filter(Boolean);cur=null;$("#ttl").textContent="مفضلتي";
  $("#main").innerHTML=`<h2>مفضلتي</h2>`+(l.length?`<div class="grid">${l.map(card).join("")}</div>`:`<p class="note">ما أضفت شي للمفضلة للحين. اضغط ♡ على أي قطعة تعجبك.</p>`)}
-const itemUrl=id=>location.origin+location.pathname.replace(/index\.html$/,"")+"?p="+encodeURIComponent(id);
+const SITE_URL="https://rax3d.com/";const itemUrl=id=>SITE_URL+"?p="+encodeURIComponent(id);
 async function copyText2(s){try{await navigator.clipboard.writeText(s);return true}catch(_){try{const a=document.createElement("textarea");a.value=s;a.style.cssText="position:fixed;opacity:0";document.body.appendChild(a);a.select();const ok=document.execCommand("copy");a.remove();return ok}catch(_){return false}}}
 async function copyLink(id){toastMsg(await copyText2(itemUrl(id))?"تم نسخ الرابط ✓":"تعذّر النسخ")}
 async function shareItem(id){const it=ITEMS.find(i=>i.id===id);if(!it)return;const data={title:it.name+" | RAX3D",text:it.name+"، من RAX3D",url:itemUrl(id)};
