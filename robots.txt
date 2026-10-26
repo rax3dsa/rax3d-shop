@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://rax3d.com/sitemap.xml
