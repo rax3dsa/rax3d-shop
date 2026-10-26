@@ -646,7 +646,7 @@ function set3DColor(i){setTimeout(sumUI,0);if(!COLORS[i][1])return;
 function close3D(){V.on=false;const s=$("#v3dStage");if(s)s.hidden=true;const p=$("#pv");if(p)p.style.visibility="";const b=$("#v3dOpen");if(b){b.setAttribute("aria-pressed","false");b.innerHTML="<span>3D</span>"}}
 /* ---------- owners only: shown on phones that have the RAX3D invoicing app (same site) or after opening /?owner=1 once.
    The box holds no secrets: print time + 3MF live in the private repo and open in the app after the PIN. ---------- */
-const OWNER_FILES=["vase","vase2","vase3","ks1","ks2","ks3","chips","clips","pringles","monk","ghost","abst","w1","w2","w3","w4","w5","ltr","d2","d4","d5","d6","skel","hood"];
+const OWNER_FILES=["vase","vase2","vase3","ks1","ks2","ks3","chips","clips","pringles","monk","ghost","abst","w1","w2","w3","w4","w5","ltr","d2","d4","d5","d6","skel","hood","drip","knobs","xkit","kcm","ttt","fncs","fish","crown","disney"];
 try{if(new URLSearchParams(location.search).get("owner")==="1"){localStorage.setItem("rax3d_owner","1");history.replaceState(null,"",location.pathname)}}catch(_){}
 function isOwnerDevice(){try{const d=JSON.parse(localStorage.getItem("rax3d_db")||"null");return !!(d&&d.role)||localStorage.getItem("rax3d_owner")==="1"}catch(_){return false}}
 function ownPanel(id){const box=$("#own");if(!box||!isOwnerDevice())return;
