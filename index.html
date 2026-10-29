@@ -1041,7 +1041,7 @@ document.addEventListener("click",async e=>{
  const t=e.target.closest("#payBtn,#paygo,#payclose");if(!t)return;
  if(t.id==="payclose"){$("#paybg").hidden=true;return}
  if(t.id==="payBtn"){if(!payable())return;$("#payName").value=CUST?CUST.n:"";$("#payPhone").value=CUST?CUST.p:"";payMsg("");$("#payform").hidden=false;$("#paymysr").hidden=true;
-  $("#paytot").textContent=`الإجمالي: ${payTotal()} ريال`+(PAY.ship?` (يشمل التوصيل ${PAY.ship})`:"");$("#paybg").hidden=false;return}
+  $("#paytot").textContent=`الإجمالي: ${payTotal()} ريال`+(PAY.ship?` (يشمل التوصيل ${PAY.ship})`:"");$("#paybg").hidden=false;if(CUST&&CUST.n&&/^05\d{8}$/.test(CUST.p||""))setTimeout(()=>$("#paygo").click(),0);return}
  const n=$("#payName").value.trim(),p=$("#payPhone").value.replace(/\s/g,"");
  if(n.length<2||!/^(05\d{8}|\+?9665\d{8})$/.test(p)){payMsg("عبّي الاسم والجوال (05xxxxxxxx).",true);return}
  const ref=orderCode(),order={ref,customer:{name:n,phone:p},cart:cart.map(o=>({id:o.id,qty:o.qty,color:o.color}))};
