@@ -12,3 +12,8 @@
 ## ترقيم الفواتير + إيميل الطلب المدفوع
 الدالة تحجز رقم الفاتورة التالي من `counter.json` في مستودع `rax3d-data` (ORD-n)، وتحفظ الطلب في `online/ORD-n.json`، وترسل إيميل «✅ طلب مدفوع ORD-n» فيه رسالة جاهزة تلصقها في تطبيق الفواتير.
 Secrets المطلوبة: `MOYASAR_SECRET` (مفتاح sk_live)، `RESEND_KEY`، `GH_TOKEN` (fine-grained، Contents قراءة/كتابة على rax3d-data فقط). المتغير `GH_REPO` في wrangler.toml.
+
+## دخول الفاتورة لبرنامج الفواتير + الاسترداد
+- عند الدفع: الدالة تضيف الفاتورة (باسم ORD-n) في `partner_log.json` بمستودع rax3d-data، والتطبيق يستلمها تلقائيًا ويدخلها السجل والإحصائيات والنقاط. التكلفة تنحسب من القطع المحفوظة عندك، وإلا من وزن القطعة.
+- عند الاسترداد: ميسر يرسل Webhook إلى `/webhook` (حدث payment_refunded)، والدالة تضيف أمر إلغاء، والتطبيق يحوّل الفاتورة «ملغاة».
+- ميسر ← الإعدادات ← Webhooks ← أضف: `https://rax3d-pay.rax3d.workers.dev/webhook`، الحدث payment_refunded، ورمز سري (Shared secret) نفسه في `WEBHOOK_SECRET` (اختياري لكن يفضل).

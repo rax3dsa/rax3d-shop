@@ -44,6 +44,20 @@ async function reserveNumber(env) {
   }
   throw new Error('busy');
 }
+// read-modify-write a JSON file in the data repo with the sha (same optimistic pattern the app uses)
+async function ghUpdate(env, path, def, fn, msg) {
+  for (let i = 0; i < 6; i++) {
+    const c = await ghRead(env, path); const nd = fn(c ? c.data : def);
+    if (nd === undefined) return;
+    const body = { message: msg, content: b64e(JSON.stringify(nd)) }; if (c) body.sha = c.sha;
+    const r = await gh(env, 'PUT', path, body);
+    if (r.ok) return;
+    if (r.status !== 409 && r.status !== 422) throw new Error('gh ' + r.status);
+    await sleep(500 + Math.random() * 700);
+  }
+  throw new Error('busy');
+}
+const riyadhDay = () => new Date(Date.now() + 3 * 3600 * 1000).toISOString().slice(0, 10);
 async function names() { try { const j = await (await fetch(SITE + '/catalog.json', { cf: { cacheTtl: 60 } })).json(); return j.items || {} } catch { return {} } }
 
 
@@ -77,12 +91,36 @@ function invoiceHtml(d) {
 <div style="height:10px;background:#111"></div></div>`;
 }
 
+// Moyasar webhook (payment_refunded): a refunded payment cancels its invoice in the invoicing app
+async function hook(req, env, out) {
+  let e; try { e = await req.json() } catch { return out({ ok: false }, 400) }
+  if (env.WEBHOOK_SECRET && e.secret_token !== env.WEBHOOK_SECRET) return out({ ok: false }, 401);
+  if (!/refund/i.test(String(e.type || ''))) return out({ ok: true, ignored: true });
+  const id = e.data && e.data.id;
+  if (!/^[0-9a-f-]{36}$/i.test(id || '') || !env.GH_TOKEN || !env.GH_REPO) return out({ ok: true, ignored: true });
+  const r = await fetch('https://api.moyasar.com/v1/payments/' + id, { headers: { Authorization: 'Basic ' + btoa(env.MOYASAR_SECRET + ':') } });
+  if (!r.ok) return out({ ok: false, reason: 'lookup' }, 502);
+  const p = await r.json();
+  const pay = await ghRead(env, 'online/pay_' + id + '.json');
+  if (!pay) return out({ ok: true, ignored: true, reason: 'unlinked' });
+  const num = pay.data.num, full = p.status === 'refunded' || (+p.refunded > 0 && +p.refunded >= +p.amount);
+  if (full) {
+    await ghUpdate(env, 'partner_log.json', [], arr => { arr = Array.isArray(arr) ? arr : []; if (!arr.some(x => x && Number(x.void) === Number(num))) arr.push({ void: num, voidAt: riyadhDay(), payId: id }); return arr }, 'استرداد ORD-' + num);
+    await mail(env, '🚫 استرداد ORD-' + num, `<p>تم استرداد دفعة الطلب <b>ORD-${num}</b> (${p.amount / 100} ${esc(p.currency)}).<br>الفاتورة تتحول «ملغاة» في برنامج الفواتير تلقائيًا أول ما تفتحه.</p>`);
+  } else {
+    await mail(env, '↩️ استرداد جزئي ORD-' + num, `<p>استرداد جزئي (${(+p.refunded || 0) / 100} من ${p.amount / 100} ${esc(p.currency)}) للطلب <b>ORD-${num}</b>. الفاتورة ما انلغت تلقائيًا، عدّلها أو ألغها من التطبيق لو تبغى.</p>`);
+  }
+  return out({ ok: true, num, voided: full });
+}
+
 export default {
   async fetch(req, env) {
     const cors = { 'Access-Control-Allow-Origin': SITE, 'Access-Control-Allow-Headers': 'Content-Type', 'Vary': 'Origin' };
     const out = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { ...cors, 'Content-Type': 'application/json' } });
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
-    if (req.method !== 'POST' || new URL(req.url).pathname !== '/confirm') return out({ ok: false }, 404);
+    const path = new URL(req.url).pathname;
+    if (req.method === 'POST' && path === '/webhook') return hook(req, env, out);
+    if (req.method !== 'POST' || path !== '/confirm') return out({ ok: false }, 404);
 
     let b; try { b = await req.json() } catch { return out({ ok: false, reason: 'bad' }, 400) }
     if (!/^[0-9a-f-]{36}$/i.test(b.paymentId || '')) return out({ ok: false, reason: 'bad' }, 400);
@@ -124,7 +162,7 @@ export default {
       return out({ ok: false, reason: 'mismatch', paid: true });
     }
     // 4) order number = the next invoice number (ORD-n), reserved once per payment. Without GH_TOKEN we fall back to the old RX code.
-    let num = null, dup = false;
+    let num = null, dup = false, logFail = false;
     if (env.GH_TOKEN && env.GH_REPO) {
       try {
         const done = await ghRead(env, 'online/pay_' + b.paymentId + '.json');
@@ -134,6 +172,12 @@ export default {
           const order = { num, paymentId: b.paymentId, ref: b.ref, amount: p.amount / 100, currency: p.currency, method: p.source?.type || '', customer: { name: (c.name || '').slice(0, 60), phone: (c.phone || '').slice(0, 20), city: (c.city || '').slice(0, 40), address: (c.address || '').slice(0, 200) }, cart: b.cart.map(o => ({ id: String(o.id), qty: Math.floor(+o.qty), color: String(o.color || '').slice(0, 30) })), at: new Date().toISOString() };
           await ghCreate(env, 'online/ORD-' + num + '.json', order, 'طلب مدفوع ORD-' + num);
           await ghCreate(env, 'online/pay_' + b.paymentId + '.json', { num }, 'ربط الدفعة بالطلب ORD-' + num);
+          // the invoice itself goes to the same shared inbox the data-entry phone uses; the app imports it into its log
+          const nm0 = await names(), itemsT = total - (+env.SHIP_FEE || 0);
+          const rec = { num, date: riyadhDay(), online: true, payId: b.paymentId, client: (c.name || '').slice(0, 60), phone: (c.phone || '').slice(0, 20), code: b.ref,
+            desc: rows.map(r => (nm0[r.id]?.n || r.id) + ' (' + r.q + ')').join(' ، '), qty: rows.reduce((a, r) => a + r.q, 0), disc: 0, total: itemsT, profit: 0, sugg: 0, sub: itemsT,
+            items: rows.map(r => ({ desc: nm0[r.id]?.n || r.id, q: r.q, unit: r.u, line: r.u * r.q, cost: 0, w: +pr.W[r.id] || 0, h: 0, m: 0, sec: 0, type: 'واحدة', auto: false, dp: 0 })) };
+          try { await ghUpdate(env, 'partner_log.json', [], arr => { arr = Array.isArray(arr) ? arr : []; if (!arr.some(x => x && Number(x.num) === num)) arr.push(rec); return arr }, 'فاتورة طلب مدفوع ORD-' + num) } catch (e) { logFail = true }
         }
       } catch (e) { num = null }
     } else if (env.ORDERS) { if (await env.ORDERS.get(b.ref)) return out({ ok: true, dup: true }); await env.ORDERS.put(b.ref, '1', { expirationTtl: 60 * 60 * 24 * 30 }) }
@@ -147,7 +191,7 @@ export default {
     const today = new Date(Date.now() + 3 * 3600 * 1000).toISOString().slice(0, 10);
     const invoice = invoiceHtml({ label, date: today, name: c.name || '', phone: c.phone || '', rows: rows.map(r => ({ ...r, name: nm[r.id]?.n || r.id })), sub: total - (+env.SHIP_FEE || 0), ship: +env.SHIP_FEE || 0, total, method: p.source?.type === 'applepay' ? 'Apple Pay' : (p.source?.company ? String(p.source.company).toUpperCase() : (p.source?.type || '')) });
     const html = invoice + `<hr style="margin:26px 0;border:0;border-top:1px dashed #ccc"><p>طلب مدفوع <b>${esc(label)}</b>${num ? '' : ' (بدون رقم فاتورة، تعذّر حجز الرقم)'}</p>` + info.replace(esc(b.ref), esc(label)) +
-      `<p>الصق الرسالة التالية في تطبيق الفواتير (استيراد الطلب) وتنعبّى الفاتورة بنفس الرقم:</p><pre style="background:#f4f1ea;padding:10px;border-radius:8px;white-space:pre-wrap">${esc(msg)}</pre>`;
+      ((logFail || !num) ? `<p style="color:#b00">⚠️ تعذّر إضافة الفاتورة تلقائيًا لبرنامج الفواتير. الصق الرسالة التالية في التطبيق (استيراد الطلب) عشان تنحفظ بنفس الرقم:</p><pre style="background:#f4f1ea;padding:10px;border-radius:8px;white-space:pre-wrap">${esc(msg)}</pre>` : `<p>✓ الفاتورة دخلت برنامج الفواتير تلقائيًا (تظهر لك أول ما تفتحه).</p>`);
     const sent = await mail(env, '✅ طلب مدفوع ' + label, html);
     return out({ ok: true, num, emailed: sent });
   }
