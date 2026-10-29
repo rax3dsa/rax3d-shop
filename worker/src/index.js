@@ -88,9 +88,15 @@ export default {
     if (!/^[0-9a-f-]{36}$/i.test(b.paymentId || '')) return out({ ok: false, reason: 'bad' }, 400);
 
     // 1) what Moyasar says was paid (also carries the order details, so a confirm still works if the browser lost them)
-    const r = await fetch('https://api.moyasar.com/v1/payments/' + b.paymentId, { headers: { Authorization: 'Basic ' + btoa(env.MOYASAR_SECRET + ':') } });
-    if (!r.ok) return out({ ok: false, reason: 'lookup' }, 502);
-    const p = await r.json();
+    // Apple Pay / mada can still be "initiated" for a moment right after the sheet closes, so look again a few times
+    let p = null, st = '';
+    for (let i = 0; i < 5; i++) {
+      const r = await fetch('https://api.moyasar.com/v1/payments/' + b.paymentId, { headers: { Authorization: 'Basic ' + btoa(env.MOYASAR_SECRET + ':') } });
+      if (!r.ok) return out({ ok: false, reason: 'lookup', code: r.status }, 502);
+      p = await r.json(); st = p.status;
+      if (st === 'paid' || st === 'failed' || st === 'voided' || st === 'refunded') break;
+      await sleep(1500);
+    }
     if (p.status !== 'paid') return out({ ok: false, reason: 'unpaid', status: p.status });
     const md = p.metadata || {};
     if (!/^RX-[A-Z0-9]{5}$/.test(b.ref || '')) b.ref = md.ref;

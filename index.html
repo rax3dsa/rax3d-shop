@@ -1034,7 +1034,7 @@ async function payConfirm(id){
   const j=await r.json();
   if(j.ok){try{sessionStorage.removeItem("rax3d_pay");localStorage.removeItem("rax3d_pay")}catch(_){}cart.length=0;OREF="";cartUI();
    $("#paymysr").hidden=true;$("#payform").hidden=false;$("#payform").innerHTML=`<p class="total">تم الدفع ✓</p><p class="inote">${j.num?`رقم طلبك <b dir="ltr">ORD-${+j.num}</b>. `:""}وصلنا طلبك وبنتواصل معك لتأكيد التجهيز والتوصيل.</p>`;$("#paybg").hidden=false;render(false);return true}
-  $("#payform").hidden=false;$("#payform").innerHTML=`<p class="inote">${j.paid?"تم الدفع، لكن نحتاج نراجع طلبك يدويًا. تواصل معنا ومعك رقم الدفعة <b dir=\"ltr\">"+esc(String(id).slice(-8))+"</b>.":"ما تأكد الدفع. ما تم خصم مبلغ، أو تواصل معنا ومعك رقم الدفعة <b dir=\"ltr\">"+esc(String(id).slice(-8))+"</b>."}</p>`;$("#paybg").hidden=false;return false
+  $("#payform").hidden=false;$("#payform").innerHTML=`<p class="inote">${j.paid?"تم الدفع، لكن نحتاج نراجع طلبك يدويًا. تواصل معنا ومعك رقم الدفعة <b dir=\"ltr\">"+esc(String(id).slice(-8))+"</b>.":"ما تأكد الدفع الحين (<span dir=\"ltr\">"+esc((j.reason||"")+(j.status?":"+j.status:"")+(j.code?":"+j.code:""))+"</span>). إذا انخصم منك مبلغ تواصل معنا ومعك رقم الدفعة <b dir=\"ltr\">"+esc(String(id).slice(-8))+"</b>."}</p>`;$("#paybg").hidden=false;return false
  }catch(_){$("#payform").hidden=false;$("#payform").innerHTML=`<p class="inote">تعذر التحقق من الدفع الحين. لا تدفع مرة ثانية، تواصل معنا ومعك رقم الدفعة <b dir="ltr">${esc(String(id).slice(-8))}</b>.</p>`;$("#paybg").hidden=false;return false}
 }
 document.addEventListener("click",async e=>{
