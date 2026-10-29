@@ -338,10 +338,8 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
  <button type="button" class="xbtn" id="payclose" aria-label="إغلاق">×</button>
  <h3 id="payt">الدفع الإلكتروني</h3>
  <div id="payform">
-  <label class="flab" for="pn">الاسم</label><input class="fin" id="pn" autocomplete="name" maxlength="40">
-  <label class="flab" for="pp">رقم الجوال</label><input class="fin" id="pp" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="05xxxxxxxx" dir="ltr">
-  <label class="flab" for="pc">المدينة</label><input class="fin" id="pc" autocomplete="address-level2" maxlength="40">
-  <label class="flab" for="pa">العنوان (الحي، الشارع، أقرب معلم)</label><textarea class="fin" id="pa" rows="2" maxlength="200" autocomplete="street-address"></textarea>
+  <label class="flab" for="payName">الاسم</label><input class="fin" id="payName" autocomplete="name" maxlength="40">
+  <label class="flab" for="payPhone">رقم الجوال</label><input class="fin" id="payPhone" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="05xxxxxxxx" dir="ltr">
   <p class="total" id="paytot"></p><div class="dmsg" id="paymsg" aria-live="polite"></div>
   <button type="button" class="btn gold" id="paygo">متابعة للدفع</button>
  </div>
@@ -1007,25 +1005,25 @@ async function payConfirm(id){
  try{const r=await fetch(PAY.api+"/confirm",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paymentId:id,ref:o.ref,customer:o.customer,cart:o.cart})});
   const j=await r.json();
   if(j.ok){try{sessionStorage.removeItem("rax3d_pay")}catch(_){}cart.length=0;OREF="";cartUI();
-   $("#paymysr").hidden=true;$("#payform").hidden=false;$("#payform").innerHTML=`<p class="total">تم الدفع ✓</p><p class="inote">رقم طلبك <b dir="ltr">${esc(o.ref)}</b>. وصلنا طلبك وبنتواصل معك على جوالك لتأكيد التجهيز والتوصيل.</p>`;$("#paybg").hidden=false;render(false);return true}
+   $("#paymysr").hidden=true;$("#payform").hidden=false;$("#payform").innerHTML=`<p class="total">تم الدفع ✓</p><p class="inote">رقم طلبك <b dir="ltr">${esc(o.ref)}</b>. وصلنا طلبك وبنتواصل معك لتأكيد التجهيز والتوصيل.</p>`;$("#paybg").hidden=false;render(false);return true}
   $("#payform").hidden=false;$("#payform").innerHTML=`<p class="inote">${j.paid?"تم الدفع، لكن نحتاج نراجع طلبك يدويًا. تواصل معنا ومعك رقم الطلب <b dir=\"ltr\">"+esc(o.ref)+"</b>.":"ما تأكد الدفع. ما تم خصم مبلغ، أو تواصل معنا ومعك رقم الطلب <b dir=\"ltr\">"+esc(o.ref)+"</b>."}</p>`;$("#paybg").hidden=false;return false
  }catch(_){$("#payform").hidden=false;$("#payform").innerHTML=`<p class="inote">تعذر التحقق من الدفع الحين. لا تدفع مرة ثانية، تواصل معنا ومعك رقم الطلب <b dir="ltr">${esc(o.ref)}</b>.</p>`;$("#paybg").hidden=false;return false}
 }
 document.addEventListener("click",async e=>{
  const t=e.target.closest("#payBtn,#paygo,#payclose");if(!t)return;
  if(t.id==="payclose"){$("#paybg").hidden=true;return}
- if(t.id==="payBtn"){if(!payable())return;$("#pn").value=CUST?CUST.n:"";$("#pp").value=CUST?CUST.p:"";payMsg("");$("#payform").hidden=false;$("#paymysr").hidden=true;
+ if(t.id==="payBtn"){if(!payable())return;$("#payName").value=CUST?CUST.n:"";$("#payPhone").value=CUST?CUST.p:"";payMsg("");$("#payform").hidden=false;$("#paymysr").hidden=true;
   $("#paytot").textContent=`الإجمالي: ${payTotal()} ريال`+(PAY.ship?` (يشمل التوصيل ${PAY.ship})`:"");$("#paybg").hidden=false;return}
- const n=$("#pn").value.trim(),p=$("#pp").value.replace(/\s/g,""),c=$("#pc").value.trim(),a=$("#pa").value.trim();
- if(n.length<2||!/^(05\d{8}|\+?9665\d{8})$/.test(p)||c.length<2||a.length<5){payMsg("عبّي الاسم والجوال (05xxxxxxxx) والمدينة والعنوان.",true);return}
- const ref=orderCode(),order={ref,customer:{name:n,phone:p,city:c,address:a},cart:cart.map(o=>({id:o.id,qty:o.qty,color:o.color}))};
+ const n=$("#payName").value.trim(),p=$("#payPhone").value.replace(/\s/g,"");
+ if(n.length<2||!/^(05\d{8}|\+?9665\d{8})$/.test(p)){payMsg("عبّي الاسم والجوال (05xxxxxxxx).",true);return}
+ const ref=orderCode(),order={ref,customer:{name:n,phone:p},cart:cart.map(o=>({id:o.id,qty:o.qty,color:o.color}))};
  try{sessionStorage.setItem("rax3d_pay",JSON.stringify(order))}catch(_){}
  try{await payLoad()}catch(_){payMsg("تعذر تحميل بوابة الدفع، جرّب مرة ثانية.",true);return}
  $("#payform").hidden=true;const f=$("#paymysr");f.hidden=false;f.innerHTML="";
  Moyasar.init({element:"#paymysr",amount:payTotal()*100,currency:"SAR",description:"RAX3D "+ref,publishable_api_key:PAY.pk,
   callback_url:location.origin+"/?pay=done",methods:["creditcard","applepay","stcpay"],supported_networks:["visa","mastercard","mada"],
   apple_pay:{country:"SA",label:"RAX3D",validate_merchant_url:"https://api.moyasar.com/v1/applepay/initiate"},
-  metadata:{ref,name:n,phone:p,city:c,items:cart.map(o=>o.id+"x"+o.qty).join(",").slice(0,400)},
+  metadata:{ref,name:n,phone:p,items:cart.map(o=>o.id+"x"+o.qty).join(",").slice(0,400)},
   on_completed:pay=>payConfirm(pay.id)})
 });
 (()=>{try{const q=new URLSearchParams(location.search);if(q.get("pay")==="done"&&q.get("id")){const id=q.get("id"),st=q.get("status");history.replaceState(null,"",location.pathname);
