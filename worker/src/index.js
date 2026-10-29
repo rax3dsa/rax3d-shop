@@ -22,6 +22,30 @@ async function mail(env, subject, html) {
   return r.ok;
 }
 
+
+// ---- invoice numbering (shares counter.json with the invoicing app in the private data repo) ----
+const b64e = s => { const b = new TextEncoder().encode(s); let o = ''; for (let i = 0; i < b.length; i += 0x8000) o += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(o) };
+const b64d = s => new TextDecoder().decode(Uint8Array.from(atob(String(s).replace(/\s/g, '')), c => c.charCodeAt(0)));
+const gh = (env, method, path, body) => fetch('https://api.github.com/repos/' + env.GH_REPO + '/contents/' + path, {
+  method, headers: { Authorization: 'Bearer ' + env.GH_TOKEN, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'rax3d-pay', 'Content-Type': 'application/json' },
+  body: body ? JSON.stringify(body) : undefined });
+const ghRead = async (env, path) => { const r = await gh(env, 'GET', path); if (r.status === 404) return null; if (!r.ok) throw new Error('gh ' + r.status); const j = await r.json(); return { data: JSON.parse(b64d(j.content)), sha: j.sha } };
+const ghCreate = async (env, path, data, msg) => { const r = await gh(env, 'PUT', path, { message: msg, content: b64e(JSON.stringify(data)) }); if (r.status === 422 || r.status === 409) return false; if (!r.ok) throw new Error('gh ' + r.status); return true };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+// reserve the next invoice number the same way the app does (optimistic write with the file sha)
+async function reserveNumber(env) {
+  for (let i = 0; i < 6; i++) {
+    const c = await ghRead(env, 'counter.json'); const num = Number(c?.data?.next);
+    if (!c || !Number.isInteger(num) || num < 1) throw new Error('counter');
+    const r = await gh(env, 'PUT', 'counter.json', { message: 'رقم الفاتورة القادم ' + (num + 1), content: b64e(JSON.stringify({ next: num + 1 })), sha: c.sha });
+    if (r.ok) return num;
+    if (r.status !== 409 && r.status !== 422) throw new Error('gh ' + r.status);
+    await sleep(500 + Math.random() * 700);
+  }
+  throw new Error('busy');
+}
+async function names() { try { const j = await (await fetch(SITE + '/catalog.json', { cf: { cacheTtl: 60 } })).json(); return j.items || {} } catch { return {} } }
+
 export default {
   async fetch(req, env) {
     const cors = { 'Access-Control-Allow-Origin': SITE, 'Access-Control-Allow-Headers': 'Content-Type', 'Vary': 'Origin' };
@@ -56,9 +80,30 @@ export default {
       await mail(env, '⚠️ دفعة تحتاج مراجعة ' + b.ref, `<p>المتوقع: ${total} ريال</p>` + info);
       return out({ ok: false, reason: 'mismatch', paid: true });
     }
-    // 4) once per order (optional KV binding ORDERS)
-    if (env.ORDERS) { if (await env.ORDERS.get(b.ref)) return out({ ok: true, ref: b.ref, dup: true }); await env.ORDERS.put(b.ref, '1', { expirationTtl: 60 * 60 * 24 * 30 }) }
-    const sent = await mail(env, '✅ طلب مدفوع ' + b.ref, info);
-    return out({ ok: true, ref: b.ref, emailed: sent });
+    // 4) order number = the next invoice number (ORD-n), reserved once per payment. Without GH_TOKEN we fall back to the old RX code.
+    let num = null, dup = false;
+    if (env.GH_TOKEN && env.GH_REPO) {
+      try {
+        const done = await ghRead(env, 'online/pay_' + b.paymentId + '.json');
+        if (done) { num = done.data.num; dup = true }
+        else {
+          num = await reserveNumber(env);
+          const order = { num, paymentId: b.paymentId, ref: b.ref, amount: p.amount / 100, currency: p.currency, method: p.source?.type || '', customer: { name: (c.name || '').slice(0, 60), phone: (c.phone || '').slice(0, 20), city: (c.city || '').slice(0, 40), address: (c.address || '').slice(0, 200) }, cart: b.cart.map(o => ({ id: String(o.id), qty: Math.floor(+o.qty), color: String(o.color || '').slice(0, 30) })), at: new Date().toISOString() };
+          await ghCreate(env, 'online/ORD-' + num + '.json', order, 'طلب مدفوع ORD-' + num);
+          await ghCreate(env, 'online/pay_' + b.paymentId + '.json', { num }, 'ربط الدفعة بالطلب ORD-' + num);
+        }
+      } catch (e) { num = null }
+    } else if (env.ORDERS) { if (await env.ORDERS.get(b.ref)) return out({ ok: true, dup: true }); await env.ORDERS.put(b.ref, '1', { expirationTtl: 60 * 60 * 24 * 30 }) }
+    if (dup) return out({ ok: true, num, dup: true });
+
+    // 5) the email: the order message is in the same format the invoicing app already imports
+    const nm = await names();
+    const label = num ? 'ORD-' + num : b.ref;
+    const msg = [`طلب مدفوع ${label}`, `* الاسم: ${(c.name || '').slice(0, 60)}`, `* الجوال: ${(c.phone || '').slice(0, 20)}`,
+      ...b.cart.map(o => `\n* القطعة: ${nm[o.id]?.n || o.id}\n* اللون: ${String(o.color || 'كما بالصورة').slice(0, 30)}\n* الكمية: ${Math.floor(+o.qty)}`)].join('\n');
+    const html = `<p>طلب مدفوع <b>${esc(label)}</b>${num ? '' : ' (بدون رقم فاتورة، تعذّر حجز الرقم)'}</p>` + info.replace(esc(b.ref), esc(label)) +
+      `<p>الصق الرسالة التالية في تطبيق الفواتير (استيراد الطلب) وتنعبّى الفاتورة بنفس الرقم:</p><pre style="background:#f4f1ea;padding:10px;border-radius:8px;white-space:pre-wrap">${esc(msg)}</pre>`;
+    const sent = await mail(env, '✅ طلب مدفوع ' + label, html);
+    return out({ ok: true, num, emailed: sent });
   }
 };

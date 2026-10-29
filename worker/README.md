@@ -8,3 +8,7 @@
 6. Apple Pay: فعّل الدومين rax3d.com من لوحة ميسر وارفع ملف التحقق في `/.well-known/`.
 
 لا تضع المفتاح السري في أي ملف داخل المستودع (المستودع عام).
+
+## ترقيم الفواتير + إيميل الطلب المدفوع
+الدالة تحجز رقم الفاتورة التالي من `counter.json` في مستودع `rax3d-data` (ORD-n)، وتحفظ الطلب في `online/ORD-n.json`، وترسل إيميل «✅ طلب مدفوع ORD-n» فيه رسالة جاهزة تلصقها في تطبيق الفواتير.
+Secrets المطلوبة: `MOYASAR_SECRET` (مفتاح sk_live)، `RESEND_KEY`، `GH_TOKEN` (fine-grained، Contents قراءة/كتابة على rax3d-data فقط). المتغير `GH_REPO` في wrangler.toml.

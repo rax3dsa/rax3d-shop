@@ -5,7 +5,10 @@ compatibility_date = "2025-01-01"
 [vars]
 MAIL_TO = "rax3d.sa@hotmail.com"
 SHIP_FEE = "0"
+GH_REPO = "rax3dsa/rax3d-data"
 # MAIL_FROM = "RAX3D <orders@rax3d.com>"   # after verifying rax3d.com in Resend
 
 # Secrets (never in this file):  wrangler secret put MOYASAR_SECRET   /   wrangler secret put RESEND_KEY
 # Optional duplicate guard:       wrangler kv namespace create ORDERS  → then add [[kv_namespaces]] binding = "ORDERS"
+
+# Invoice numbering: wrangler secret put GH_TOKEN  (fine-grained token, Contents read/write on rax3d-data only)

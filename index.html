@@ -1031,9 +1031,9 @@ async function payConfirm(id){
  try{const r=await fetch(PAY.api+"/confirm",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paymentId:id,ref:o.ref,customer:o.customer,cart:o.cart})});
   const j=await r.json();
   if(j.ok){try{sessionStorage.removeItem("rax3d_pay")}catch(_){}cart.length=0;OREF="";cartUI();
-   $("#paymysr").hidden=true;$("#payform").hidden=false;$("#payform").innerHTML=`<p class="total">تم الدفع ✓</p><p class="inote">رقم طلبك <b dir="ltr">${esc(o.ref)}</b>. وصلنا طلبك وبنتواصل معك لتأكيد التجهيز والتوصيل.</p>`;$("#paybg").hidden=false;render(false);return true}
-  $("#payform").hidden=false;$("#payform").innerHTML=`<p class="inote">${j.paid?"تم الدفع، لكن نحتاج نراجع طلبك يدويًا. تواصل معنا ومعك رقم الطلب <b dir=\"ltr\">"+esc(o.ref)+"</b>.":"ما تأكد الدفع. ما تم خصم مبلغ، أو تواصل معنا ومعك رقم الطلب <b dir=\"ltr\">"+esc(o.ref)+"</b>."}</p>`;$("#paybg").hidden=false;return false
- }catch(_){$("#payform").hidden=false;$("#payform").innerHTML=`<p class="inote">تعذر التحقق من الدفع الحين. لا تدفع مرة ثانية، تواصل معنا ومعك رقم الطلب <b dir="ltr">${esc(o.ref)}</b>.</p>`;$("#paybg").hidden=false;return false}
+   $("#paymysr").hidden=true;$("#payform").hidden=false;$("#payform").innerHTML=`<p class="total">تم الدفع ✓</p><p class="inote">${j.num?`رقم طلبك <b dir="ltr">ORD-${+j.num}</b>. `:""}وصلنا طلبك وبنتواصل معك لتأكيد التجهيز والتوصيل.</p>`;$("#paybg").hidden=false;render(false);return true}
+  $("#payform").hidden=false;$("#payform").innerHTML=`<p class="inote">${j.paid?"تم الدفع، لكن نحتاج نراجع طلبك يدويًا. تواصل معنا ومعك رقم الدفعة <b dir=\"ltr\">"+esc(String(id).slice(-8))+"</b>.":"ما تأكد الدفع. ما تم خصم مبلغ، أو تواصل معنا ومعك رقم الدفعة <b dir=\"ltr\">"+esc(String(id).slice(-8))+"</b>."}</p>`;$("#paybg").hidden=false;return false
+ }catch(_){$("#payform").hidden=false;$("#payform").innerHTML=`<p class="inote">تعذر التحقق من الدفع الحين. لا تدفع مرة ثانية، تواصل معنا ومعك رقم الدفعة <b dir="ltr">${esc(String(id).slice(-8))}</b>.</p>`;$("#paybg").hidden=false;return false}
 }
 document.addEventListener("click",async e=>{
  const t=e.target.closest("#payBtn,#paygo,#payclose");if(!t)return;
