@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ar" dir="rtl"><head><meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.moyasar.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.moyasar.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://cdn.moyasar.com; connect-src 'self' https://api.moyasar.com https://*.workers.dev https://pay.rax3d.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self' https://api.moyasar.com">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="متجر طباعة 3D في السعودية: مزهريات وهدايا وميداليات وإكسسوارات قهوة xBloom وصفارات وديكور مكتب وكؤوس. اختر القطعة واللون والمقاس وشوفها ثلاثية الأبعاد قبل الطلب.">
 <meta name="robots" content="index,follow,max-image-preview:large">
@@ -334,6 +334,20 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
  <a class="btn gold" id="sgo" href="https://ig.me/m/rax3d.sa" target="_blank" rel="noopener">افتح انستقرام</a>
  <a class="btn gold" id="sgt" href="https://www.tiktok.com/@rax3d.sa" target="_blank" rel="noopener" style="margin-top:8px">افتح تيك توك</a>
 </div></div>
+<div class="modal-bg" id="paybg" hidden><div class="modal" dir="rtl" role="dialog" aria-modal="true" aria-labelledby="payt">
+ <button type="button" class="xbtn" id="payclose" aria-label="إغلاق">×</button>
+ <h3 id="payt">الدفع الإلكتروني</h3>
+ <div id="payform">
+  <label class="flab" for="pn">الاسم</label><input class="fin" id="pn" autocomplete="name" maxlength="40">
+  <label class="flab" for="pp">رقم الجوال</label><input class="fin" id="pp" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="05xxxxxxxx" dir="ltr">
+  <label class="flab" for="pc">المدينة</label><input class="fin" id="pc" autocomplete="address-level2" maxlength="40">
+  <label class="flab" for="pa">العنوان (الحي، الشارع، أقرب معلم)</label><textarea class="fin" id="pa" rows="2" maxlength="200" autocomplete="street-address"></textarea>
+  <p class="total" id="paytot"></p><div class="dmsg" id="paymsg" aria-live="polite"></div>
+  <button type="button" class="btn gold" id="paygo">متابعة للدفع</button>
+ </div>
+ <div class="mysr-form" id="paymysr" hidden></div>
+ <p class="inote">الدفع عبر ميسر (مدى، البطاقات، Apple Pay، STC Pay). ما نحفظ بيانات بطاقتك.</p>
+</div></div>
 <div class="shell" dir="rtl">
   <div class="drawer-bg" id="drawerBg"></div><nav class="rail" id="rail" aria-label="الأقسام"></nav>
   <main class="main" id="main"></main>
@@ -575,7 +589,7 @@ function cartView(){
   ${cart.some(o=>UP(o.id,o.qty))?`<p class="total">الإجمالي: ${cart.reduce((a,o)=>a+LT(o),0)} ريال</p>`:""}
   ${accCard()}
   <p class="note sendnote">📋 لما تضغط «أرسل الطلب بالخاص» ننسخ رسالة طلبك جاهزة، ونفتح لك محادثتنا في انستقرام أو تيك توك. <b>الصقها في خانة الكتابة وأرسلها</b>، ونأكد لك طلبك وموعد التجهيز.</p>
-  <button type="button" class="btn gold" id="sendBtn">أرسل الطلب بالخاص</button><button type="button" class="btn alt" id="copy">انسخ الطلب فقط</button>
+  ${payable()?`<button type="button" class="btn gold" id="payBtn">ادفع الحين · مدى · Apple Pay · STC Pay</button>`:""}<button type="button" class="btn ${payable()?"alt":"gold"}" id="sendBtn">أرسل الطلب بالخاص</button><button type="button" class="btn alt" id="copy">انسخ الطلب فقط</button>
   <div class="toast" id="toast" aria-live="polite"></div>`
   :accCard()+`<p class="note">ما أضفت قطع بعد.</p><button type="button" class="btn alt" data-home>تصفح القطع</button>`}`;
 }
@@ -942,7 +956,7 @@ function applyLang(){const en=LANG==="en";document.documentElement.lang=en?"en":
 $("#langBtn").onclick=()=>{LANG=LANG==="en"?"ar":"en";try{localStorage.setItem("rax3d_lang",LANG)}catch(_){}
  if(LANG==="ar"){location.reload();return}applyLang();render(false)};
 /* lock page scroll while a dialog is open (stops the page sliding behind the 3D viewer on phones) */
-(()=>{const ids=["mbg","ibg","abg","pbg","sbg"];let y=0,locked=false;
+(()=>{const ids=["mbg","ibg","abg","pbg","sbg","paybg"];let y=0,locked=false;
  const sync=()=>{const open=ids.some(i=>{const e=document.getElementById(i);return e&&!e.hidden});if(open===locked)return;locked=open;
   const b=document.body;if(window.LENIS)open?LENIS.stop():LENIS.start();if(open){y=scrollY;b.style.position="fixed";b.style.top=-y+"px";b.style.left="0";b.style.right="0";b.style.overflow="hidden"}
   else{b.style.position=b.style.top=b.style.left=b.style.right=b.style.overflow="";scrollTo(0,y)}};
@@ -976,6 +990,44 @@ try{const pid=new URLSearchParams(location.search).get("p");if(pid&&ITEMS.some(i
   ScrollTrigger.refresh();
  };
 })();
+/* ---------- online payment (Moyasar). Hidden until PAY.pk and PAY.api are filled in.
+   The amount the customer pays is re-checked by the worker in /worker (secret key stays there). ---------- */
+const PAY={pk:"",api:"",ship:0};
+const payable=()=>!!(PAY.pk&&PAY.api&&cart.length&&cart.every(o=>UP(o.id,o.qty)&&!o.size&&!o.note));
+const payTotal=()=>cart.reduce((a,o)=>a+LT(o),0)+PAY.ship;
+function payLoad(){return new Promise((ok,no)=>{if(window.Moyasar)return ok();
+ const l=document.createElement("link");l.rel="stylesheet";l.href="https://cdn.moyasar.com/mpf/1.14.0/moyasar.css";document.head.appendChild(l);
+ const sc=document.createElement("script");sc.src="https://cdn.moyasar.com/mpf/1.14.0/moyasar.js";sc.onload=ok;sc.onerror=no;document.head.appendChild(sc)})}
+function payMsg(t,err){const m=$("#paymsg");m.textContent=t;m.className="dmsg"+(err?" err":"")}
+async function payConfirm(id){
+ let o=null;try{o=JSON.parse(sessionStorage.getItem("rax3d_pay")||"null")}catch(_){}
+ if(!o)return false;
+ try{const r=await fetch(PAY.api+"/confirm",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paymentId:id,ref:o.ref,customer:o.customer,cart:o.cart})});
+  const j=await r.json();
+  if(j.ok){try{sessionStorage.removeItem("rax3d_pay")}catch(_){}cart.length=0;OREF="";cartUI();
+   $("#paymysr").hidden=true;$("#payform").hidden=false;$("#payform").innerHTML=`<p class="total">تم الدفع ✓</p><p class="inote">رقم طلبك <b dir="ltr">${esc(o.ref)}</b>. وصلنا طلبك وبنتواصل معك على جوالك لتأكيد التجهيز والتوصيل.</p>`;$("#paybg").hidden=false;render(false);return true}
+  $("#payform").hidden=false;$("#payform").innerHTML=`<p class="inote">${j.paid?"تم الدفع، لكن نحتاج نراجع طلبك يدويًا. تواصل معنا ومعك رقم الطلب <b dir=\"ltr\">"+esc(o.ref)+"</b>.":"ما تأكد الدفع. ما تم خصم مبلغ، أو تواصل معنا ومعك رقم الطلب <b dir=\"ltr\">"+esc(o.ref)+"</b>."}</p>`;$("#paybg").hidden=false;return false
+ }catch(_){$("#payform").hidden=false;$("#payform").innerHTML=`<p class="inote">تعذر التحقق من الدفع الحين. لا تدفع مرة ثانية، تواصل معنا ومعك رقم الطلب <b dir="ltr">${esc(o.ref)}</b>.</p>`;$("#paybg").hidden=false;return false}
+}
+document.addEventListener("click",async e=>{
+ const t=e.target.closest("#payBtn,#paygo,#payclose");if(!t)return;
+ if(t.id==="payclose"){$("#paybg").hidden=true;return}
+ if(t.id==="payBtn"){if(!payable())return;$("#pn").value=CUST?CUST.n:"";$("#pp").value=CUST?CUST.p:"";payMsg("");$("#payform").hidden=false;$("#paymysr").hidden=true;
+  $("#paytot").textContent=`الإجمالي: ${payTotal()} ريال`+(PAY.ship?` (يشمل التوصيل ${PAY.ship})`:"");$("#paybg").hidden=false;return}
+ const n=$("#pn").value.trim(),p=$("#pp").value.replace(/\s/g,""),c=$("#pc").value.trim(),a=$("#pa").value.trim();
+ if(n.length<2||!/^(05\d{8}|\+?9665\d{8})$/.test(p)||c.length<2||a.length<5){payMsg("عبّي الاسم والجوال (05xxxxxxxx) والمدينة والعنوان.",true);return}
+ const ref=orderCode(),order={ref,customer:{name:n,phone:p,city:c,address:a},cart:cart.map(o=>({id:o.id,qty:o.qty,color:o.color}))};
+ try{sessionStorage.setItem("rax3d_pay",JSON.stringify(order))}catch(_){}
+ try{await payLoad()}catch(_){payMsg("تعذر تحميل بوابة الدفع، جرّب مرة ثانية.",true);return}
+ $("#payform").hidden=true;const f=$("#paymysr");f.hidden=false;f.innerHTML="";
+ Moyasar.init({element:"#paymysr",amount:payTotal()*100,currency:"SAR",description:"RAX3D "+ref,publishable_api_key:PAY.pk,
+  callback_url:location.origin+"/?pay=done",methods:["creditcard","applepay","stcpay"],supported_networks:["visa","mastercard","mada"],
+  apple_pay:{country:"SA",label:"RAX3D",validate_merchant_url:"https://api.moyasar.com/v1/applepay/initiate"},
+  metadata:{ref,name:n,phone:p,city:c,items:cart.map(o=>o.id+"x"+o.qty).join(",").slice(0,400)},
+  on_completed:pay=>payConfirm(pay.id)})
+});
+(()=>{try{const q=new URLSearchParams(location.search);if(q.get("pay")==="done"&&q.get("id")){const id=q.get("id"),st=q.get("status");history.replaceState(null,"",location.pathname);
+ if(st==="paid")payConfirm(id);else{$("#payform").innerHTML=`<p class="inote">ما تمت عملية الدفع (${esc(q.get("message")||st||"")}). تقدر تحاول مرة ثانية من «طلبي».</p>`;$("#paybg").hidden=false}}}catch(_){}})();
 loadPts();render(false);applyLang();
 </script>
 
