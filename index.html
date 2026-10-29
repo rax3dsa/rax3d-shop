@@ -992,7 +992,7 @@ try{const pid=new URLSearchParams(location.search).get("p");if(pid&&ITEMS.some(i
 })();
 /* ---------- online payment (Moyasar). Hidden until PAY.pk and PAY.api are filled in.
    The amount the customer pays is re-checked by the worker in /worker (secret key stays there). ---------- */
-const PAY={pk:"",api:"",ship:0};
+const PAY={pk:"",api:"https://rax3d-pay.rax3d.workers.dev",ship:0};
 const payable=()=>!!(PAY.pk&&PAY.api&&cart.length&&cart.every(o=>UP(o.id,o.qty)&&!o.size&&!o.note));
 const payTotal=()=>cart.reduce((a,o)=>a+LT(o),0)+PAY.ship;
 function payLoad(){return new Promise((ok,no)=>{if(window.Moyasar)return ok();
