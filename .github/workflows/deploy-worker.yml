@@ -1,9 +1,6 @@
 name: Deploy payment worker
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: ['worker/**']
 jobs:
   deploy:
     runs-on: ubuntu-latest
