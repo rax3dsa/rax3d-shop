@@ -85,11 +85,23 @@ export default {
     if (req.method !== 'POST' || new URL(req.url).pathname !== '/confirm') return out({ ok: false }, 404);
 
     let b; try { b = await req.json() } catch { return out({ ok: false, reason: 'bad' }, 400) }
-    const c = b.customer || {};
-    if (!/^[0-9a-f-]{36}$/i.test(b.paymentId || '') || !/^RX-[A-Z0-9]{5}$/.test(b.ref || '') || !Array.isArray(b.cart) || !b.cart.length || b.cart.length > 40)
-      return out({ ok: false, reason: 'bad' }, 400);
+    if (!/^[0-9a-f-]{36}$/i.test(b.paymentId || '')) return out({ ok: false, reason: 'bad' }, 400);
 
-    // 1) what the cart should cost, from the live site prices
+    // 1) what Moyasar says was paid (also carries the order details, so a confirm still works if the browser lost them)
+    const r = await fetch('https://api.moyasar.com/v1/payments/' + b.paymentId, { headers: { Authorization: 'Basic ' + btoa(env.MOYASAR_SECRET + ':') } });
+    if (!r.ok) return out({ ok: false, reason: 'lookup' }, 502);
+    const p = await r.json();
+    if (p.status !== 'paid') return out({ ok: false, reason: 'unpaid', status: p.status });
+    const md = p.metadata || {};
+    if (!/^RX-[A-Z0-9]{5}$/.test(b.ref || '')) b.ref = md.ref;
+    if (!Array.isArray(b.cart) || !b.cart.length) {
+      const cols = {}; String(md.cols || '').split(',').forEach(s => { const i = s.indexOf(':'); if (i > 0) cols[s.slice(0, i)] = s.slice(i + 1) });
+      b.cart = String(md.items || '').split(',').filter(Boolean).map(s => { const i = s.lastIndexOf('x'); return { id: s.slice(0, i), qty: +s.slice(i + 1), color: cols[s.slice(0, i)] || '' } });
+    }
+    const c = (b.customer && b.customer.name) ? b.customer : { name: md.name || '', phone: md.phone || '' };
+    if (!/^RX-[A-Z0-9]{5}$/.test(b.ref || '') || !Array.isArray(b.cart) || !b.cart.length || b.cart.length > 40) return out({ ok: false, reason: 'bad' }, 400);
+
+    // 2) what the cart should cost, from the live site prices
     const pr = await prices(); let total = 0; const lines = [], rows = [];
     for (const o of b.cart) {
       const q = Math.floor(+o.qty), u = unit(pr, String(o.id), q);
@@ -97,12 +109,6 @@ export default {
       total += u * q; rows.push({ id: String(o.id), q, u, color: String(o.color || '').slice(0, 30) }); lines.push(`${esc(o.id)} × ${q} (${esc(String(o.color || '').slice(0, 30))}) = ${u * q} ريال`);
     }
     total += +env.SHIP_FEE || 0;
-
-    // 2) what Moyasar says was paid
-    const r = await fetch('https://api.moyasar.com/v1/payments/' + b.paymentId, { headers: { Authorization: 'Basic ' + btoa(env.MOYASAR_SECRET + ':') } });
-    if (!r.ok) return out({ ok: false, reason: 'lookup' }, 502);
-    const p = await r.json();
-    if (p.status !== 'paid') return out({ ok: false, reason: 'unpaid', status: p.status });
 
     const info = `<p>رقم الطلب: <b>${esc(b.ref)}</b><br>الاسم: ${esc((c.name || '').slice(0, 60))}<br>الجوال: ${esc((c.phone || '').slice(0, 20))}<br>المدينة: ${esc((c.city || '').slice(0, 40))}<br>العنوان: ${esc((c.address || '').slice(0, 200))}</p><p>${lines.join('<br>')}</p><p>المدفوع: <b>${p.amount / 100} ${esc(p.currency)}</b> · طريقة الدفع: ${esc(p.source?.type || '')} · رقم الدفعة: ${esc(p.id)}</p>`;
 
