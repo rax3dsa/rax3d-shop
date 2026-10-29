@@ -992,8 +992,10 @@ try{const pid=new URLSearchParams(location.search).get("p");if(pid&&ITEMS.some(i
 })();
 /* ---------- online payment (Moyasar). Hidden until PAY.pk and PAY.api are filled in.
    The amount the customer pays is re-checked by the worker in /worker (secret key stays there). ---------- */
-const PAY={pk:"",api:"https://rax3d-pay.rax3d.workers.dev",ship:0};
-const payable=()=>!!(PAY.pk&&PAY.api&&cart.length&&cart.every(o=>UP(o.id,o.qty)&&!o.size&&!o.note));
+const PAY={pk:"pk_test_Z2SX4k75BMdfhdLi5zVW6FdybYGLX5L4sdiDz6u6",api:"https://rax3d-pay.rax3d.workers.dev",ship:0};
+/* a pk_test_ key is only live for whoever opens the site with ?paytest, so customers never see test mode */
+const PTEST=(()=>{try{if(/[?&]paytest\b/.test(location.search))sessionStorage.setItem("rax3d_ptest","1");return sessionStorage.getItem("rax3d_ptest")==="1"}catch(_){return false}})();
+const payable=()=>!!(PAY.pk&&PAY.api&&(!PAY.pk.startsWith("pk_test_")||PTEST)&&cart.length&&cart.every(o=>UP(o.id,o.qty)&&!o.size&&!o.note));
 const payTotal=()=>cart.reduce((a,o)=>a+LT(o),0)+PAY.ship;
 function payLoad(){return new Promise((ok,no)=>{if(window.Moyasar)return ok();
  const l=document.createElement("link");l.rel="stylesheet";l.href="https://cdn.moyasar.com/mpf/1.14.0/moyasar.css";document.head.appendChild(l);
