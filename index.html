@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ar" dir="rtl"><head><meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.moyasar.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.moyasar.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://cdn.moyasar.com; connect-src 'self' https://api.moyasar.com https://*.workers.dev https://pay.rax3d.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self' https://api.moyasar.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' https://api.moyasar.com https://*.workers.dev https://pay.rax3d.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self' https://api.moyasar.com">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="متجر طباعة 3D في السعودية: مزهريات وهدايا وميداليات وإكسسوارات قهوة xBloom وصفارات وديكور مكتب وكؤوس. اختر القطعة واللون والمقاس وشوفها ثلاثية الأبعاد قبل الطلب.">
 <meta name="robots" content="index,follow,max-image-preview:large">
@@ -996,8 +996,8 @@ const PTEST=(()=>{try{if(/[?&]paytest\b/.test(location.search))sessionStorage.se
 const payable=()=>!!(PAY.pk&&PAY.api&&(!PAY.pk.startsWith("pk_test_")||PTEST)&&cart.length&&cart.every(o=>UP(o.id,o.qty)&&!o.size&&!o.note));
 const payTotal=()=>cart.reduce((a,o)=>a+LT(o),0)+PAY.ship;
 function payLoad(){return new Promise((ok,no)=>{if(window.Moyasar)return ok();
- const l=document.createElement("link");l.rel="stylesheet";l.href="https://cdn.moyasar.com/mpf/1.14.0/moyasar.css";document.head.appendChild(l);
- const sc=document.createElement("script");sc.src="https://cdn.moyasar.com/mpf/1.14.0/moyasar.js";sc.onload=ok;sc.onerror=no;document.head.appendChild(sc)})}
+ const l=document.createElement("link");l.rel="stylesheet";l.href="lib/moyasar.css";document.head.appendChild(l);
+ const sc=document.createElement("script");sc.src="lib/moyasar.umd.js";sc.onload=ok;sc.onerror=no;document.head.appendChild(sc)})}
 function payMsg(t,err){const m=$("#paymsg");m.textContent=t;m.className="dmsg"+(err?" err":"")}
 async function payConfirm(id){
  let o=null;try{o=JSON.parse(sessionStorage.getItem("rax3d_pay")||"null")}catch(_){}
@@ -1024,7 +1024,7 @@ document.addEventListener("click",async e=>{
   callback_url:location.origin+"/?pay=done",methods:PAY.methods,supported_networks:["visa","mastercard","mada"],
   ...(PAY.methods.includes("applepay")?{apple_pay:{country:"SA",label:"RAX3D",validate_merchant_url:"https://api.moyasar.com/v1/applepay/initiate"}}:{}),
   metadata:{ref,name:n,phone:p,items:cart.map(o=>o.id+"x"+o.qty).join(",").slice(0,400)},
-  on_completed:pay=>payConfirm(pay.id)})
+  on_completed:async pay=>{await payConfirm(pay.id)}})
 });
 (()=>{try{const q=new URLSearchParams(location.search);if(q.get("pay")==="done"&&q.get("id")){const id=q.get("id"),st=q.get("status");history.replaceState(null,"",location.pathname);
  if(st==="paid")payConfirm(id);else{$("#payform").innerHTML=`<p class="inote">ما تمت عملية الدفع (${esc(q.get("message")||st||"")}). تقدر تحاول مرة ثانية من «طلبي».</p>`;$("#paybg").hidden=false}}}catch(_){}})();
