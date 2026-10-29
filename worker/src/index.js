@@ -82,7 +82,7 @@ function invoiceHtml(d) {
 <tr>${lab('المجموع')}${td(money(d.sub), 'text-align:center')}</tr>${ship}
 <tr>${lab('الخصومات')}${td(money(0), 'text-align:center')}</tr>
 <tr><td style="background:#111;color:${GL};padding:10px;font-weight:bold;border:1px solid #111">المجموع النهائي</td><td style="background:#111;color:${GL};padding:10px;font-weight:bold;text-align:center;border:1px solid #111">${money(d.total)}</td></tr></table>
-<div style="clear:both;padding:14px 18px 0;font-size:13px;color:#2e7d32;font-weight:bold">✓ مدفوعة (${esc(d.method)})</div>
+<div style="clear:both;padding:14px 18px 0;font-size:13px;color:#2e7d32;font-weight:bold">${d.cod ? '<span style="color:#b26a00">⏳ الدفع عند الاستلام: المطلوب تحصيله ' + money(d.total) + '</span>' : '✓ مدفوعة (' + esc(d.method) + ')'}</div>
 <div style="margin:16px 18px 0;background:${CR};border:1px solid ${LN};padding:12px 14px;font-size:12.5px;line-height:1.8;color:#333"><b style="color:${G};font-size:14px">سياسة الاستبدال والاسترجاع</b><br>• إذا وصلتك القطعة مكسورة، أو فيها عيب طباعة، أو تختلف عن طلبك في اللون أو المقاس، راسلنا خلال 3 أيام من الاستلام مع صورة، ونعيد طباعتها أو نستبدلها مجاناً.<br>• لأن القطع تنصنع لك خصيصاً، ما نقبل الإرجاع بسبب تغيير الرأي بعد بدء الطباعة.<br>• تقدر تلغي طلبك مجاناً قبل ما نبدأ الطباعة.<br>• القطع المخصصة (اسم أو عبارة أو مقاس معدّل) تُستبدل فقط إذا فيها عيب.<br>• الفرق البسيط في درجة اللون أو ظهور خطوط الطبقات طبيعي في الطباعة ثلاثية الأبعاد، وما يُعتبر عيب.</div>
 <div style="height:4px;background:${G};margin:18px 18px 0"></div>
 <div style="text-align:center;padding:14px 18px 6px;font-weight:bold;font-size:18px;color:${G}">شكراً لتعاملكم مع RAX3D</div>
@@ -113,6 +113,45 @@ async function hook(req, env, out) {
   return out({ ok: true, num, voided: full });
 }
 
+// Cash on delivery: no payment to verify. The order gets its ORD number and is emailed to the owner, but it is NOT added to the
+// invoicing app's log (no sale / loyalty points until it is delivered and paid), so fake orders cost nothing.
+async function cod(req, env, out) {
+  let b; try { b = await req.json() } catch { return out({ ok: false, reason: 'bad' }, 400) }
+  const c = b.customer || {}, name = String(c.name || '').trim().slice(0, 60), phone = String(c.phone || '').replace(/\s/g, '').slice(0, 20);
+  const city = String(c.city || '').trim().slice(0, 40), address = String(c.address || '').trim().slice(0, 200);
+  if (!/^RX-[A-Z0-9]{5}$/.test(b.ref || '') || !Array.isArray(b.cart) || !b.cart.length || b.cart.length > 40) return out({ ok: false, reason: 'bad' }, 400);
+  if (name.length < 2 || !/^(05\d{8}|\+?9665\d{8})$/.test(phone) || city.length < 2 || address.length < 5) return out({ ok: false, reason: 'fields' }, 400);
+  const pr = await prices(); let sub = 0; const rows = [];
+  for (const o of b.cart) {
+    const q = Math.floor(+o.qty), u = unit(pr, String(o.id), q);
+    if (!u || q < 1 || q > 500) return out({ ok: false, reason: 'item' }, 400);
+    sub += u * q; rows.push({ id: String(o.id), q, u, color: String(o.color || '').slice(0, 30) });
+  }
+  const ship = +env.SHIP_FEE || 0, total = sub + ship;
+  if (!env.GH_TOKEN || !env.GH_REPO) return out({ ok: false, reason: 'config' }, 500);
+  let num, dup = false;
+  try {
+    const done = await ghRead(env, 'online/cod_' + b.ref + '.json');
+    if (done) { num = done.data.num; dup = true }
+    else {
+      num = await reserveNumber(env);
+      await ghCreate(env, 'online/ORD-' + num + '.json', { num, cod: true, ref: b.ref, total, customer: { name, phone, city, address }, cart: rows, at: new Date().toISOString() }, 'طلب دفع عند الاستلام ORD-' + num);
+      await ghCreate(env, 'online/cod_' + b.ref + '.json', { num }, 'ربط الطلب ' + b.ref);
+    }
+  } catch (e) { return out({ ok: false, reason: 'number' }, 502) }
+  if (dup) return out({ ok: true, num, dup: true });
+  const nm = await names(), label = 'ORD-' + num;
+  rows.forEach(r => { r.name = nm[r.id]?.n || r.id });
+  const msg = [`طلب ${label} (دفع عند الاستلام)`, `* الاسم: ${name}`, `* الجوال: ${phone}`,
+    ...rows.map(r => `\n* القطعة: ${r.name}\n* اللون: ${r.color || 'كما بالصورة'}\n* الكمية: ${r.q}`)].join('\n');
+  const html = `<p style="font-size:16px"><b>🚚 طلب جديد بالدفع عند الاستلام ${esc(label)}</b><br>الطلب غير مدفوع، تحصّل ${total} ريال عند التسليم. ما انسجل في برنامج الفواتير، سجّله بعد التسليم.</p>`
+    + invoiceHtml({ label, date: riyadhDay(), name, phone, rows, sub, ship, total, cod: true })
+    + `<p>الجوال: <span dir="ltr">${esc(phone)}</span><br>المدينة: ${esc(city)}<br>العنوان: ${esc(address)}</p>`
+    + `<p>للتسجيل في التطبيق بنفس الرقم، الصق هذه الرسالة في «استيراد الطلب»:</p><pre style="background:#f4f1ea;padding:10px;border-radius:8px;white-space:pre-wrap">${esc(msg)}</pre>`;
+  const sent = await mail(env, '🚚 طلب دفع عند الاستلام ' + label, html);
+  return out({ ok: true, num, emailed: sent });
+}
+
 export default {
   async fetch(req, env) {
     const cors = { 'Access-Control-Allow-Origin': SITE, 'Access-Control-Allow-Headers': 'Content-Type', 'Vary': 'Origin' };
@@ -120,6 +159,7 @@ export default {
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
     const path = new URL(req.url).pathname;
     if (req.method === 'POST' && path === '/webhook') return hook(req, env, out);
+    if (req.method === 'POST' && path === '/cod') return cod(req, env, out);
     if (req.method !== 'POST' || path !== '/confirm') return out({ ok: false }, 404);
 
     let b; try { b = await req.json() } catch { return out({ ok: false, reason: 'bad' }, 400) }

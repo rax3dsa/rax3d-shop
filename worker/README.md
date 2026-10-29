@@ -17,3 +17,7 @@ Secrets المطلوبة: `MOYASAR_SECRET` (مفتاح sk_live)، `RESEND_KEY`،
 - عند الدفع: الدالة تضيف الفاتورة (باسم ORD-n) في `partner_log.json` بمستودع rax3d-data، والتطبيق يستلمها تلقائيًا ويدخلها السجل والإحصائيات والنقاط. التكلفة تنحسب من القطع المحفوظة عندك، وإلا من وزن القطعة.
 - عند الاسترداد: ميسر يرسل Webhook إلى `/webhook` (حدث payment_refunded)، والدالة تضيف أمر إلغاء، والتطبيق يحوّل الفاتورة «ملغاة».
 - ميسر ← الإعدادات ← Webhooks ← أضف: `https://rax3d-pay.rax3d.workers.dev/webhook`، الحدث payment_refunded، ورمز سري (Shared secret) نفسه في `WEBHOOK_SECRET` (اختياري لكن يفضل).
+
+
+## Cash on delivery (POST /cod)
+Body: `{ref, customer:{name,phone,city,address}, cart:[{id,qty,color}]}`. Reserves an ORD-n number, stores `online/ORD-n.json` (cod:true) and emails the owner. It is NOT added to the invoicing app log (no sale/points until delivered and paid). Needs the same secrets as /confirm (GH_TOKEN, GH_REPO, RESEND_KEY, MAIL_TO).
