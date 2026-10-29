@@ -1016,7 +1016,7 @@ try{const pid=new URLSearchParams(location.search).get("p");if(pid&&ITEMS.some(i
 })();
 /* ---------- online payment (Moyasar). Hidden until PAY.pk and PAY.api are filled in.
    The amount the customer pays is re-checked by the worker in /worker (secret key stays there). ---------- */
-const PAY={pk:"pk_test_Z2SX4k75BMdfhdLi5zVW6FdybYGLX5L4sdiDz6u6",api:"https://rax3d-pay.rax3d.workers.dev",ship:0,methods:["creditcard"]}; /* add "applepay" / "stcpay" only after Moyasar has activated them for the account */
+const PAY={pk:"pk_test_Z2SX4k75BMdfhdLi5zVW6FdybYGLX5L4sdiDz6u6",api:"https://rax3d-pay.rax3d.workers.dev",ship:0,methods:["creditcard","applepay"]}; /* add "applepay" / "stcpay" only after Moyasar has activated them for the account */
 /* a pk_test_ key is only live for whoever opens the site with ?paytest, so customers never see test mode */
 const PTEST=(()=>{try{if(/[?&]paytest\b/.test(location.search))sessionStorage.setItem("rax3d_ptest","1");return sessionStorage.getItem("rax3d_ptest")==="1"}catch(_){return false}})();
 const payable=()=>!!(PAY.pk&&PAY.api&&(!PAY.pk.startsWith("pk_test_")||PTEST)&&cart.length&&cart.every(o=>UP(o.id,o.qty)&&!o.size&&!o.note));
