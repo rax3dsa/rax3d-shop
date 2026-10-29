@@ -1027,7 +1027,9 @@ function payLoad(){return new Promise((ok,no)=>{if(window.Moyasar)return ok();
 function payMsg(t,err){const m=$("#paymsg");m.textContent=t;m.className="dmsg"+(err?" err":"")}
 async function payConfirm(id){
  let o=null;try{o=JSON.parse(sessionStorage.getItem("rax3d_pay")||"null")}catch(_){}
- if(!o)return false;
+ if(!o)o=window.LASTORD||null;
+ if(!o){$("#paymysr").hidden=true;$("#payform").hidden=false;$("#payform").innerHTML=`<p class="total">تم الدفع ✓</p><p class="inote">وصلنا دفعتك (رقم الدفعة <b dir="ltr">${esc(String(id).slice(-8))}</b>) وبنتواصل معك لتأكيد التجهيز والتوصيل.</p>`;$("#paybg").hidden=false;return true}
+ $("#paymysr").hidden=true;$("#payform").hidden=false;$("#payform").innerHTML=`<p class="total">تم الدفع ✓</p><p class="inote">جاري تأكيد طلبك…</p>`;$("#paybg").hidden=false;
  try{const r=await fetch(PAY.api+"/confirm",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paymentId:id,ref:o.ref,customer:o.customer,cart:o.cart})});
   const j=await r.json();
   if(j.ok){try{sessionStorage.removeItem("rax3d_pay")}catch(_){}cart.length=0;OREF="";cartUI();
@@ -1043,7 +1045,7 @@ document.addEventListener("click",async e=>{
  const n=$("#payName").value.trim(),p=$("#payPhone").value.replace(/\s/g,"");
  if(n.length<2||!/^(05\d{8}|\+?9665\d{8})$/.test(p)){payMsg("عبّي الاسم والجوال (05xxxxxxxx).",true);return}
  const ref=orderCode(),order={ref,customer:{name:n,phone:p},cart:cart.map(o=>({id:o.id,qty:o.qty,color:o.color}))};
- try{sessionStorage.setItem("rax3d_pay",JSON.stringify(order))}catch(_){}
+ window.LASTORD=order;try{sessionStorage.setItem("rax3d_pay",JSON.stringify(order))}catch(_){}
  try{await payLoad()}catch(_){payMsg("تعذر تحميل بوابة الدفع، جرّب مرة ثانية.",true);return}
  $("#payform").hidden=true;const f=$("#paymysr");f.hidden=false;f.innerHTML="";
  Moyasar.init({element:"#paymysr",amount:payTotal()*100,currency:"SAR",description:"RAX3D "+ref,publishable_api_key:PAY.pk,
