@@ -113,8 +113,8 @@ async function hook(req, env, out) {
   return out({ ok: true, num, voided: full });
 }
 
-// Cash on delivery: no payment to verify. The order gets its ORD number and is emailed to the owner, but it is NOT added to the
-// invoicing app's log (no sale / loyalty points until it is delivered and paid), so fake orders cost nothing.
+// Cash on delivery: no payment to verify. The order gets its ORD number, goes into the invoicing app's log (with loyalty points)
+// and is emailed to the owner. If the order is cancelled, the owner cancels the invoice in the app.
 async function cod(req, env, out) {
   let b; try { b = await req.json() } catch { return out({ ok: false, reason: 'bad' }, 400) }
   const c = b.customer || {}, name = String(c.name || '').trim().slice(0, 60), phone = String(c.phone || '').replace(/\s/g, '').slice(0, 20);
@@ -129,7 +129,8 @@ async function cod(req, env, out) {
   }
   const ship = +env.SHIP_FEE || 0, total = sub + ship;
   if (!env.GH_TOKEN || !env.GH_REPO) return out({ ok: false, reason: 'config' }, 500);
-  let num, dup = false;
+  let num, dup = false, logFail = false;
+  const nm0 = await names();
   try {
     const done = await ghRead(env, 'online/cod_' + b.ref + '.json');
     if (done) { num = done.data.num; dup = true }
@@ -137,6 +138,11 @@ async function cod(req, env, out) {
       num = await reserveNumber(env);
       await ghCreate(env, 'online/ORD-' + num + '.json', { num, cod: true, ref: b.ref, total, customer: { name, phone, city, address }, cart: rows, at: new Date().toISOString() }, 'طلب دفع عند الاستلام ORD-' + num);
       await ghCreate(env, 'online/cod_' + b.ref + '.json', { num }, 'ربط الطلب ' + b.ref);
+      // the invoice already has its number, so it goes straight into the invoicing app's log (points included)
+      const rec = { num, date: riyadhDay(), online: true, cod: true, payId: 'cod_' + b.ref, client: name, phone, code: b.ref,
+        desc: rows.map(r => (nm0[r.id]?.n || r.id) + ' (' + r.q + ')').join(' ، '), qty: rows.reduce((a, r) => a + r.q, 0), disc: 0, total: sub, profit: 0, sugg: 0, sub,
+        items: rows.map(r => ({ desc: nm0[r.id]?.n || r.id, q: r.q, unit: r.u, line: r.u * r.q, cost: 0, w: +pr.W[r.id] || 0, h: 0, m: 0, sec: 0, type: 'واحدة', auto: false, dp: 0 })) };
+      try { await ghUpdate(env, 'partner_log.json', [], arr => { arr = Array.isArray(arr) ? arr : []; if (!arr.some(x => x && Number(x.num) === num)) arr.push(rec); return arr }, 'فاتورة دفع عند الاستلام ORD-' + num) } catch (e) { logFail = true }
     }
   } catch (e) { return out({ ok: false, reason: 'number' }, 502) }
   if (dup) return out({ ok: true, num, dup: true });
@@ -144,7 +150,7 @@ async function cod(req, env, out) {
   rows.forEach(r => { r.name = nm[r.id]?.n || r.id });
   const msg = [`طلب ${label} (دفع عند الاستلام)`, `* الاسم: ${name}`, `* الجوال: ${phone}`,
     ...rows.map(r => `\n* القطعة: ${r.name}\n* اللون: ${r.color || 'كما بالصورة'}\n* الكمية: ${r.q}`)].join('\n');
-  const html = `<p style="font-size:16px"><b>🚚 طلب جديد بالدفع عند الاستلام ${esc(label)}</b><br>الطلب غير مدفوع، تحصّل ${total} ريال عند التسليم. ما انسجل في برنامج الفواتير، سجّله بعد التسليم.</p>`
+  const html = `<p style="font-size:16px"><b>🚚 طلب جديد بالدفع عند الاستلام ${esc(label)}</b><br>الطلب غير مدفوع، تحصّل ${total} ريال عند التسليم. ${logFail ? '⚠️ تعذّر إضافته تلقائيًا لبرنامج الفواتير، الصق الرسالة أسفل في «استيراد الطلب».' : 'الفاتورة انسجلت تلقائيًا في برنامج الفواتير (بنقاط الولاء) أول ما تفتحه. إذا انلغى الطلب ألغ الفاتورة من التطبيق.'}</p>`
     + invoiceHtml({ label, date: riyadhDay(), name, phone, rows, sub, ship, total, cod: true })
     + `<p>الجوال: <span dir="ltr">${esc(phone)}</span><br>المدينة: ${esc(city)}<br>العنوان: ${esc(address)}</p>`
     + `<p>للتسجيل في التطبيق بنفس الرقم، الصق هذه الرسالة في «استيراد الطلب»:</p><pre style="background:#f4f1ea;padding:10px;border-radius:8px;white-space:pre-wrap">${esc(msg)}</pre>`;
