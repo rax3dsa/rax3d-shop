@@ -1048,7 +1048,7 @@ document.addEventListener("click",async e=>{
  $("#payform").hidden=true;const f=$("#paymysr");f.hidden=false;f.innerHTML="";
  Moyasar.init({element:"#paymysr",amount:payTotal()*100,currency:"SAR",description:"RAX3D "+ref,publishable_api_key:PAY.pk,
   callback_url:location.origin+"/?pay=done",methods:PAY.methods,supported_networks:["visa","mastercard","mada"],
-  ...(PAY.methods.includes("applepay")?{apple_pay:{country:"SA",label:"RAX3D",validate_merchant_url:"https://api.moyasar.com/v1/applepay/initiate"}}:{}),
+  ...(PAY.methods.includes("applepay")?{apple_pay:{country:"SA",label:"RAX3D",version:6,merchant_capabilities:["supports3DS"],validate_merchant_url:"https://api.moyasar.com/v1/applepay/initiate"}}:{}),
   metadata:{ref,name:n,phone:p,items:cart.map(o=>o.id+"x"+o.qty).join(",").slice(0,400)},
   on_completed:async pay=>{await payConfirm(pay.id)}})
 });
