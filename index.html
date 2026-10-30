@@ -598,7 +598,7 @@ function cartView(){
   ${cart.some(o=>UP(o.id,o.qty))?`<p class="total">الإجمالي: ${cart.reduce((a,o)=>a+LT(o),0)} ريال</p>`:""}
   ${accCard()}
   <p class="note sendnote">📋 لما تضغط «أرسل الطلب بالخاص» ننسخ رسالة طلبك جاهزة، ونفتح لك محادثتنا في انستقرام أو تيك توك. <b>الصقها في خانة الكتابة وأرسلها</b>، ونأكد لك طلبك وموعد التجهيز.</p>
-  ${payable()?`<button type="button" class="btn gold" id="payBtn">ادفع الحين · مدى · Apple Pay</button>`:""}${codable()?`<button type="button" class="btn ${payable()?"alt":"gold"}" id="codBtn">اطلب والدفع عند الاستلام</button>`:""}<button type="button" class="btn ${payable()||codable()?"alt":"gold"}" id="sendBtn">أرسل الطلب بالخاص</button><button type="button" class="btn alt" id="copy">انسخ الطلب فقط</button>
+  ${payable()?`<button type="button" class="btn gold" id="payBtn">ادفع الحين · مدى · Apple Pay</button>`:""}${codable()?`<button type="button" class="btn ${payable()?"alt":"gold"}" id="codBtn">اطلب والدفع عند الاستلام</button>`:""}<button type="button" class="btn ${payable()||codable()?"alt":"gold"}" id="sendBtn">أرسل الطلب بالخاص</button>
   <div class="toast" id="toast" aria-live="polite"></div>`
   :accCard()+`<p class="note">ما أضفت قطع بعد.</p><button type="button" class="btn alt" data-home>تصفح القطع</button>`}`;
 }
