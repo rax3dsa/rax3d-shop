@@ -139,8 +139,9 @@ async function cod(req, env, out) {
     else {
       const rlPath = 'online/rl_' + phone.replace(/\D/g, '').slice(-9) + '.json', now = Date.now();
       const rl = await ghRead(env, rlPath), recent = ((rl && rl.data.t) || []).filter(t => now - t < 864e5);
-      if (recent.length >= 3) return out({ ok: false, reason: 'limit' }, 429);
-      await ghUpdate(env, rlPath, { t: [] }, d => ({ t: [...(d.t || []).filter(t => now - t < 864e5), now] }), 'حد الطلبات');
+      const cap = env.COD_LIMIT === undefined ? 20 : +env.COD_LIMIT;   // per phone per day; set COD_LIMIT=0 in Cloudflare for no limit
+      if (cap > 0 && recent.length >= cap) return out({ ok: false, reason: 'limit' }, 429);
+      if (cap > 0) await ghUpdate(env, rlPath, { t: [] }, d => ({ t: [...(d.t || []).filter(t => now - t < 864e5), now] }), 'حد الطلبات');
       num = await reserveNumber(env);
       await ghCreate(env, 'online/ORD-' + num + '.json', { num, cod: true, ref: b.ref, total, customer: { name, phone, city, address }, cart: rows, at: new Date().toISOString() }, 'طلب دفع عند الاستلام ORD-' + num);
       await ghCreate(env, 'online/cod_' + b.ref + '.json', { num }, 'ربط الطلب ' + b.ref);
