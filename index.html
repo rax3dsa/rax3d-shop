@@ -764,7 +764,7 @@ document.addEventListener("change",e=>{
  if(cur&&e.target.dataset&&e.target.dataset.dim!==undefined){const i=+e.target.dataset.dim;let v=parseFloat(e.target.value);if(v>MAXD){v=MAXD}if(isFinite(v)&&v>0){setDim(i,v)}syncDims(-1)}
 });
 document.getElementById("mbg").addEventListener("click",e=>{if(e.target.id==="mbg")e.target.hidden=true});
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){$("#mbg").hidden=true;closeDrawer();close3D()}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){$("#mbg").hidden=true;["#codbg","#paybg","#sbg"].forEach(s=>{const x=$(s);if(x)x.hidden=true});closeDrawer();close3D()}});
 document.addEventListener("input",e=>{
  if(cur&&e.target.dataset&&e.target.dataset.dim!==undefined){const i=+e.target.dataset.dim,v=parseFloat(e.target.value);
   if(isFinite(v)&&v>0&&v<=MAXD){setDim(i,v);syncDims(i)}else{cur.dim[i]=isFinite(v)?v:null;syncDims(i)}}

@@ -105,8 +105,9 @@ async function hook(req, env, out) {
   if (!pay) return out({ ok: true, ignored: true, reason: 'unlinked' });
   const num = pay.data.num, full = p.status === 'refunded' || (+p.refunded > 0 && +p.refunded >= +p.amount);
   if (full) {
-    await ghUpdate(env, 'partner_log.json', [], arr => { arr = Array.isArray(arr) ? arr : []; if (!arr.some(x => x && Number(x.void) === Number(num))) arr.push({ void: num, voidAt: riyadhDay(), payId: id }); return arr }, 'استرداد ORD-' + num);
-    await mail(env, '🚫 استرداد ORD-' + num, `<p>تم استرداد دفعة الطلب <b>ORD-${num}</b> (${p.amount / 100} ${esc(p.currency)}).<br>الفاتورة تتحول «ملغاة» في برنامج الفواتير تلقائيًا أول ما تفتحه.</p>`);
+    let fresh = false;
+    await ghUpdate(env, 'partner_log.json', [], arr => { arr = Array.isArray(arr) ? arr : []; if (arr.some(x => x && Number(x.void) === Number(num))) return undefined; fresh = true; arr.push({ void: num, voidAt: riyadhDay(), payId: id }); return arr }, 'استرداد ORD-' + num);
+    if (fresh) await mail(env, '🚫 استرداد ORD-' + num, `<p>تم استرداد دفعة الطلب <b>ORD-${num}</b> (${p.amount / 100} ${esc(p.currency)}).<br>الفاتورة تتحول «ملغاة» في برنامج الفواتير تلقائيًا أول ما تفتحه.</p>`);
   } else {
     await mail(env, '↩️ استرداد جزئي ORD-' + num, `<p>استرداد جزئي (${(+p.refunded || 0) / 100} من ${p.amount / 100} ${esc(p.currency)}) للطلب <b>ORD-${num}</b>. الفاتورة ما انلغت تلقائيًا، عدّلها أو ألغها من التطبيق لو تبغى.</p>`);
   }
