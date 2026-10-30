@@ -352,8 +352,6 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
  <div id="codform">
   <label class="flab" for="codName">الاسم</label><input class="fin" id="codName" autocomplete="name" maxlength="40">
   <label class="flab" for="codPhone">رقم الجوال</label><input class="fin" id="codPhone" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="05xxxxxxxx" dir="ltr">
-  <label class="flab" for="codCity">المدينة</label><input class="fin" id="codCity" autocomplete="address-level2" maxlength="40" placeholder="الدمام">
-  <label class="flab" for="codAddr">العنوان (الحي، الشارع، أقرب معلم)</label><input class="fin" id="codAddr" autocomplete="street-address" maxlength="200">
   <p class="total" id="codtot"></p><div class="dmsg" id="codmsg" aria-live="polite"></div>
   <button type="button" class="btn gold" id="codgo">تأكيد الطلب</button>
  </div>
@@ -1074,12 +1072,11 @@ document.addEventListener("click",async e=>{
  if(t.id==="codclose"){$("#codbg").hidden=true;return}
  if(t.id==="codBtn"){if(!codable())return;$("#codName").value=CUST?CUST.n:"";$("#codPhone").value=CUST?CUST.p:"";codMsg("");$("#codform").hidden=false;
   $("#codtot").textContent=`الإجمالي عند الاستلام: ${payTotal()} ريال`+(PAY.ship?` (يشمل التوصيل ${PAY.ship})`:"");$("#codbg").hidden=false;return}
- const n=$("#codName").value.trim(),p=$("#codPhone").value.replace(/\s/g,""),c=$("#codCity").value.trim(),a=$("#codAddr").value.trim();
+ const n=$("#codName").value.trim(),p=$("#codPhone").value.replace(/\s/g,"");
  if(n.length<2||!/^(05\d{8}|\+?9665\d{8})$/.test(p)){codMsg("عبّي الاسم والجوال (05xxxxxxxx).",true);return}
- if(c.length<2||a.length<5){codMsg("اكتب المدينة والعنوان عشان نوصل لك.",true);return}
  t.disabled=true;codMsg("جاري إرسال طلبك…");
  const ref=orderCode();
- try{const r=await fetch(PAY.api+"/cod",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ref,customer:{name:n,phone:p,city:c,address:a},cart:cart.map(o=>({id:o.id,qty:o.qty,color:o.color}))})});
+ try{const r=await fetch(PAY.api+"/cod",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ref,customer:{name:n,phone:p,city:"يُحدد بالتواصل",address:"يُحدد بالتواصل"},cart:cart.map(o=>({id:o.id,qty:o.qty,color:o.color}))})});
   const j=await r.json();
   if(j.ok){cart.length=0;OREF="";cartUI();$("#codform").innerHTML=`<p class="total">وصلنا طلبك ✓</p><p class="inote">رقم طلبك <b dir="ltr">ORD-${+j.num}</b>. بنتواصل معك لتأكيد التجهيز والتوصيل، وتدفع عند الاستلام.</p>`;render(false);return}
   codMsg(j.reason==="fields"?"تأكد من الاسم والجوال والعنوان.":"ما تم إرسال الطلب، جرّب مرة ثانية أو أرسله بالخاص.",true)

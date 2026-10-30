@@ -120,7 +120,7 @@ async function cod(req, env, out) {
   const c = b.customer || {}, name = String(c.name || '').trim().slice(0, 60), phone = String(c.phone || '').replace(/\s/g, '').slice(0, 20);
   const city = String(c.city || '').trim().slice(0, 40), address = String(c.address || '').trim().slice(0, 200);
   if (!/^RX-[A-Z0-9]{5}$/.test(b.ref || '') || !Array.isArray(b.cart) || !b.cart.length || b.cart.length > 40) return out({ ok: false, reason: 'bad' }, 400);
-  if (name.length < 2 || !/^(05\d{8}|\+?9665\d{8})$/.test(phone) || city.length < 2 || address.length < 5) return out({ ok: false, reason: 'fields' }, 400);
+  if (name.length < 2 || !/^(05\d{8}|\+?9665\d{8})$/.test(phone)) return out({ ok: false, reason: 'fields' }, 400);
   const pr = await prices(); let sub = 0; const rows = [];
   for (const o of b.cart) {
     const q = Math.floor(+o.qty), u = unit(pr, String(o.id), q);
@@ -152,7 +152,7 @@ async function cod(req, env, out) {
     ...rows.map(r => `\n* القطعة: ${r.name}\n* اللون: ${r.color || 'كما بالصورة'}\n* الكمية: ${r.q}`)].join('\n');
   const html = `<p style="font-size:16px"><b>🚚 طلب جديد بالدفع عند الاستلام ${esc(label)}</b><br>الطلب غير مدفوع، تحصّل ${total} ريال عند التسليم. ${logFail ? '⚠️ تعذّر إضافته تلقائيًا لبرنامج الفواتير، الصق الرسالة أسفل في «استيراد الطلب».' : 'الفاتورة انسجلت تلقائيًا في برنامج الفواتير (بنقاط الولاء) أول ما تفتحه. إذا انلغى الطلب ألغ الفاتورة من التطبيق.'}</p>`
     + invoiceHtml({ label, date: riyadhDay(), name, phone, rows, sub, ship, total, cod: true })
-    + `<p>الجوال: <span dir="ltr">${esc(phone)}</span><br>المدينة: ${esc(city)}<br>العنوان: ${esc(address)}</p>`
+    + `<p>الجوال: <span dir="ltr">${esc(phone)}</span></p><p>العنوان يُتفق عليه بالتواصل مع العميل.</p>`
     + `<p>للتسجيل في التطبيق بنفس الرقم، الصق هذه الرسالة في «استيراد الطلب»:</p><pre style="background:#f4f1ea;padding:10px;border-radius:8px;white-space:pre-wrap">${esc(msg)}</pre>`;
   const sent = await mail(env, '🚚 طلب دفع عند الاستلام ' + label, html);
   return out({ ok: true, num, emailed: sent });
