@@ -120,6 +120,7 @@ async function cod(req, env, out) {
   const c = b.customer || {}, name = String(c.name || '').trim().slice(0, 60), phone = String(c.phone || '').replace(/\s/g, '').slice(0, 20);
   const city = String(c.city || '').trim().slice(0, 40), address = String(c.address || '').trim().slice(0, 200);
   if (!/^RX-[A-Z0-9]{5}$/.test(b.ref || '') || !Array.isArray(b.cart) || !b.cart.length || b.cart.length > 40) return out({ ok: false, reason: 'bad' }, 400);
+  { const og = req.headers.get('Origin'); if (og && og !== SITE && og !== 'https://www.rax3d.com') return out({ ok: false, reason: 'origin' }, 403) }
   if (name.length < 2 || !/^(05\d{8}|\+?9665\d{8})$/.test(phone)) return out({ ok: false, reason: 'fields' }, 400);
   const pr = await prices(); let sub = 0; const rows = [];
   for (const o of b.cart) {
@@ -135,6 +136,10 @@ async function cod(req, env, out) {
     const done = await ghRead(env, 'online/cod_' + b.ref + '.json');
     if (done) { num = done.data.num; dup = true }
     else {
+      const rlPath = 'online/rl_' + phone.replace(/\D/g, '').slice(-9) + '.json', now = Date.now();
+      const rl = await ghRead(env, rlPath), recent = ((rl && rl.data.t) || []).filter(t => now - t < 864e5);
+      if (recent.length >= 3) return out({ ok: false, reason: 'limit' }, 429);
+      await ghUpdate(env, rlPath, { t: [] }, d => ({ t: [...(d.t || []).filter(t => now - t < 864e5), now] }), 'حد الطلبات');
       num = await reserveNumber(env);
       await ghCreate(env, 'online/ORD-' + num + '.json', { num, cod: true, ref: b.ref, total, customer: { name, phone, city, address }, cart: rows, at: new Date().toISOString() }, 'طلب دفع عند الاستلام ORD-' + num);
       await ghCreate(env, 'online/cod_' + b.ref + '.json', { num }, 'ربط الطلب ' + b.ref);

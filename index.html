@@ -1093,7 +1093,7 @@ document.addEventListener("click",async e=>{
  try{const r=await fetch(PAY.api+"/cod",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ref,customer:{name:n,phone:p,city:"يُحدد بالتواصل",address:"يُحدد بالتواصل"},cart:cart.map(o=>({id:o.id,qty:o.qty,color:o.color}))})});
   const j=await r.json();
   if(j.ok){cart.length=0;OREF="";cartUI();$("#codform").innerHTML=`<p class="total">وصلنا طلبك ✓</p><p class="inote">رقم طلبك <b dir="ltr">ORD-${+j.num}</b>. بنتواصل معك لتأكيد التجهيز والتوصيل، وتدفع عند الاستلام.</p>`;render(false);return}
-  codMsg(j.reason==="fields"?"تأكد من الاسم والجوال والعنوان.":"ما تم إرسال الطلب، جرّب مرة ثانية أو أرسله بالخاص.",true)
+  codMsg(j.reason==="fields"?"تأكد من الاسم والجوال.":j.reason==="limit"?"وصلت للحد اليومي لطلبات الدفع عند الاستلام. تواصل معنا بالخاص.":"ما تم إرسال الطلب، جرّب مرة ثانية أو أرسله بالخاص.",true)
  }catch(_){codMsg("ما فيه اتصال، جرّب مرة ثانية.",true)}
  t.disabled=false
 });
