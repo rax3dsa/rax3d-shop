@@ -664,8 +664,22 @@ function open3D_(){
   obj.rotation.x=-Math.PI/2;if(m.rotZ)obj.rotation.z=m.rotZ;/* print files are Z-up */
   const box=new THREE.Box3().setFromObject(obj),c=box.getCenter(new THREE.Vector3()),s=box.getSize(new THREE.Vector3());
   obj.position.sub(c);obj.position.y+=s.y*0.0;const d=Math.max(s.x,s.y,s.z);
-  V.cam.position.set(d*1.45,d*0.95,d*1.85);V.cam.near=d/100;V.cam.far=d*20;V.cam.updateProjectionMatrix();V.controls.target.set(0,0,0);V.controls.autoRotate=true;
-  V.scene.add(obj);set3DColor(ci);$("#v3dMsg").hidden=true};
+  V.scene.add(obj);obj.updateMatrixWorld(true);
+  {/* frame the piece so it fills ~86% of the stage whatever its shape: move the camera back along a fixed view until every corner of its box fits */
+   const dir=new THREE.Vector3(1.45,0.95,1.85).normalize(),hb=new THREE.Box3().setFromObject(obj),cs=[];
+   obj.traverse(o=>{if(!o.isMesh||!o.geometry.attributes.position)return;const ps=o.geometry.attributes.position,st=Math.max(1,Math.floor(ps.count/2500));for(let i=0;i<ps.count;i+=st)cs.push(new THREE.Vector3().fromBufferAttribute(ps,i).applyMatrix4(o.matrixWorld))});
+   if(!cs.length)for(let i=0;i<8;i++)cs.push(new THREE.Vector3(i&1?hb.max.x:hb.min.x,i&2?hb.max.y:hb.min.y,i&4?hb.max.z:hb.min.z));
+   V.cam.near=d/100;V.cam.far=d*30;let best=0;
+   for(let a=0;a<12;a++){/* it auto-rotates, so fit the worst angle */
+    const ca=Math.cos(a*Math.PI/6),sa=Math.sin(a*Math.PI/6),rc=cs.map(p=>new THREE.Vector3(p.x*ca+p.z*sa,p.y,-p.x*sa+p.z*ca));let dist=d*2.6;
+    for(let k=0;k<6;k++){V.cam.position.copy(dir).multiplyScalar(dist);V.cam.lookAt(0,0,0);V.cam.updateProjectionMatrix();V.cam.updateMatrixWorld(true);
+     let m=0;rc.forEach(p=>{const q=p.clone().project(V.cam);m=Math.max(m,Math.abs(q.x),Math.abs(q.y))});
+     if(!m)break;dist*=Math.max(0.5,Math.min(2,m/0.86))}
+    best=Math.max(best,dist)}
+   const dist=best||d*2.6;V.cam.position.copy(dir).multiplyScalar(dist);V.cam.lookAt(0,0,0);V.cam.updateProjectionMatrix();
+   V.controls.minDistance=dist*0.4;V.controls.maxDistance=dist*2.2}
+  V.controls.target.set(0,0,0);V.controls.autoRotate=true;
+  set3DColor(ci);$("#v3dMsg").hidden=true};
  const fail=()=>{$("#v3dMsg").textContent="ما قدرنا نحمّل المجسم، جرّب مرة ثانية."};
  if(m.grid)fetch(m.file).then(r=>{if(!r.ok)throw 0;return r.json()}).then(d=>{const g=ringGrid(d);done(g.isObject3D?g:new THREE.Mesh(g,new THREE.MeshStandardMaterial()))}).catch(fail);
  else if(/\.stl$/i.test(m.file))new THREE.STLLoader().load(m.file,g=>{const g2=g;done(new THREE.Mesh(g2,new THREE.MeshStandardMaterial()))},undefined,fail);
