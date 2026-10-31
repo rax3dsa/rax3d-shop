@@ -114,6 +114,28 @@ async function hook(req, env, out) {
   return out({ ok: true, num, voided: full });
 }
 
+// ---- loyalty balance lookup ----
+// The invoicing app writes { phone: points } to points_private.json in the PRIVATE data repo. The site asks here with the visitor's own mobile,
+// so no file with everybody's balances has to be public. Answers: {ok, src:'private', pts} | {ok, src:'none'} (file not published yet) | {ok:false}.
+const normPhone = v => { let d = String(v || '').replace(/[٠-٩]/g, c => '٠١٢٣٤٥٦٧٨٩'.indexOf(c)).replace(/\D/g, ''); if (d.startsWith('00966')) d = d.slice(5); else if (d.startsWith('966')) d = d.slice(3); if (d.length === 9 && d[0] === '5') d = '0' + d; return d };
+let PCACHE = { t: 0, d: null };      // per-isolate copy, refreshed at most once a minute
+const PRL = new Map();               // best-effort per-IP limit (30 lookups a minute) against walking through phone numbers
+async function points(req, env, out) {
+  { const og = req.headers.get('Origin'); if (og && og !== SITE && og !== 'https://www.rax3d.com') return out({ ok: false, reason: 'origin' }, 403) }
+  const ip = req.headers.get('CF-Connecting-IP') || '', now = Date.now();
+  if (ip) { const a = (PRL.get(ip) || []).filter(t => now - t < 60000); if (a.length >= 30) return out({ ok: false, reason: 'limit' }, 429); a.push(now); PRL.set(ip, a); if (PRL.size > 5000) PRL.clear() }
+  let b; try { b = await req.json() } catch { return out({ ok: false, reason: 'bad' }, 400) }
+  const ph = normPhone(b && b.phone);
+  if (!/^05\d{8}$/.test(ph)) return out({ ok: false, reason: 'bad' }, 400);
+  if (!env.GH_TOKEN || !env.GH_REPO) return out({ ok: true, src: 'none' });
+  if (now - PCACHE.t > 60000) {
+    try { const f = await ghRead(env, 'points_private.json'); PCACHE = { t: now, d: f ? f.data : null } }
+    catch (e) { if (!PCACHE.t) return out({ ok: false, reason: 'error' }, 502) }   // keep serving the last copy if GitHub hiccups
+  }
+  if (!PCACHE.d || PCACHE.d.v !== 1) return out({ ok: true, src: 'none' });
+  return out({ ok: true, src: 'private', pts: Math.max(0, Math.floor(+((PCACHE.d.p || {})[ph]) || 0)) });
+}
+
 // Cash on delivery: no payment to verify. The order gets its ORD number, goes into the invoicing app's log (with loyalty points)
 // and is emailed to the owner. If the order is cancelled, the owner cancels the invoice in the app.
 async function cod(req, env, out) {
@@ -174,11 +196,12 @@ async function cod(req, env, out) {
 async function handle(req, env) {
   {
     const cors = { 'Access-Control-Allow-Origin': SITE, 'Access-Control-Allow-Headers': 'Content-Type', 'Vary': 'Origin' };
-    const out = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { ...cors, 'Content-Type': 'application/json' } });
+    const out = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
     const path = new URL(req.url).pathname;
     if (req.method === 'POST' && path === '/webhook') return hook(req, env, out);
     if (req.method === 'POST' && path === '/cod') return cod(req, env, out);
+    if (req.method === 'POST' && path === '/points') return points(req, env, out);
     if (req.method !== 'POST' || path !== '/confirm') return out({ ok: false }, 404);
 
     { const og = req.headers.get('Origin'); if (og && og !== SITE && og !== 'https://www.rax3d.com') return out({ ok: false, reason: 'origin' }, 403) }
