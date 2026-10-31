@@ -137,11 +137,17 @@ async function cod(req, env, out) {
     const done = await ghRead(env, 'online/cod_' + b.ref + '.json');
     if (done) { num = done.data.num; dup = true }
     else {
-      const rlPath = 'online/rl_' + phone.replace(/\D/g, '').slice(-9) + '.json', now = Date.now();
-      const rl = await ghRead(env, rlPath), recent = ((rl && rl.data.t) || []).filter(t => now - t < 864e5);
-      const cap = env.COD_LIMIT === undefined ? 20 : +env.COD_LIMIT;   // per phone per day; set COD_LIMIT=0 in Cloudflare for no limit
-      if (cap > 0 && recent.length >= cap) return out({ ok: false, reason: 'limit' }, 429);
-      if (cap > 0) await ghUpdate(env, rlPath, { t: [] }, d => ({ t: [...(d.t || []).filter(t => now - t < 864e5), now] }), 'حد الطلبات');
+      // abuse guard: per phone (COD_LIMIT, default 20/day, 0 = unlimited) and per IP (COD_IP_LIMIT, default 30/day, 0 = unlimited)
+      const now = Date.now(), ip = req.headers.get('CF-Connecting-IP') || '';
+      const ipHash = ip ? [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('rax3d|' + ip)))].slice(0, 8).map(x => x.toString(16).padStart(2, '0')).join('') : '';
+      const guards = [['rl_' + phone.replace(/\D/g, '').slice(-9), env.COD_LIMIT === undefined ? 20 : +env.COD_LIMIT]];
+      if (ipHash) guards.push(['ip_' + ipHash, env.COD_IP_LIMIT === undefined ? 30 : +env.COD_IP_LIMIT]);
+      for (const [k, cap] of guards) {
+        if (!(cap > 0)) continue;
+        const g = await ghRead(env, 'online/' + k + '.json');
+        if (((g && g.data.t) || []).filter(t => now - t < 864e5).length >= cap) return out({ ok: false, reason: 'limit' }, 429);
+      }
+      for (const [k, cap] of guards) if (cap > 0) await ghUpdate(env, 'online/' + k + '.json', { t: [] }, d => ({ t: [...(d.t || []).filter(t => now - t < 864e5), now] }), 'حد الطلبات');
       num = await reserveNumber(env);
       await ghCreate(env, 'online/ORD-' + num + '.json', { num, cod: true, ref: b.ref, total, customer: { name, phone, city, address }, cart: rows, at: new Date().toISOString() }, 'طلب دفع عند الاستلام ORD-' + num);
       await ghCreate(env, 'online/cod_' + b.ref + '.json', { num }, 'ربط الطلب ' + b.ref);
