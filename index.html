@@ -713,7 +713,8 @@ const LT=o=>UP(o.id,o.qty)*o.qty;
 const SAR=n=>`${n} ريال`;
 const AR=n=>String(n);
 function qtyUI(){setTimeout(sumUI,0);const w=WQ(cur.it.id);$("#qv").textContent=cur.qty;const b=$("#qb");b.className="badge"+(cur.qty>=w?" on":"");b.textContent=cur.qty>=w?"سعر الجملة مفعّل لهذه القطعة ✓":`سعر الجملة من ${AR(w)} حبة من نفس القطعة (باقي ${w-cur.qty})`}
-function cartUI(){if(!cart.length)OREF="";$("#cartN").textContent=cart.reduce((a,o)=>a+o.qty,0)}
+function cartUI(){if(!cart.length)OREF="";$("#cartN").textContent=cart.reduce((a,o)=>a+o.qty,0);try{localStorage.setItem("rax3d_cart",JSON.stringify(cart))}catch(_){}}
+try{const s=JSON.parse(localStorage.getItem("rax3d_cart")||"[]");if(Array.isArray(s))s.forEach(o=>{if(o&&IMG[o.id]&&COLORS[o.ci]&&Number.isInteger(o.qty)&&o.qty>0&&o.qty<=9999&&cart.length<30)cart.push({id:o.id,name:String(o.name).slice(0,80),color:COLORS[o.ci][0],ci:o.ci,qty:o.qty,size:o.size||undefined,note:String(o.note||"").slice(0,200)})});if(cart.length)cartUI()}catch(_){}
 /* ---------- order code: short and easy to keep (e.g. RX-7KM3Q). The order details travel in the message text itself,
    which the invoicing app reads when the whole message is pasted. Same code for the whole cart. ---------- */
 let OREF="";
