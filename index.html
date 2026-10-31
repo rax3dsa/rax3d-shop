@@ -352,6 +352,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
  <div id="codform">
   <label class="flab" for="codName">الاسم</label><input class="fin" id="codName" autocomplete="name" maxlength="40">
   <label class="flab" for="codPhone">رقم الجوال</label><input class="fin" id="codPhone" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="05xxxxxxxx" dir="ltr">
+  <p class="inote" id="codwho" hidden></p>
   <p class="total" id="codtot"></p><div class="dmsg" id="codmsg" aria-live="polite"></div>
   <button type="button" class="btn gold" id="codgo">تأكيد الطلب</button>
  </div>
@@ -1088,6 +1089,7 @@ document.addEventListener("click",async e=>{
  const t=e.target.closest("#codBtn,#codgo,#codclose");if(!t)return;
  if(t.id==="codclose"){$("#codbg").hidden=true;return}
  if(t.id==="codBtn"){if(!codable())return;formFresh("codform","cod");$("#codName").value=CUST?CUST.n:"";$("#codPhone").value=CUST?CUST.p:"";codMsg("");$("#codform").hidden=false;
+  {const known=!!(CUST&&CUST.n&&/^05\d{8}$/.test(CUST.p||""));["codName","codPhone"].forEach(i=>{$("#"+i).style.display=known?"none":"";const l=document.querySelector(`label[for=${i}]`);if(l)l.style.display=known?"none":""});const w=$("#codwho");w.hidden=!known;if(known)w.innerHTML=`الطلب باسم <b>${esc(CUST.n)}</b> · <span dir="ltr">${esc(CUST.p)}</span>`}
   $("#codtot").textContent=`الإجمالي عند الاستلام: ${payTotal()} ريال`+(PAY.ship?` (يشمل التوصيل ${PAY.ship})`:"");$("#codbg").hidden=false;return}
  const n=$("#codName").value.trim(),p=$("#codPhone").value.replace(/\s/g,"");
  if(n.length<2||!/^(05\d{8}|\+?9665\d{8})$/.test(p)){codMsg("عبّي الاسم والجوال (05xxxxxxxx).",true);return}
