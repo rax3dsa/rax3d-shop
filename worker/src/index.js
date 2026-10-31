@@ -171,8 +171,8 @@ async function cod(req, env, out) {
   return out({ ok: true, num, emailed: sent });
 }
 
-export default {
-  async fetch(req, env) {
+async function handle(req, env) {
+  {
     const cors = { 'Access-Control-Allow-Origin': SITE, 'Access-Control-Allow-Headers': 'Content-Type', 'Vary': 'Origin' };
     const out = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { ...cors, 'Content-Type': 'application/json' } });
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
@@ -181,6 +181,7 @@ export default {
     if (req.method === 'POST' && path === '/cod') return cod(req, env, out);
     if (req.method !== 'POST' || path !== '/confirm') return out({ ok: false }, 404);
 
+    { const og = req.headers.get('Origin'); if (og && og !== SITE && og !== 'https://www.rax3d.com') return out({ ok: false, reason: 'origin' }, 403) }
     let b; try { b = await req.json() } catch { return out({ ok: false, reason: 'bad' }, 400) }
     if (!/^[0-9a-f-]{36}$/i.test(b.paymentId || '')) return out({ ok: false, reason: 'bad' }, 400);
 
@@ -253,5 +254,15 @@ export default {
       ((logFail || !num) ? `<p style="color:#b00">⚠️ تعذّر إضافة الفاتورة تلقائيًا لبرنامج الفواتير. الصق الرسالة التالية في التطبيق (استيراد الطلب) عشان تنحفظ بنفس الرقم:</p><pre style="background:#f4f1ea;padding:10px;border-radius:8px;white-space:pre-wrap">${esc(msg)}</pre>` : `<p>✓ الفاتورة دخلت برنامج الفواتير تلقائيًا (تظهر لك أول ما تفتحه).</p>`);
     const sent = await mail(env, '✅ طلب مدفوع ' + label, html);
     return out({ ok: true, num, emailed: sent });
+  }
+}
+
+// any unexpected exception still answers with JSON + CORS, so the page can show its "contact us with your payment number" message
+export default {
+  async fetch(req, env) {
+    try { return await handle(req, env) }
+    catch (e) {
+      return new Response(JSON.stringify({ ok: false, reason: 'error' }), { status: 500, headers: { 'Access-Control-Allow-Origin': SITE, 'Content-Type': 'application/json', 'Vary': 'Origin' } });
+    }
   }
 };
