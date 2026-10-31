@@ -477,7 +477,7 @@ const CAT_ORDER=["إكسسوارات السيارة","إكسسوارات الق�
 const CATS=[...new Set(ITEMS.map(i=>i.cat))].sort((a,b)=>CAT_ORDER.indexOf(a)-CAT_ORDER.indexOf(b));
 /* "وصل حديثاً": آخر 4 قطع أُضيفت، الأحدث أولاً. عند إضافة قطعة جديدة تُوضع في أول القائمة وتخرج الأقدم (وتبقى في قسمها). */
 const NEW=["pcorn","gmug","hood","d2"];
-const FEATURED=["vase2","pringles","ks2"]; /* "الأكثر طلباً" on the home page */
+const FEATURED=["ltr","ks2","hood","vase2","skel","ttt"]; /* "الأكثر طلباً" on the home page */
 const $=s=>document.querySelector(s);
 const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 let cart=[], cur=null, hist=[{v:"home"}], hi=0;
