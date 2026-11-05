@@ -21,4 +21,4 @@ Secrets المطلوبة: `MOYASAR_SECRET` (مفتاح sk_live)، `RESEND_KEY`،
 
 ## Cash on delivery (POST /cod)
 Body: `{ref, customer:{name,phone,city,address}, cart:[{id,qty,color}]}`. Reserves an ORD-n number, stores `online/ORD-n.json` (cod:true), adds the invoice to `partner_log.json` (it enters the invoicing app log with loyalty points at once) and emails the owner. A cancelled COD order is cancelled manually in the app. Needs the same secrets as /confirm (GH_TOKEN, GH_REPO, RESEND_KEY, MAIL_TO).
-Limits (optional vars in wrangler.toml): `COD_MAX` max order value in SAR (default 1500, 0 = no cap; protects loyalty points from fake orders), `COD_LIMIT` orders per phone per day (default 20), `COD_IP_LIMIT` per IP per day (default 30).
+Limits (optional vars in wrangler.toml): `COD_MAX` max order value in SAR (default 1500, 0 = no cap; protects loyalty points from fake orders), `COD_LIMIT` orders per phone per day (default 5), `COD_IP_LIMIT` per IP per day (default 10).

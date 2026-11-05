@@ -1,0 +1,1 @@
+/* a page header cannot forbid framing on GitHub Pages, so refuse to run inside someone else's frame (clickjacking) */if(window.top!==window.self){try{window.top.location=window.location.href}catch(_){document.documentElement.style.display="none"}}

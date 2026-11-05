@@ -163,11 +163,11 @@ async function cod(req, env, out) {
     const done = await ghRead(env, 'online/cod_' + b.ref + '.json');
     if (done) { num = done.data.num; dup = true }
     else {
-      // abuse guard: per phone (COD_LIMIT, default 20/day, 0 = unlimited) and per IP (COD_IP_LIMIT, default 30/day, 0 = unlimited)
+      // abuse guard: per phone (COD_LIMIT, default 5/day, 0 = unlimited) and per IP (COD_IP_LIMIT, default 10/day, 0 = unlimited)
       const now = Date.now(), ip = req.headers.get('CF-Connecting-IP') || '';
       const ipHash = ip ? [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('rax3d|' + ip)))].slice(0, 8).map(x => x.toString(16).padStart(2, '0')).join('') : '';
-      const guards = [['rl_' + phone.replace(/\D/g, '').slice(-9), env.COD_LIMIT === undefined ? 20 : +env.COD_LIMIT]];
-      if (ipHash) guards.push(['ip_' + ipHash, env.COD_IP_LIMIT === undefined ? 30 : +env.COD_IP_LIMIT]);
+      const guards = [['rl_' + phone.replace(/\D/g, '').slice(-9), env.COD_LIMIT === undefined ? 5 : +env.COD_LIMIT]];
+      if (ipHash) guards.push(['ip_' + ipHash, env.COD_IP_LIMIT === undefined ? 10 : +env.COD_IP_LIMIT]);
       for (const [k, cap] of guards) {
         if (!(cap > 0)) continue;
         const g = await ghRead(env, 'online/' + k + '.json');
@@ -202,7 +202,7 @@ async function handle(req, env) {
     // answer CORS for both the bare domain and www (the origin checks below already accept both)
     const og0 = req.headers.get('Origin'), allow = og0 === 'https://www.rax3d.com' ? og0 : SITE;
     const cors = { 'Access-Control-Allow-Origin': allow, 'Access-Control-Allow-Headers': 'Content-Type', 'Vary': 'Origin' };
-    const out = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+    const out = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
     const path = new URL(req.url).pathname;
     if (req.method === 'POST' && path === '/webhook') return hook(req, env, out);
