@@ -152,6 +152,10 @@ async function cod(req, env, out) {
     sub += u * q; rows.push({ id: String(o.id), q, u, color: String(o.color || '').slice(0, 30) });
   }
   const ship = +env.SHIP_FEE || 0, total = sub + ship;
+  // unpaid COD orders earn loyalty points at once, so one fake order of 40 items x 500 pcs could mint huge points.
+  // Cap the COD order value (COD_MAX riyals, default 1500, 0 = no cap); bigger orders pay online or go by DM.
+  const codMax = env.COD_MAX === undefined ? 1500 : +env.COD_MAX;
+  if (codMax > 0 && total > codMax) return out({ ok: false, reason: 'max', max: codMax }, 400);
   if (!env.GH_TOKEN || !env.GH_REPO) return out({ ok: false, reason: 'config' }, 500);
   let num, dup = false, logFail = false;
   const nm0 = await names();
@@ -195,7 +199,9 @@ async function cod(req, env, out) {
 
 async function handle(req, env) {
   {
-    const cors = { 'Access-Control-Allow-Origin': SITE, 'Access-Control-Allow-Headers': 'Content-Type', 'Vary': 'Origin' };
+    // answer CORS for both the bare domain and www (the origin checks below already accept both)
+    const og0 = req.headers.get('Origin'), allow = og0 === 'https://www.rax3d.com' ? og0 : SITE;
+    const cors = { 'Access-Control-Allow-Origin': allow, 'Access-Control-Allow-Headers': 'Content-Type', 'Vary': 'Origin' };
     const out = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
     const path = new URL(req.url).pathname;
