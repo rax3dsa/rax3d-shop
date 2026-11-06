@@ -222,6 +222,21 @@
       "n": "لوحة سنوبي تشيل",
       "en": "Snoopy Chill Wall Panel",
       "g": 65
+    },
+    "pmaskl": {
+      "n": "قناع اليقطين (مقاس L)",
+      "g": 210,
+      "en": "Pumpkin mask (size L)"
+    },
+    "pmaskm": {
+      "n": "قناع اليقطين (مقاس M)",
+      "g": 159,
+      "en": "Pumpkin mask (size M)"
+    },
+    "pmasks": {
+      "n": "قناع اليقطين (مقاس S)",
+      "g": 118,
+      "en": "Pumpkin mask (size S)"
     }
   },
   "colors": [
