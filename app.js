@@ -87,8 +87,8 @@ ITEMS.forEach(i=>{if(WEIGHT[i.id])i.g=WEIGHT[i.id];if(DIM[i.id])i.d=DIM[i.id]});
 const CAT_ORDER=["إكسسوارات السيارة","إكسسوارات القهوة","إكسسوارات المكتب","الديكور","الإضاءات","ميداليات","سناك وضيافة","ألعاب وصفارات","إكسسوارات ألعاب الفيديو"];
 const CATS=[...new Set(ITEMS.map(i=>i.cat))].sort((a,b)=>CAT_ORDER.indexOf(a)-CAT_ORDER.indexOf(b));
 /* "وصل حديثاً": آخر 6 قطع أُضيفت، الأحدث أولاً. عند إضافة قطعة جديدة تُوضع في أول القائمة وتخرج الأقدم (وتبقى في قسمها). */
-const NEW=["wilson","pmaskl","lampman","cubea","lamp","snoopy","pcorn"];
-const FEATURED=["ltr","lampman","cubea","lamp","ks2","vase2"]; /* "الأكثر طلباً" on the home page (6 slots). STANDING RULE (Nov 7 2026): when a new piece is added it goes FIRST in NEW; the piece that falls out of NEW is added FIRST in FEATURED, and the LAST item of FEATURED is dropped (it stays in its category). */
+const NEW=["wilson","pmaskl","lampman","cubea","lamp","snoopy"];
+const FEATURED=["pcorn","ltr","lampman","cubea","lamp","ks2"]; /* "الأكثر طلباً" on the home page (6 slots). STANDING RULE (Nov 7 2026): when a new piece is added it goes FIRST in NEW; the piece that falls out of NEW is added FIRST in FEATURED, and the LAST item of FEATURED is dropped (it stays in its category). */
 const $=s=>document.querySelector(s);
 const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 let cart=[], cur=null, hist=[{v:"home"}], hi=0;
