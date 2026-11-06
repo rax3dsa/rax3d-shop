@@ -323,7 +323,7 @@ const partsTxt=()=>{const o=cur.pc||{},ks=Object.keys(o).filter(k=>o[k]);return 
 const ctxt=()=>COLORS[cur.color][0]+(MODELS[cur.it.id]&&MODELS[cur.it.id].two?" · غطاء: "+COLORS[cur.color2][0]:"")+partsTxt();
 /* part colours: models with extra parts (eyes, text, logo...) get a tab per part. Default = same colour as the main one; the customer may pick any of the colours. */
 function applyParts(){if(!cur||!V.parts||V.id!==cur.it.id)return;const pc=cur.pc||{};
- V.parts.forEach((p,k)=>{const hex=pc[k]?COLORS[pc[k]][1]:V.mainHex;
+ V.parts.forEach((p,k)=>{const hex=pc[k]?COLORS[pc[k]][1]:null;
   if(hex){p.mat.color.copy(new THREE.Color(hex).convertSRGBToLinear());if(p.mat.vertexColors){p.mat.vertexColors=false;p.mat.needsUpdate=true}}
   else{p.mat.color.copy(p.orig);if(p.mat.vertexColors!==p.vc){p.mat.vertexColors=p.vc;p.mat.needsUpdate=true}}})}
 function partsUI(){const b=$("#partsBox");if(!b)return;
@@ -331,9 +331,9 @@ function partsUI(){const b=$("#partsBox");if(!b)return;
  cur.pc=cur.pc||{};cur.pt=Math.min(cur.pt||0,V.parts.length-1);const k=cur.pt,sel=cur.pc[k]||0;
  const dot=c=>"#"+c.clone().convertLinearToSRGB().getHexString();
  b.hidden=false;
- b.innerHTML=`<span class="lbl">ألوان الأجزاء الأخرى: <span id="pcname">${sel?COLORS[sel][0]:"نفس اللون الأساسي"}</span></span>
+ b.innerHTML=`<span class="lbl">ألوان الأجزاء الأخرى: <span id="pcname">${sel?COLORS[sel][0]:"كما في المجسم الأصلي"}</span></span>
   <div class="ptabs" role="tablist">${V.parts.map((p,i)=>`<button type="button" class="ptab" role="tab" data-pt="${i}" aria-pressed="${i===k}"><i style="background:${dot(p.orig)}"></i>الجزء ${i+2}</button>`).join("")}</div>
-  <div class="sws"><button type="button" class="pcsame" data-pc="same" aria-pressed="${!sel}">نفس الأساسي</button>${COLORS.map((c,i)=>c[1]&&!OUT.has(i)?`<button type="button" class="sw3" style="background:${c[1]}" aria-label="${c[0]}" aria-pressed="${i===sel}" data-pc="${i}"></button>`:"").join("")}</div>
+  <div class="sws"><button type="button" class="pcsame" data-pc="same" aria-pressed="${!sel}">اللون الأصلي</button>${COLORS.map((c,i)=>c[1]&&!OUT.has(i)?`<button type="button" class="sw3" style="background:${c[1]}" aria-label="${c[0]}" aria-pressed="${i===sel}" data-pc="${i}"></button>`:"").join("")}</div>
   <small class="pnote">تظهر ألوان الأجزاء في المعاينة ثلاثية الأبعاد.</small>`;applyParts()}
 function set3DShade(i){if(!cur||!COLORS[i]||!COLORS[i][1])return;cur.color2=i;const c=new THREE.Color(COLORS[i][1]).convertSRGBToLinear();(V.tint2||[]).forEach(mt=>mt.color.copy(c));document.querySelectorAll("#main .sw2").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.s===i));if($("#cname2"))$("#cname2").textContent=COLORS[i][0];setTimeout(sumUI,0)}
 function set3DColor(i){setTimeout(sumUI,0);if(!COLORS[i][1])return;
