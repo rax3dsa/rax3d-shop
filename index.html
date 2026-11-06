@@ -170,6 +170,7 @@ h2{font-size:18px}
 @media (min-width:700px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .item{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;padding:0;text-align:right;cursor:pointer;display:flex;flex-direction:column}
 .item{position:relative}.item .fv{position:absolute;top:8px;inset-inline-start:8px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.92);color:#c0392b;display:grid;place-items:center;font-size:19px;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,.25);cursor:pointer}
+.vsel{margin:12px 0 4px;display:flex;flex-direction:column;gap:8px}.vopts{display:flex;gap:8px}.vopts button{flex:1;display:flex;flex-direction:column;gap:2px;align-items:center;padding:10px 8px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);font:inherit;color:inherit;cursor:pointer}.vopts button b{font-size:15px}.vopts button small{font-size:12px;color:var(--muted)}.vopts button em{font-style:normal;font-weight:700;color:var(--accent)}.vopts button[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
 .acts{display:flex;gap:8px;margin:10px 0 2px}.acts button{flex:1;padding:10px 6px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font:inherit;font-size:14px;color:inherit;cursor:pointer}.acts button.on{border-color:#c0392b;color:#c0392b}
 .item img{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:var(--stage)}
 .item .cap{padding:8px 10px 10px;display:flex;flex-direction:column}
@@ -378,7 +379,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
 <script src="lib/lenis.min.js"></script>
 <script type="text/plain" id="pdata">
 /* source of truth for prices and weights. Read by app.js and by the payment worker (worker/src/index.js); keep the two declarations below in exactly this shape. */
-const PRICE={"snoopy":[76,60],"pcorn":[83,66],"gmug":[86,68],"d2":[25,20],"drip":[43,34],"knobs":[12,10],"xkit":[145,113],"hood":[33,25],"kcm":[38,30],"ttt":[51,41],"fncs":[60,47],"fish":[131,102],"disney":[40,32],"crown":[91,71],"d5":[20,16],"d6":[28,21],"skel":[29,23],"lamp":[122,95],"ltr":[92,72],"w1":[34,27],"abst":[84,66],"chips":[28,22],"clips":[38,33],"ghost":[84,66],"ks1":[25,20],"ks2":[30,23],"ks3":[24,19],"monk":[84,66],"pringles":[33,28],"vase":[123,96],"vase2":[63,49],"vase3":[30,23],"w2":[40,32],"w3":[79,63],"w4":[25,20],"w5":[43,34]};
+const PRICE={"snoopy":[76,60],"pcorn":[83,66],"gmug":[86,68],"d2":[25,20],"drip":[43,34],"knobs":[12,10],"xkit":[145,113],"hood":[33,25],"kcm":[38,30],"ttt":[51,41],"fncs":[60,47],"fish":[131,102],"disney":[40,32],"crown":[91,71],"d5":[20,16],"d6":[28,21],"skel":[29,23],"lamp":[122,95],"cubea":[392,305],"cubeb":[590,458],"ltr":[92,72],"w1":[34,27],"abst":[84,66],"chips":[28,22],"clips":[38,33],"ghost":[84,66],"ks1":[25,20],"ks2":[30,23],"ks3":[24,19],"monk":[84,66],"pringles":[33,28],"vase":[123,96],"vase2":[63,49],"vase3":[30,23],"w2":[40,32],"w3":[79,63],"w4":[25,20],"w5":[43,34]};
 const WEIGHT={
  d2:12.64,
  drip:39,
@@ -402,7 +403,7 @@ const WEIGHT={
  vase2:61,
  vase3:16,
  ltr:85,
- d5:3,d6:12,skel:13,lamp:103,gmug:93.35,pcorn:123,snoopy:65
+ d5:3,d6:12,skel:13,lamp:103,cubea:445,cubeb:680,gmug:93.35,pcorn:123,snoopy:65
 };
 </script>
 <script src="app.js"></script>
