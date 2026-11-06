@@ -82,8 +82,8 @@ const MODELS={lampman:{file:"models/lampman.json",grid:true,keep:["keep"],def:1,
 ITEMS.forEach(i=>{if(WEIGHT[i.id])i.g=WEIGHT[i.id];if(DIM[i.id])i.d=DIM[i.id]});
 const CAT_ORDER=["إكسسوارات السيارة","إكسسوارات القهوة","إكسسوارات المكتب","الديكور","الإضاءات","ميداليات","سناك وضيافة","ألعاب وصفارات","إكسسوارات ألعاب الفيديو"];
 const CATS=[...new Set(ITEMS.map(i=>i.cat))].sort((a,b)=>CAT_ORDER.indexOf(a)-CAT_ORDER.indexOf(b));
-/* "وصل حديثاً": آخر 4 قطع أُضيفت، الأحدث أولاً. عند إضافة قطعة جديدة تُوضع في أول القائمة وتخرج الأقدم (وتبقى في قسمها). */
-const NEW=["lampman","cubea","lamp","snoopy"];
+/* "وصل حديثاً": آخر 6 قطع أُضيفت، الأحدث أولاً. عند إضافة قطعة جديدة تُوضع في أول القائمة وتخرج الأقدم (وتبقى في قسمها). */
+const NEW=["lampman","cubea","lamp","snoopy","pcorn","gmug"];
 const FEATURED=["ltr","ks2","vase2","skel"]; /* "الأكثر طلباً" on the home page */
 const $=s=>document.querySelector(s);
 const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -133,7 +133,7 @@ function rail(active){
   CATS.map(c=>`<button type="button" data-cat="${c}" aria-current="${c===active}"><img src="${IMG[ITEMS.find(i=>i.cat===c).id].thumb}" alt="">${c}</button>`).join("");
 }
 const card=i=>`<button type="button" class="item" data-open="${i.id}">${CUST?`<span class="fv" role="button" data-fav="${i.id}" aria-label="المفضلة">${isFav(i.id)?"♥":"♡"}</span>`:""}<img src="${IMG[i.id].thumb}" alt="${i.name}" loading="lazy"><span class="cap"><b>${i.name}</b><small>${i.use}</small>${PRICE[i.id]?`<em class="pr">${OLD[i.id]?`<s class="old">${SAR(OLD[i.id])}</s> `:""}${SAR(PRICE[i.id][0])}</em>`:""}</span></button>`;
-const carousel=ids=>`<div class="car" data-car>${ids.slice(0,4).map(id=>ITEMS.find(i=>i.id===id)).filter(Boolean).map(card).join("")}</div>`;
+const carousel=(ids,n=4)=>`<div class="car" data-car>${ids.slice(0,n).map(id=>ITEMS.find(i=>i.id===id)).filter(Boolean).map(card).join("")}</div>`;
 /* شريط يتحرك لوحده كل 3.5 ثانية، يوقف عند اللمس أو خروجه من الشاشة أو لو الجوال مفعّل تقليل الحركة، والعميل يقدر يسحبه بإصبعه */
 let carT=null;
 function startCars(){clearInterval(carT);const cars=[...document.querySelectorAll("[data-car]")];if(!cars.length||matchMedia("(prefers-reduced-motion:reduce)").matches)return;
@@ -149,7 +149,7 @@ function home(){
    <p class="lead">اختر القطعة واللون والمقاس، ونطبعها لك عند الطلب.</p>
    ${CUST?`<button type="button" class="btn gold shop" data-shop>تسوّق الآن</button>`:`<button type="button" class="btn gold shop" data-acc>سجّل الآن واكسب نقاط ولائك، استبدلها بخصومات وجوائز</button><span class="inote" style="display:block;margin-top:8px">بدون رقم سري، اسمك وجوالك بس ⭐</span>`}
    <ul class="perks"><li><b>13</b><span>لون تختار منها</span></li><li><b>3D</b><span>شوف القطعة قبل الطلب</span></li><li><b>⭐</b><span>نقطة ولاء على كل ريال</span></li></ul></section>
-   <h2 id="newHd">وصل حديثاً</h2>${carousel(NEW)}
+   <h2 id="newHd">وصل حديثاً</h2>${carousel(NEW,6)}
    <h2>الأكثر طلباً</h2>${carousel(FEATURED)}
    <h2>كيف أطلب؟</h2><ol class="how"><li><b>اختر القطعة</b><span>واللون والمقاس والعدد، وأضفها لطلبك.</span></li><li><b>أكّد طلبك</b><span>ادفع أونلاين (مدى، Apple Pay)، أو اطلب بالدفع عند الاستلام، أو أرسل الطلب بالخاص في انستقرام أو تيك توك.</span></li><li><b>نأكد طلبك</b><span>نتواصل معك بتأكيد الطلب وموعد التجهيز.</span></li><li><b>نطبع ونسلّم</b><span>تتابع طلبك برقم الطلب اللي في فاتورتك.</span></li></ol>
    <section class="about"><h2>نقاط الولاء</h2><ul class="note" style="text-align:right;padding-inline-start:18px;line-height:1.8"><li>كل 1000 نقطة = خصم 10 ريال</li><li>5000 نقطة = قطعة مجانية بقيمة حتى 250 ريال</li><li>تنتهي كل نقطة بعد 12 شهراً من تاريخ كسبها</li><li>النقاط لا تُستبدل بمبالغ مالية</li></ul></section>
