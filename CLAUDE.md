@@ -32,3 +32,13 @@ Do this in the same commit as the product. Never grow either list. Say in the re
 - Never put secrets in the repo (it is public). Payment keys live in the Cloudflare worker.
 - Do not reuse an `id` attribute in the HTML (duplicate ids already broke the points and chat modals once).
 - Customer-facing text is Arabic (Saudi tone); keep the English dictionary complete.
+
+## Product descriptions and SEO (added)
+- Every new product needs an Arabic entry in `DESC` and an English one in `DESC_EN` (app.js, <=125 chars, sells the piece). Hidden variants (`vg`) inherit from the lead item.
+- After adding or editing a product run `python3 tools/seo-build.py` (regenerates sitemap.xml and the crawler `<noscript>` block in index.html).
+- Page titles come from `seoFor()` (`TI` category map); keep titles unique and <=70 chars.
+
+## Part colours (added)
+- Models with fixed parts (`keeps` / `keep`) show a "ألوان الأجزاء الأخرى" tab per part (`#partsBox`, `partsUI()`, `applyParts()`). Default = same as the main colour; the customer may pick any of the colours. Choices are saved in `cur.pc` and appended to the colour text (`partsTxt()`), so they reach the cart and the order.
+- The lampman `shade` keeps its own separate "لون الغطاء العلوي" control.
+- Untested in a real browser so far: check the tabs, 3D preview, cart text (AR + EN) before relying on it.
