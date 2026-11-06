@@ -201,7 +201,7 @@ function accCard(){return CUST?`<div class="acc on"><div class="row"><span>ال�
 function cartView(){
   $("#ttl").textContent="طلبي";
   $("#main").innerHTML=`<h2>طلبي</h2>${cart.length?`<div class="lines">${cart.map((o,i)=>`<div class="line"><img src="${IMG[o.id].thumb}" alt=""><div><b>${esc(String(o.name))}</b><small>${esc(String(o.color))} · ${o.qty} حبة${isW(o)?" · جملة":""}${o.size?" · مقاس "+esc(String(o.size)):""}${o.note?" · "+esc(o.note):""}</small></div>${UP(o.id,o.qty)?`<em class="pr">${SAR(LT(o))}</em>`:""}<button type="button" data-del="${i}" aria-label="حذف">×</button></div>`).join("")}</div>
-  ${cart.some(o=>UP(o.id,o.qty))?`<p class="total">الإجمالي: ${cart.reduce((a,o)=>a+LT(o),0)} ريال</p>`:""}
+  ${cart.some(o=>UP(o.id,o.qty))?`<p class="total">الإجمالي: ${cart.reduce((a,o)=>a+LT(o),0)} ريال</p>${PAY.ship&&cart.every(o=>UP(o.id,o.qty))?`<p class="inote">+ رسوم التوصيل ${PAY.ship} ريال عند الدفع أونلاين أو عند الاستلام، فيكون المطلوب ${cart.reduce((a,o)=>a+LT(o),0)+PAY.ship} ريال.</p>`:""}`:""}
   ${accCard()}
   <p class="note sendnote">📋 لما تضغط «أرسل الطلب بالخاص» ننسخ رسالة طلبك جاهزة، ونفتح لك محادثتنا في انستقرام أو تيك توك. <b>الصقها في خانة الكتابة وأرسلها</b>، ونأكد لك طلبك وموعد التجهيز.</p>
   ${payable()?`<button type="button" class="btn gold" id="payBtn">ادفع الحين · مدى · Apple Pay</button>`:""}${codable()?`<button type="button" class="btn ${payable()?"alt":"gold"}" id="codBtn">اطلب والدفع عند الاستلام</button>`:""}<button type="button" class="btn alt" id="delBtn">🚚 اطلب مع التوصيل (+25 ريال) · نتواصل بالخاص</button><button type="button" class="btn ${payable()||codable()?"alt":"gold"}" id="sendBtn">أرسل الطلب بالخاص</button>
@@ -584,6 +584,8 @@ const EN={"أومني دريبر 2 (نيقوشيتر) xBloom Studio":"Omni Dripp
 const WH={"على الشاشة الرئيسية لجوالك":"on your phone's home screen","في الـ Dock وفي مجلد التطبيقات":"in the Dock and the Applications folder","على سطح المكتب وفي قائمة ابدأ":"on the desktop and in the Start menu","بين تطبيقات جهازك":"among your device's apps"};
 const tw=s=>WH[s]||s;
 const RX=[
+ [/^\+ رسوم التوصيل (\d+) ريال عند الدفع أونلاين أو عند الاستلام، فيكون المطلوب (\d+) ريال\.$/,(m,a,b)=>"+ delivery fee "+a+" SAR for online payment or cash on delivery, so the amount due is "+b+" SAR."],
+ [/^(.*) \(يشمل التوصيل (\d+)\)$/,(m,a,b)=>tr(a)+" (incl. delivery "+b+" SAR)"],
  [/^الإجمالي عند الاستلام: (\d+) ريال(.*)$/,(m,a,r)=>"Total on delivery: "+a+" SAR"+(r?" "+r:"")],[/^رقم طلبك ORD-(\d+)$/,(m,a)=>"Your order number ORD-"+a],
  [/^([\d.]+) مم$/,(m,a)=>a+" mm"],[/^([\d.]+) سم$/,(m,a)=>a+" cm"],[/^(\d+) قطع$/,(m,a)=>a+" pieces"],
  [/^القسم: (.+)$/,(m,a)=>"Section: "+tr(a)],[/^المقاس الجديد: (.+) مم$/,(m,a)=>"New size: "+a+" mm"],
@@ -665,6 +667,8 @@ const PAY={pk:"pk_live_VwRA9r6iBwKYbBg2ZvGd9HdrX5pG8cJSeGXhVadE",gate:false,api:
 /* a pk_test_ key is only live for whoever opens the site with ?paytest, so customers never see test mode */
 const PTEST=(()=>{try{if(/[?&]paytest\b/.test(location.search))sessionStorage.setItem("rax3d_ptest","1");return sessionStorage.getItem("rax3d_ptest")==="1"}catch(_){return false}})();
 const payable=()=>!!(PAY.pk&&PAY.api&&((!PAY.pk.startsWith("pk_test_")&&!PAY.gate)||PTEST)&&cart.length&&cart.every(o=>UP(o.id,o.qty)&&!o.size&&!o.note));
+/* the delivery fee comes from the worker so the site and the amount the worker checks can never disagree (no answer = no fee) */
+fetch(PAY.api+"/config",{cache:"no-store"}).then(r=>r.json()).then(j=>{if(j&&j.ok&&Number.isFinite(+j.ship)&&+j.ship>=0&&+j.ship<=200){PAY.ship=+j.ship;if(hist[hi]&&hist[hi].v==="cart")render(false)}}).catch(()=>{});
 const payTotal=()=>cart.reduce((a,o)=>a+LT(o),0)+PAY.ship;
 function payLoad(){return new Promise((ok,no)=>{if(window.Moyasar)return ok();
  const l=document.createElement("link");l.rel="stylesheet";l.href="lib/moyasar.css";document.head.appendChild(l);

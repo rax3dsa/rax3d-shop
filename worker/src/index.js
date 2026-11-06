@@ -2,6 +2,8 @@
 // POST /confirm  { paymentId, ref, customer:{name,phone,city,address}, cart:[{id,qty,color}] }
 // Re-prices the cart from the live site, asks Moyasar what was really paid, then emails the order.
 const SITE = 'https://rax3d.com';
+// delivery fee added to every online and cash-on-delivery order (riyals). The site reads it from GET /config so both always agree.
+const SHIP_FEE = 25;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 async function prices() {
@@ -151,7 +153,7 @@ async function cod(req, env, out) {
     if (!u || q < 1 || q > 500) return out({ ok: false, reason: 'item' }, 400);
     sub += u * q; rows.push({ id: String(o.id), q, u, color: String(o.color || '').slice(0, 30) });
   }
-  const ship = +env.SHIP_FEE || 0, total = sub + ship;
+  const ship = SHIP_FEE, total = sub + ship;
   // unpaid COD orders earn loyalty points at once, so one fake order of 40 items x 500 pcs could mint huge points.
   // Cap the COD order value (COD_MAX riyals, default 1500, 0 = no cap); bigger orders pay online or go by DM.
   const codMax = env.COD_MAX === undefined ? 1500 : +env.COD_MAX;
@@ -208,6 +210,7 @@ async function handle(req, env) {
     if (req.method === 'POST' && path === '/webhook') return hook(req, env, out);
     if (req.method === 'POST' && path === '/cod') return cod(req, env, out);
     if (req.method === 'POST' && path === '/points') return points(req, env, out);
+    if (req.method === 'GET' && path === '/config') return out({ ok: true, ship: SHIP_FEE });
     if (req.method !== 'POST' || path !== '/confirm') return out({ ok: false }, 404);
 
     { const og = req.headers.get('Origin'); if (og && og !== SITE && og !== 'https://www.rax3d.com') return out({ ok: false, reason: 'origin' }, 403) }
@@ -241,7 +244,7 @@ async function handle(req, env) {
       if (!u || q < 1 || q > 500) return out({ ok: false, reason: 'item' }, 400);
       total += u * q; rows.push({ id: String(o.id), q, u, color: String(o.color || '').slice(0, 30) }); lines.push(`${esc(o.id)} × ${q} (${esc(String(o.color || '').slice(0, 30))}) = ${u * q} ريال`);
     }
-    total += +env.SHIP_FEE || 0;
+    total += SHIP_FEE;
 
     const info = `<p>رقم الطلب: <b>${esc(b.ref)}</b><br>الاسم: ${esc((c.name || '').slice(0, 60))}<br>الجوال: ${esc((c.phone || '').slice(0, 20))}<br>المدينة: ${esc((c.city || '').slice(0, 40))}<br>العنوان: ${esc((c.address || '').slice(0, 200))}</p><p>${lines.join('<br>')}</p><p>المدفوع: <b>${p.amount / 100} ${esc(p.currency)}</b> · طريقة الدفع: ${esc(p.source?.type || '')} · رقم الدفعة: ${esc(p.id)}</p>`;
 
@@ -262,7 +265,7 @@ async function handle(req, env) {
           await ghCreate(env, 'online/ORD-' + num + '.json', order, 'طلب مدفوع ORD-' + num);
           await ghCreate(env, 'online/pay_' + b.paymentId + '.json', { num }, 'ربط الدفعة بالطلب ORD-' + num);
           // the invoice itself goes to the same shared inbox the data-entry phone uses; the app imports it into its log
-          const nm0 = await names(), itemsT = total - (+env.SHIP_FEE || 0);
+          const nm0 = await names(), itemsT = total - (SHIP_FEE);
           const rec = { num, date: riyadhDay(), online: true, payId: b.paymentId, client: (c.name || '').slice(0, 60), phone: (c.phone || '').slice(0, 20), code: b.ref,
             desc: rows.map(r => (nm0[r.id]?.n || r.id) + ' (' + r.q + ')').join(' ، '), qty: rows.reduce((a, r) => a + r.q, 0), disc: 0, total: itemsT, profit: 0, sugg: 0, sub: itemsT,
             items: rows.map(r => ({ desc: nm0[r.id]?.n || r.id, q: r.q, unit: r.u, line: r.u * r.q, cost: 0, w: +pr.W[r.id] || 0, h: 0, m: 0, sec: 0, type: 'واحدة', auto: false, dp: 0 })) };
@@ -278,7 +281,7 @@ async function handle(req, env) {
     const msg = [`طلب مدفوع ${label}`, `* الاسم: ${(c.name || '').slice(0, 60)}`, `* الجوال: ${(c.phone || '').slice(0, 20)}`,
       ...b.cart.map(o => `\n* القطعة: ${nm[o.id]?.n || o.id}\n* اللون: ${String(o.color || 'كما بالصورة').slice(0, 30)}\n* الكمية: ${Math.floor(+o.qty)}`)].join('\n');
     const today = new Date(Date.now() + 3 * 3600 * 1000).toISOString().slice(0, 10);
-    const invoice = invoiceHtml({ label, date: today, name: c.name || '', phone: c.phone || '', rows: rows.map(r => ({ ...r, name: nm[r.id]?.n || r.id })), sub: total - (+env.SHIP_FEE || 0), ship: +env.SHIP_FEE || 0, total, method: p.source?.type === 'applepay' ? 'Apple Pay' : (p.source?.company ? String(p.source.company).toUpperCase() : (p.source?.type || '')) });
+    const invoice = invoiceHtml({ label, date: today, name: c.name || '', phone: c.phone || '', rows: rows.map(r => ({ ...r, name: nm[r.id]?.n || r.id })), sub: total - (SHIP_FEE), ship: SHIP_FEE, total, method: p.source?.type === 'applepay' ? 'Apple Pay' : (p.source?.company ? String(p.source.company).toUpperCase() : (p.source?.type || '')) });
     const html = invoice + `<hr style="margin:26px 0;border:0;border-top:1px dashed #ccc"><p>طلب مدفوع <b>${esc(label)}</b>${num ? '' : ' (بدون رقم فاتورة، تعذّر حجز الرقم)'}</p>` + info.replace(esc(b.ref), esc(label)) +
       ((logFail || !num) ? `<p style="color:#b00">⚠️ تعذّر إضافة الفاتورة تلقائيًا لبرنامج الفواتير. الصق الرسالة التالية في التطبيق (استيراد الطلب) عشان تنحفظ بنفس الرقم:</p><pre style="background:#f4f1ea;padding:10px;border-radius:8px;white-space:pre-wrap">${esc(msg)}</pre>` : `<p>✓ الفاتورة دخلت برنامج الفواتير تلقائيًا (تظهر لك أول ما تفتحه).</p>`);
     const sent = await mail(env, '✅ طلب مدفوع ' + label, html);

@@ -4,7 +4,7 @@ compatibility_date = "2025-01-01"
 
 [vars]
 MAIL_TO = "rax3d.sa@hotmail.com"
-SHIP_FEE = "0"
+# SHIP_FEE is now a constant inside src/index.js (25 SAR); the site reads it from GET /config
 GH_REPO = "rax3dsa/rax3d-data"
 # MAIL_FROM = "RAX3D <orders@rax3d.com>"   # after verifying rax3d.com in Resend
 
