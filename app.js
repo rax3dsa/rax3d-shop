@@ -83,7 +83,7 @@ ITEMS.forEach(i=>{if(WEIGHT[i.id])i.g=WEIGHT[i.id];if(DIM[i.id])i.d=DIM[i.id]});
 const CAT_ORDER=["إكسسوارات السيارة","إكسسوارات القهوة","إكسسوارات المكتب","الديكور","الإضاءات","ميداليات","سناك وضيافة","ألعاب وصفارات","إكسسوارات ألعاب الفيديو"];
 const CATS=[...new Set(ITEMS.map(i=>i.cat))].sort((a,b)=>CAT_ORDER.indexOf(a)-CAT_ORDER.indexOf(b));
 /* "وصل حديثاً": آخر 4 قطع أُضيفت، الأحدث أولاً. عند إضافة قطعة جديدة تُوضع في أول القائمة وتخرج الأقدم (وتبقى في قسمها). */
-const NEW=["snoopy","pcorn","gmug","hood"];
+const NEW=["lampman","cubea","lamp","snoopy"];
 const FEATURED=["ltr","ks2","vase2","skel"]; /* "الأكثر طلباً" on the home page */
 const $=s=>document.querySelector(s);
 const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
