@@ -88,7 +88,7 @@ const CAT_ORDER=["إكسسوارات السيارة","إكسسوارات الق�
 const CATS=[...new Set(ITEMS.map(i=>i.cat))].sort((a,b)=>CAT_ORDER.indexOf(a)-CAT_ORDER.indexOf(b));
 /* "وصل حديثاً": آخر 6 قطع أُضيفت، الأحدث أولاً. عند إضافة قطعة جديدة تُوضع في أول القائمة وتخرج الأقدم (وتبقى في قسمها). */
 const NEW=["wilson","pmaskl","lampman","cubea","lamp","snoopy","pcorn"];
-const FEATURED=["ltr","ks2","vase2","skel"]; /* "الأكثر طلباً" on the home page */
+const FEATURED=["ltr","lampman","cubea","lamp","ks2","vase2"]; /* "الأكثر طلباً" on the home page */
 const $=s=>document.querySelector(s);
 const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 let cart=[], cur=null, hist=[{v:"home"}], hi=0;
@@ -154,7 +154,7 @@ function home(){
    ${CUST?`<button type="button" class="btn gold shop" data-shop>تسوّق الآن</button>`:`<button type="button" class="btn gold shop" data-acc>سجّل الآن واكسب نقاط ولائك، استبدلها بخصومات وجوائز</button><span class="inote" style="display:block;margin-top:8px">بدون رقم سري، اسمك وجوالك بس ⭐</span>`}
    <ul class="perks"><li><b>13</b><span>لون تختار منها</span></li><li><b>3D</b><span>شوف القطعة قبل الطلب</span></li><li><b>⭐</b><span>نقطة ولاء على كل ريال</span></li></ul></section>
    <h2 id="newHd">وصل حديثاً</h2>${carousel(NEW,6)}
-   <h2>الأكثر طلباً</h2>${carousel(FEATURED)}
+   <h2>الأكثر طلباً</h2>${carousel(FEATURED,6)}
    <h2>كيف أطلب؟</h2><ol class="how"><li><b>اختر القطعة</b><span>واللون والمقاس والعدد، وأضفها لطلبك.</span></li><li><b>أكّد طلبك</b><span>ادفع أونلاين (مدى، Apple Pay)، أو اطلب بالدفع عند الاستلام، أو أرسل الطلب بالخاص في انستقرام أو تيك توك.</span></li><li><b>نأكد طلبك</b><span>نتواصل معك بتأكيد الطلب وموعد التجهيز.</span></li><li><b>نطبع ونسلّم</b><span>تتابع طلبك برقم الطلب اللي في فاتورتك.</span></li></ol>
    <section class="about"><h2>نقاط الولاء</h2><ul class="note" style="text-align:right;padding-inline-start:18px;line-height:1.8"><li>كل 1000 نقطة = خصم 10 ريال</li><li>5000 نقطة = قطعة مجانية بقيمة حتى 250 ريال</li><li>تنتهي كل نقطة بعد 12 شهراً من تاريخ كسبها</li><li>النقاط لا تُستبدل بمبالغ مالية</li></ul></section>
    <section class="about"><h2>طباعة ثلاثية الأبعاد في السعودية</h2><p class="note" style="text-align:right">RAX3D متجر سعودي للطباعة ثلاثية الأبعاد (طباعة 3D): مزهريات وديكور للمنزل والمكتب، هدايا مميزة وكؤوس، ميداليات مفاتيح، صفارات، وإكسسوارات قهوة xBloom. تختار القطعة واللون والمقاس، وتشوفها ثلاثية الأبعاد قبل الطلب، ونطبعها لك حسب الطلب. نقبل الطلبات بالقطعة وبالجملة للمحلات والتوزيعات.</p></section>
