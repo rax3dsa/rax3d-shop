@@ -334,8 +334,8 @@ function partsUI(){const b=$("#partsBox"),mo=$("#mainOpt");if(!b)return;
  if(!cur||!V.parts||V.id!==cur.it.id){b.hidden=true;if(mo)mo.hidden=false;return}
  if(!V.parts.length){/* single-part model: base colour (photo look) or another colour (3D preview) */
   const base=!cur.color,st=$("#v3dStage"),pv=$("#pv");if(mo)mo.hidden=base;b.hidden=false;
-  if(V.on){if(st)st.hidden=base;if(pv)pv.style.visibility=base?"":"hidden"}
-  b.innerHTML=`<div class="ptabs" role="tablist"><button type="button" class="ptab" role="tab" data-sp="base" aria-pressed="${base}"><i style="background:conic-gradient(#e5484d,#f5c542,#46a758,#3e63dd,#e5484d)"></i>اللون الأساسي</button><button type="button" class="ptab" role="tab" data-sp="other" aria-pressed="${!base}"><i style="background:${COLORS[cur.color||MODELS[cur.it.id].def||1][1]}"></i>لون آخر</button></div>${base?`<small class="pnote">الألوان كما في الصورة الأساسية للمجسم.</small>`:""}`;return}
+  if(V.on){if(st)st.hidden=false;if(pv)pv.style.visibility="hidden"}
+  b.innerHTML=`<div class="ptabs" role="tablist"><button type="button" class="ptab" role="tab" data-sp="base" aria-pressed="${base}"><i style="background:conic-gradient(#e5484d,#f5c542,#46a758,#3e63dd,#e5484d)"></i>اللون الأساسي</button><button type="button" class="ptab" role="tab" data-sp="other" aria-pressed="${!base}"><i style="background:${COLORS[cur.color||MODELS[cur.it.id].def||1][1]}"></i>لون آخر</button></div>${base?`<small class="pnote">المعاينة ثلاثية الأبعاد: حرّكها بإصبعك. الألوان الأصلية للقطعة كما في صورتها، وتُنفَّذ عند الطباعة.</small>`:""}`;return}
  cur.pc=cur.pc||{};const n=V.parts.length;if(cur.pt===undefined||cur.pt>=n)cur.pt=-2;const k=cur.pt,sel=k>=0?(cur.pc[k]||0):0;
  const dot=c=>"#"+c.clone().convertLinearToSRGB().getHexString(),mn=MN[cur.it.id]||"الجسم",mh=COLORS[cur.color][1]||"#ddd";
  if(mo)mo.hidden=k!==-1;b.hidden=false;
