@@ -268,7 +268,7 @@ function open3D_(){
  }
  st.prepend(V.renderer.domElement);
  const r=st.getBoundingClientRect();V.renderer.setSize(r.width,r.height,false);V.cam.aspect=r.width/r.height;V.cam.updateProjectionMatrix();
- if(V.id===cur.it.id&&V.obj){set3DColor(ci);set3DShade(cur.color2);partsUI();$("#v3dMsg")&&($("#v3dMsg").hidden=true);return}
+ if(V.id===cur.it.id&&V.obj){tintMain(ci);set3DShade(cur.color2);partsUI();$("#v3dMsg")&&($("#v3dMsg").hidden=true);return}
  if(V.obj){V.scene.remove(V.obj);V.obj=null}
  V.id=cur.it.id;
  const done=obj=>{
@@ -298,7 +298,7 @@ function open3D_(){
    const dist=best||d*2.6;V.cam.position.copy(dir).multiplyScalar(dist);V.cam.lookAt(0,0,0);V.cam.updateProjectionMatrix();
    V.controls.minDistance=dist*0.4;V.controls.maxDistance=dist*2.2}
   V.controls.target.set(0,0,0);V.controls.autoRotate=true;
-  set3DColor(ci);set3DShade(cur.color2);partsUI();$("#v3dMsg").hidden=true};
+  tintMain(ci);set3DShade(cur.color2);partsUI();$("#v3dMsg").hidden=true};
  const fail=()=>{$("#v3dMsg").textContent="ما قدرنا نحمّل المجسم، جرّب مرة ثانية."};
  if(m.grid)fetch(m.file).then(r=>{if(!r.ok)throw 0;return r.json()}).then(d=>{const g=ringGrid(d);done(g.isObject3D?g:new THREE.Mesh(g,new THREE.MeshStandardMaterial()))}).catch(fail);
  else if(/\.stl$/i.test(m.file))new THREE.STLLoader().load(m.file,g=>{const g2=g;done(new THREE.Mesh(g2,new THREE.MeshStandardMaterial()))},undefined,fail);
@@ -336,8 +336,8 @@ function partsUI(){const b=$("#partsBox"),mo=$("#mainOpt");if(!b)return;
 
  if(!V.parts.length||FIXED_PARTS.has(cur.it.id)){/* single-part model: base colour (photo look) or another colour (3D preview) */
   const base=!cur.color,st=$("#v3dStage"),pv=$("#pv");if(mo)mo.hidden=base;b.hidden=false;
-  const show3=!base||!!cur.v3;if(V.on){if(st)st.hidden=!show3;if(pv)pv.style.visibility=show3?"hidden":""}
-  b.innerHTML=`<div class="ptabs" role="tablist"><button type="button" class="ptab" role="tab" data-sp="base" aria-pressed="${base}"><i style="background:conic-gradient(#e5484d,#f5c542,#46a758,#3e63dd,#e5484d)"></i>اللون الأساسي</button><button type="button" class="ptab" role="tab" data-sp="other" aria-pressed="${!base}"><i style="background:${COLORS[cur.color||MODELS[cur.it.id].def||1][1]}"></i>لون آخر</button></div>${base?`<button type="button" class="pcsame" data-sp="3d" aria-pressed="${show3}">${show3?"🖼 الصورة الأصلية":"🧊 حرّكها ثلاثية الأبعاد"}</button><small class="pnote">${show3?"حرّك القطعة بإصبعك. اللون في المعاينة الثلاثية تقريبي، والألوان الأصلية كما في الصورة وتُنفَّذ عند الطباعة.":"الألوان كما في الصورة الأصلية للقطعة."}</small>`:""}`;return}
+  const show3=true;if(V.on){if(st)st.hidden=!show3;if(pv)pv.style.visibility=show3?"hidden":""}
+  b.innerHTML=`<div class="ptabs" role="tablist"><button type="button" class="ptab" role="tab" data-sp="base" aria-pressed="${base}"><i style="background:conic-gradient(#e5484d,#f5c542,#46a758,#3e63dd,#e5484d)"></i>اللون الأساسي</button><button type="button" class="ptab" role="tab" data-sp="other" aria-pressed="${!base}"><i style="background:${COLORS[cur.color||MODELS[cur.it.id].def||1][1]}"></i>لون آخر</button></div>${base?`<small class="pnote">حرّك القطعة بإصبعك لتراها من كل الجهات. اللون الأساسي: كما في الصورة الأصلية.</small>`:""}`;return}
  cur.pc=cur.pc||{};const n=V.parts.length;if(cur.pt===undefined||cur.pt>=n)cur.pt=-2;const k=cur.pt,sel=k>=0?(cur.pc[k]||0):0;
  const dot=c=>"#"+c.clone().convertLinearToSRGB().getHexString(),mn=MN[cur.it.id]||"الجسم",mh=COLORS[cur.color][1]||"#ddd";
  if(mo)mo.hidden=k!==-1;b.hidden=false;
