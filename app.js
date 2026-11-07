@@ -334,7 +334,9 @@ const FIXED_PARTS=new Set(["snoopy"]); /* parts that keep their colour; only the
 function partsUI(){const b=$("#partsBox"),mo=$("#mainOpt");if(!b)return;
  if(!cur||!V.parts||V.id!==cur.it.id){b.hidden=true;if(mo)mo.hidden=false;return}
 
- if(!V.parts.length||FIXED_PARTS.has(cur.it.id)){/* single-part model: base colour (photo look) or another colour (3D preview) */
+ if(!V.parts.length){/* single-part model: plain colour grid + rotatable 3D (owner-approved original behaviour) */
+  b.hidden=true;if(mo)mo.hidden=false;const st=$("#v3dStage"),pv=$("#pv");if(V.on){if(st)st.hidden=false;if(pv)pv.style.visibility="hidden"}return}
+ if(FIXED_PARTS.has(cur.it.id)){/* fixed parts model: base colour (photo look) or another colour (3D preview) */
   const base=!cur.color,st=$("#v3dStage"),pv=$("#pv");if(mo)mo.hidden=base;b.hidden=false;
   const show3=!base||!!cur.v3;if(V.on){if(st)st.hidden=!show3;if(pv)pv.style.visibility=show3?"hidden":""}
   b.innerHTML=`<div class="ptabs" role="tablist"><button type="button" class="ptab" role="tab" data-sp="base" aria-pressed="${base}"><i style="background:conic-gradient(#e5484d,#f5c542,#46a758,#3e63dd,#e5484d)"></i>اللون الأساسي</button><button type="button" class="ptab" role="tab" data-sp="other" aria-pressed="${!base}"><i style="background:${COLORS[cur.color||MODELS[cur.it.id].def||1][1]}"></i>لون آخر</button></div>${base?`<button type="button" class="pcsame" data-sp="3d" aria-pressed="${show3}">${show3?"🖼 الصورة الأصلية":"🧊 معاينة ثلاثية الأبعاد"}</button><small class="pnote">${show3?"حرّك القطعة بإصبعك لتراها من كل الجهات.":"اللون الأساسي كما في الصورة الأصلية."}</small>`:""}`;return}
