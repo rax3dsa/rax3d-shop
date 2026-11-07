@@ -192,7 +192,7 @@ function editView(id){   /* customise page: preview (3D when available) + colour
    <p class="tip3d">${MODELS[it.id]?"🧊 لفّ القطعة بإصبعك وشوفها من كل جهة، واختر اللون من تحت ويتغير عليها مباشرة.":"🎨 اختر اللون من تحت ويتغير على الصورة مباشرة."}</p>
   ${MODELS[it.id]?`<div class="opt" id="partsBox" hidden></div>`:""}
   <div class="opt" id="mainOpt"><span class="lbl">اللون: <span id="cname">${COLORS[0][0]}</span></span><div class="sws">${COLORS.map((c,i)=>`<button type="button" class="sw ${c[1]?"":"orig"}${OUT.has(i)?" out":""}"${OUT.has(i)?` aria-disabled="true" title="${c[0]} — غير متوفر حالياً"`:""} style="${c[1]?"background:"+c[1]:""}" aria-label="${c[0]}" aria-pressed="${i===0}" data-c="${i}"></button>`).join("")}</div></div>${MODELS[it.id]&&MODELS[it.id].two?`
-  <div class="opt"${PARTCOL.has(it.id)?" hidden":""}><span class="lbl">لون الغطاء العلوي: <span id="cname2">${COLORS[2][0]}</span></span><div class="sws">${COLORS.map((c,i)=>c[1]&&!OUT.has(i)?`<button type="button" class="sw2" style="background:${c[1]}" aria-label="${c[0]}" aria-pressed="${i===2}" data-s="${i}"></button>`:"").join("")}</div></div>`:""}
+  <div class="opt" hidden><span class="lbl">لون الغطاء العلوي: <span id="cname2">${COLORS[2][0]}</span></span><div class="sws">${COLORS.map((c,i)=>c[1]&&!OUT.has(i)?`<button type="button" class="sw2" style="background:${c[1]}" aria-label="${c[0]}" aria-pressed="${i===2}" data-s="${i}"></button>`:"").join("")}</div></div>`:""}
   <small class="pnote" id="partHint2">💡 تقدر تغيّر الأجزاء أو الكتابات بلون مختلف: اذكر ذلك في خانة «تفاصيل إضافية قبل الطباعة» تحت.</small>
   <div class="dims"><div class="dims-hd"><b>تبي مقاس مختلف؟</b><label class="lock"><input type="checkbox" id="sizeOn"> تعديل المقاس</label></div>
    <div id="sizeBox" hidden>
@@ -325,7 +325,7 @@ const pname=(i,id)=>{const a=PN[id||cur.it.id];return a&&a[i]?a[i][0]:"الجز�
 const MN={lampman:"الجسم",pringles:"الجسم",chips:"الحامل",ttt:"اللوحة",ltr:"الحرف",w1:"المقبض",clips:"الصحن الأول"};
 const PNAMES=[...new Set(Object.values(PN).flat().map(x=>x[0]))];
 const partsTxt=()=>{const o=cur.pc||{},ks=Object.keys(o).filter(k=>o[k]);return ks.length?" · "+ks.map(k=>pname(+k)+": "+COLORS[o[k]][0]).join(" · "):""};
-const ctxt=()=>COLORS[cur.color][0]+(MODELS[cur.it.id]&&MODELS[cur.it.id].two?" · غطاء: "+COLORS[cur.color2][0]:"")+partsTxt();
+const ctxt=()=>COLORS[cur.color][0]+""+partsTxt();
 /* part colours: models with extra parts (eyes, text, logo...) get a tab per part. Default = same colour as the main one; the customer may pick any of the colours. */
 function applyParts(){if(!cur||!V.parts||V.id!==cur.it.id)return;const pc=cur.pc||{};
  V.parts.forEach((p,k)=>{const hex=pc[k]?COLORS[pc[k]][1]:null;
