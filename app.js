@@ -184,7 +184,7 @@ function itemView(id){   /* the piece page: photo + details only. Editing happen
   <button type="button" class="btn gold" data-edit="${it.id}">${MODELS[it.id]?"🧊 خصّصها وشوفها ثلاثية الأبعاد":"🎨 اختر اللون والمقاس والعدد"}</button>`;
 }
 function editView(id){   /* customise page: preview (3D when available) + colour, size, quantity, other, then confirm */
-  const it=ITEMS.find(i=>i.id===id);cur={it,color:0,color2:2,pc:{},pt:-1,qty:1,other:false,note:"",sizeOn:false,dim:null};$("#ttl").textContent=it.name;
+  const it=ITEMS.find(i=>i.id===id);cur={it,color:0,color2:2,pc:{},pt:-2,qty:1,other:false,note:"",sizeOn:false,dim:null};$("#ttl").textContent=it.name;
   $("#main").innerHTML=`<div class="sechd"><h2>خصّص: ${it.name}${it.vl?` (${it.vl})`:""}</h2></div>
   <div class="pic"><img id="pv" src="hq/${it.id}-0.webp" width="800" height="800" alt="${it.name}" decoding="async">
    ${MODELS[it.id]?`<div class="v3d-stage" id="v3dStage" hidden><div class="v3d-msg" id="v3dMsg">جاري تحميل المجسم…</div><div class="v3d-hint">اسحب بإصبعك لتدوير القطعة، وقرّب بإصبعين</div></div>
@@ -332,12 +332,13 @@ function applyParts(){if(!cur||!V.parts||V.id!==cur.it.id)return;const pc=cur.pc
   else{p.mat.color.copy(p.orig);if(p.mat.vertexColors!==p.vc){p.mat.vertexColors=p.vc;p.mat.needsUpdate=true}}})}
 function partsUI(){const b=$("#partsBox"),mo=$("#mainOpt");if(!b)return;
  if(!cur||!V.parts||!V.parts.length||V.id!==cur.it.id){b.hidden=true;if(mo)mo.hidden=false;return}
- cur.pc=cur.pc||{};cur.pm=cur.pm||{};const n=V.parts.length;if(cur.pt===undefined||cur.pt>=n)cur.pt=-1;const k=cur.pt,sel=k>=0?(cur.pc[k]||0):0;
+ cur.pc=cur.pc||{};const n=V.parts.length;if(cur.pt===undefined||cur.pt>=n)cur.pt=-2;const k=cur.pt,sel=k>=0?(cur.pc[k]||0):0;
  const dot=c=>"#"+c.clone().convertLinearToSRGB().getHexString(),mn=MN[cur.it.id]||"الأساسي",mh=COLORS[cur.color][1]||"#ddd";
- if(mo)mo.hidden=k>=0;b.hidden=false;
+ if(mo)mo.hidden=k!==-1;b.hidden=false;
  b.innerHTML=`<span class="lbl">اختر الجزء ثم لونه</span>
-  <div class="ptabs" role="tablist"><button type="button" class="ptab" role="tab" data-pt="-1" aria-pressed="${k<0}"><i style="background:${mh}"></i>${mn}</button>${V.parts.map((p,i)=>`<button type="button" class="ptab" role="tab" data-pt="${i}" aria-pressed="${i===k}"><i style="background:${cur.pc[i]?COLORS[cur.pc[i]][1]:dot(p.orig)}"></i>${pname(i)}</button>`).join("")}</div>
-  ${k>=0?`<span class="lbl">${pname(k)}: <span id="pcname">${sel?COLORS[sel][0]:"اللون الأصلي"}</span></span><div class="sws"><button type="button" class="pcsame" data-pc="same" aria-pressed="${!sel&&!cur.pm[k]}">اللون الأصلي</button><button type="button" class="pcsame" data-pc="more" aria-pressed="${!!(sel||cur.pm[k])}">لون آخر</button></div>${sel||cur.pm[k]?`<div class="sws">${COLORS.map((c,i)=>c[1]&&!OUT.has(i)?`<button type="button" class="sw3" style="background:${c[1]}" aria-label="${c[0]}" aria-pressed="${i===sel}" data-pc="${i}"></button>`:"").join("")}</div>`:""}`:""}`;applyParts()}
+  <div class="ptabs" role="tablist"><button type="button" class="ptab" role="tab" data-pt="-2" aria-pressed="${k===-2}"><i style="background:conic-gradient(#e5484d,#f5c542,#46a758,#3e63dd,#e5484d)"></i>اللون الأساسي</button><button type="button" class="ptab" role="tab" data-pt="-1" aria-pressed="${k===-1}"><i style="background:${mh}"></i>${mn}</button>${V.parts.map((p,i)=>`<button type="button" class="ptab" role="tab" data-pt="${i}" aria-pressed="${i===k}"><i style="background:${cur.pc[i]?COLORS[cur.pc[i]][1]:dot(p.orig)}"></i>${pname(i)}</button>`).join("")}</div>
+  ${k===-2?`<small class="pnote">الألوان كما في الصورة الأساسية للمجسم. اختر أحد الأجزاء لتغيير لونه.</small>`:""}
+  ${k>=0?`<span class="lbl">${pname(k)}: <span id="pcname">${sel?COLORS[sel][0]:"اللون الأصلي"}</span></span><div class="sws">${COLORS.map((c,i)=>c[1]&&!OUT.has(i)?`<button type="button" class="sw3" style="background:${c[1]}" aria-label="${c[0]}" aria-pressed="${i===sel}" data-pc="${i}"></button>`:"").join("")}</div>`:""}`;applyParts()}
 function set3DShade(i){if(!cur||!COLORS[i]||!COLORS[i][1])return;cur.color2=i;const c=new THREE.Color(COLORS[i][1]).convertSRGBToLinear();(V.tint2||[]).forEach(mt=>mt.color.copy(c));document.querySelectorAll("#main .sw2").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.s===i));if($("#cname2"))$("#cname2").textContent=COLORS[i][0];setTimeout(sumUI,0)}
 function set3DColor(i){setTimeout(sumUI,0);if(!COLORS[i][1])return;
  const c=new THREE.Color(COLORS[i][1]).convertSRGBToLinear();(V.tint||[]).forEach(mt=>mt.color.copy(c));V.mainHex=COLORS[i][1];applyParts();
@@ -380,8 +381,8 @@ document.addEventListener("click",e=>{
  else if(t.dataset.del!==undefined){cart.splice(+t.dataset.del,1);cartUI();cartView()}
  else if(t.id==="copy"){navigator.clipboard.writeText(msg()).then(()=>{$("#toast").textContent="تم النسخ، الصقه في الخاص"}).catch(()=>{$("#toast").textContent=msg()})}
  else if(t.classList&&t.classList.contains("out")){toastMsg(COLORS[+(t.dataset.c||t.dataset.c3)][0]+" غير متوفر حالياً")}
- else if(cur&&t.dataset.pt!==undefined){cur.pt=+t.dataset.pt;partsUI()}
- else if(cur&&t.dataset.pc!==undefined){cur.pc=cur.pc||{};const k=cur.pt;if(k<0)return;cur.pm=cur.pm||{};if(t.dataset.pc==="same"){delete cur.pc[k];delete cur.pm[k]}else if(t.dataset.pc==="more")cur.pm[k]=1;else cur.pc[k]=+t.dataset.pc;partsUI();setTimeout(sumUI,0)}
+ else if(cur&&t.dataset.pt!==undefined){cur.pt=+t.dataset.pt;if(cur.pt===-2){cur.pc={};cur.pm={};const b0=document.querySelector("#main .sw[data-c=\"0\"]");if(b0)b0.click();set3DColor(MODELS[cur.it.id].def||1)}partsUI()}
+ else if(cur&&t.dataset.pc!==undefined){cur.pc=cur.pc||{};const k=cur.pt;if(k<0)return;cur.pc[k]=+t.dataset.pc;partsUI();setTimeout(sumUI,0)}
  else if(cur&&t.dataset.s!==undefined){set3DShade(+t.dataset.s);if(!V.on)toastMsg("لون الغطاء يظهر في المعاينة ثلاثية الأبعاد 🧊")}
  else if(cur&&t.dataset.c!==undefined&&V.on&&COLORS[+t.dataset.c][1]){set3DColor(+t.dataset.c)}
  else if(cur&&t.dataset.c!==undefined){cur.color=+t.dataset.c;document.querySelectorAll(".sw").forEach((b,i)=>b.setAttribute("aria-pressed",i===cur.color));$("#cname").textContent=COLORS[cur.color][0];paint();partsUI()}
