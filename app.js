@@ -331,7 +331,11 @@ function applyParts(){if(!cur||!V.parts||V.id!==cur.it.id)return;const pc=cur.pc
   if(hex){p.mat.color.copy(new THREE.Color(hex).convertSRGBToLinear());if(p.mat.vertexColors){p.mat.vertexColors=false;p.mat.needsUpdate=true}}
   else{p.mat.color.copy(p.orig);if(p.mat.vertexColors!==p.vc){p.mat.vertexColors=p.vc;p.mat.needsUpdate=true}}})}
 function partsUI(){const b=$("#partsBox"),mo=$("#mainOpt");if(!b)return;
- if(!cur||!V.parts||!V.parts.length||V.id!==cur.it.id){b.hidden=true;if(mo)mo.hidden=false;return}
+ if(!cur||!V.parts||V.id!==cur.it.id){b.hidden=true;if(mo)mo.hidden=false;return}
+ if(!V.parts.length){/* single-part model: base colour (photo look) or another colour (3D preview) */
+  const base=!cur.color,st=$("#v3dStage"),pv=$("#pv");if(mo)mo.hidden=base;b.hidden=false;
+  if(V.on){if(st)st.hidden=base;if(pv)pv.style.visibility=base?"":"hidden"}
+  b.innerHTML=`<div class="ptabs" role="tablist"><button type="button" class="ptab" role="tab" data-sp="base" aria-pressed="${base}"><i style="background:conic-gradient(#e5484d,#f5c542,#46a758,#3e63dd,#e5484d)"></i>اللون الأساسي</button><button type="button" class="ptab" role="tab" data-sp="other" aria-pressed="${!base}"><i style="background:${COLORS[cur.color||MODELS[cur.it.id].def||1][1]}"></i>لون آخر</button></div>${base?`<small class="pnote">الألوان كما في الصورة الأساسية للمجسم.</small>`:""}`;return}
  cur.pc=cur.pc||{};const n=V.parts.length;if(cur.pt===undefined||cur.pt>=n)cur.pt=-2;const k=cur.pt,sel=k>=0?(cur.pc[k]||0):0;
  const dot=c=>"#"+c.clone().convertLinearToSRGB().getHexString(),mn=MN[cur.it.id]||"الجسم",mh=COLORS[cur.color][1]||"#ddd";
  if(mo)mo.hidden=k!==-1;b.hidden=false;
@@ -343,7 +347,7 @@ function set3DShade(i){if(!cur||!COLORS[i]||!COLORS[i][1])return;cur.color2=i;co
 function set3DColor(i){setTimeout(sumUI,0);if(!COLORS[i][1])return;
  const c=new THREE.Color(COLORS[i][1]).convertSRGBToLinear();(V.tint||[]).forEach(mt=>mt.color.copy(c));V.mainHex=COLORS[i][1];applyParts();
  document.querySelectorAll("#v3dSws .sw").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.c3===i));$("#v3dCname")&&($("#v3dCname").textContent=COLORS[i][0]);
- if(cur){cur.color=i;document.querySelectorAll("#main .sw").forEach((b,j)=>b.setAttribute("aria-pressed",j===i));if($("#cname"))$("#cname").textContent=COLORS[i][0];paint();const s3=document.getElementById("v3dStage")&&!document.getElementById("v3dStage").hidden?document.getElementById("v3dStage"):document.getElementById("pv");if(s3){const r3=s3.getBoundingClientRect(),hd=70;if(r3.top<hd||r3.bottom>innerHeight)window.scrollBy({top:r3.top-hd,behavior:"smooth"})}}}
+ if(cur){cur.color=i;document.querySelectorAll("#main .sw").forEach((b,j)=>b.setAttribute("aria-pressed",j===i));if($("#cname"))$("#cname").textContent=COLORS[i][0];paint();partsUI();const s3=document.getElementById("v3dStage")&&!document.getElementById("v3dStage").hidden?document.getElementById("v3dStage"):document.getElementById("pv");if(s3){const r3=s3.getBoundingClientRect(),hd=70;if(r3.top<hd||r3.bottom>innerHeight)window.scrollBy({top:r3.top-hd,behavior:"smooth"})}}}
 function close3D(){V.on=false;const s=$("#v3dStage");if(s)s.hidden=true;const p=$("#pv");if(p)p.style.visibility="";const b=$("#v3dOpen");if(b){b.setAttribute("aria-pressed","false");b.innerHTML="<span>3D</span>"}}
 /* wholesale threshold by piece weight: <100 g → 12 pcs, ≥100 g → 6 pcs (unknown weight → 12) */
 const WQ=id=>{const it=ITEMS.find(i=>i.id===id);return it&&it.g>=100?6:12};
@@ -381,6 +385,7 @@ document.addEventListener("click",e=>{
  else if(t.dataset.del!==undefined){cart.splice(+t.dataset.del,1);cartUI();cartView()}
  else if(t.id==="copy"){navigator.clipboard.writeText(msg()).then(()=>{$("#toast").textContent="تم النسخ، الصقه في الخاص"}).catch(()=>{$("#toast").textContent=msg()})}
  else if(t.classList&&t.classList.contains("out")){toastMsg(COLORS[+(t.dataset.c||t.dataset.c3)][0]+" غير متوفر حالياً")}
+ else if(cur&&t.dataset.sp!==undefined){const m=MODELS[cur.it.id],c=t.dataset.sp==="base"?0:(cur.color||m.def||1),bt=document.querySelector(`#main .sw[data-c="${c}"]`);if(bt)bt.click();if(c)set3DColor(c);partsUI()}
  else if(cur&&t.dataset.pt!==undefined){cur.pt=+t.dataset.pt;if(cur.pt===-2){cur.pc={};cur.pm={};const b0=document.querySelector("#main .sw[data-c=\"0\"]");if(b0)b0.click();set3DColor(MODELS[cur.it.id].def||1)}partsUI()}
  else if(cur&&t.dataset.pc!==undefined){cur.pc=cur.pc||{};const k=cur.pt;if(k<0)return;cur.pc[k]=+t.dataset.pc;partsUI();setTimeout(sumUI,0)}
  else if(cur&&t.dataset.s!==undefined){set3DShade(+t.dataset.s);if(!V.on)toastMsg("لون الغطاء يظهر في المعاينة ثلاثية الأبعاد 🧊")}
