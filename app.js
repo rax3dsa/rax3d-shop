@@ -331,7 +331,7 @@ function applyParts(){if(!cur||!V.parts||V.id!==cur.it.id)return;const pc=cur.pc
   if(hex){p.mat.color.copy(new THREE.Color(hex).convertSRGBToLinear());if(p.mat.vertexColors){p.mat.vertexColors=false;p.mat.needsUpdate=true}}
   else{p.mat.color.copy(p.orig);if(p.mat.vertexColors!==p.vc){p.mat.vertexColors=p.vc;p.mat.needsUpdate=true}}})}
 function partsUI(){const b=$("#partsBox"),mo=$("#mainOpt");if(!b)return;
- if(!cur||!V.parts||V.id!==cur.it.id){b.hidden=true;if(mo)mo.hidden=false;return}
+ if(!cur||!V.parts||!V.parts.length||V.id!==cur.it.id){b.hidden=true;if(mo)mo.hidden=false;return}
  cur.pc=cur.pc||{};const n=V.parts.length;if(cur.pt===undefined||cur.pt>=n)cur.pt=-2;const k=cur.pt,sel=k>=0?(cur.pc[k]||0):0;
  const dot=c=>"#"+c.clone().convertLinearToSRGB().getHexString(),mn=MN[cur.it.id]||"الجسم",mh=COLORS[cur.color][1]||"#ddd";
  if(mo)mo.hidden=k!==-1;b.hidden=false;
