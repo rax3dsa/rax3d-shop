@@ -38,5 +38,7 @@ Do this in the same commit as the product. Never grow either list. Say in the re
 - After adding or editing a product run `python3 tools/seo-build.py` (regenerates sitemap.xml and the crawler `<noscript>` block in index.html).
 - Page titles come from `seoFor()` (`TI` category map); keep titles unique and <=70 chars.
 
-## Part colours
-- OWNER REMOVED all part-colour tabs and the photo/3D toggle (11-07): the colour UI is the original plain colour grid for every model. Do not re-add without the owner asking.
+## Part colours (owner-approved for 7 models ONLY, 11-07)
+- Only the ids in `PARTCOL` (app.js: pringles, chips, ttt, lampman, ltr, w1, clips) get the part-colour tabs ("اللون الأساسي" = photo look, then the main part, then each fixed part; names in `MN` + `PN`, named from the product photo). Every other model keeps the plain 13-colour grid + rotatable 3D. Do not extend `PARTCOL` unless the owner asks.
+- Part names must come from the photo (e.g. pringles: face & lettering / moustache & eyes). clips: second bowl is a split-out `keeps` part (blue).
+- Untested in a real browser: check tabs, base-colour look, cart text (AR + EN).
