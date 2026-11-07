@@ -346,6 +346,7 @@ function partsUI(){const b=$("#partsBox"),mo=$("#mainOpt");if(!b)return;
   ${k===-2?`<small class="pnote">الألوان كما في الصورة الأساسية للمجسم. اختر أحد الأجزاء لتغيير لونه.</small>`:""}
   ${k>=0?`<span class="lbl">${pname(k)}: <span id="pcname">${sel?COLORS[sel][0]:"اللون الأصلي"}</span></span><div class="sws">${COLORS.map((c,i)=>c[1]&&!OUT.has(i)?`<button type="button" class="sw3" style="background:${c[1]}" aria-label="${c[0]}" aria-pressed="${i===sel}" data-pc="${i}"></button>`:"").join("")}</div>`:""}`;applyParts()}
 function set3DShade(i){if(!cur||!COLORS[i]||!COLORS[i][1])return;cur.color2=i;const c=new THREE.Color(COLORS[i][1]).convertSRGBToLinear();(V.tint2||[]).forEach(mt=>mt.color.copy(c));document.querySelectorAll("#main .sw2").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.s===i));if($("#cname2"))$("#cname2").textContent=COLORS[i][0];setTimeout(sumUI,0)}
+function tintMain(i){if(!window.THREE||!COLORS[i]||!COLORS[i][1])return;const c=new THREE.Color(COLORS[i][1]).convertSRGBToLinear();(V.tint||[]).forEach(mt=>mt.color.copy(c));V.mainHex=COLORS[i][1];applyParts()} /* tint the 3D main mesh without touching cur.color (used by "اللون الأساسي") */
 function set3DColor(i){setTimeout(sumUI,0);if(!COLORS[i][1])return;
  const c=new THREE.Color(COLORS[i][1]).convertSRGBToLinear();(V.tint||[]).forEach(mt=>mt.color.copy(c));V.mainHex=COLORS[i][1];applyParts();
  document.querySelectorAll("#v3dSws .sw").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.c3===i));$("#v3dCname")&&($("#v3dCname").textContent=COLORS[i][0]);
@@ -387,8 +388,8 @@ document.addEventListener("click",e=>{
  else if(t.dataset.del!==undefined){cart.splice(+t.dataset.del,1);cartUI();cartView()}
  else if(t.id==="copy"){navigator.clipboard.writeText(msg()).then(()=>{$("#toast").textContent="تم النسخ، الصقه في الخاص"}).catch(()=>{$("#toast").textContent=msg()})}
  else if(t.classList&&t.classList.contains("out")){toastMsg(COLORS[+(t.dataset.c||t.dataset.c3)][0]+" غير متوفر حالياً")}
- else if(cur&&t.dataset.sp!==undefined){const m=MODELS[cur.it.id],c=t.dataset.sp==="base"?0:(cur.color||m.def||1),bt=document.querySelector(`#main .sw[data-c="${c}"]`);if(bt)bt.click();if(c)set3DColor(c);partsUI()}
- else if(cur&&t.dataset.pt!==undefined){cur.pt=+t.dataset.pt;if(cur.pt===-2){cur.pc={};cur.pm={};const b0=document.querySelector("#main .sw[data-c=\"0\"]");if(b0)b0.click();set3DColor(MODELS[cur.it.id].def||1)}partsUI()}
+ else if(cur&&t.dataset.sp!==undefined){const m=MODELS[cur.it.id],c=t.dataset.sp==="base"?0:(cur.color||m.def||1),bt=document.querySelector(`#main .sw[data-c="${c}"]`);if(bt)bt.click();if(c)set3DColor(c);else tintMain(m.def||1);partsUI()}
+ else if(cur&&t.dataset.pt!==undefined){cur.pt=+t.dataset.pt;if(cur.pt===-2){cur.pc={};cur.pm={};const b0=document.querySelector("#main .sw[data-c=\"0\"]");if(b0)b0.click();tintMain(MODELS[cur.it.id].def||1)}partsUI()}
  else if(cur&&t.dataset.pc!==undefined){cur.pc=cur.pc||{};const k=cur.pt;if(k<0)return;cur.pc[k]=+t.dataset.pc;partsUI();setTimeout(sumUI,0)}
  else if(cur&&t.dataset.s!==undefined){set3DShade(+t.dataset.s);if(!V.on)toastMsg("لون الغطاء يظهر في المعاينة ثلاثية الأبعاد 🧊")}
  else if(cur&&t.dataset.c!==undefined&&V.on&&COLORS[+t.dataset.c][1]){set3DColor(+t.dataset.c)}
