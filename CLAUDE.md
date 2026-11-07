@@ -43,3 +43,4 @@ Do this in the same commit as the product. Never grow either list. Say in the re
 - The lampman `shade` keeps its own separate "لون الغطاء العلوي" control.
 - Untested in a real browser so far: check the tabs, 3D preview, cart text (AR + EN) before relying on it.
 - Single-part models (e.g. d2 duck: one fused mesh, cannot be split) get two buttons: "اللون الأساسي" (3D stays visible and rotatable in the default colour, grid hidden; the real photo colours are applied by the owner at print time) and "لون آخر" (shows the 3D preview + the 13 colours). Colours are the customer's wish only; the owner applies them before printing, so never depend on the print file for this.
+- `FIXED_PARTS` (app.js): multi-part models whose fixed parts must NOT be recoloured (snoopy: Snoopy white and Woodstock yellow are fixed; only the lettering changes). They use the two-button UI (اللون الأساسي / لون آخر).
