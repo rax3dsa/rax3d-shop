@@ -331,9 +331,9 @@ function applyParts(){if(!cur||!V.parts||V.id!==cur.it.id)return;const pc=cur.pc
   if(hex){p.mat.color.copy(new THREE.Color(hex).convertSRGBToLinear());if(p.mat.vertexColors){p.mat.vertexColors=false;p.mat.needsUpdate=true}}
   else{p.mat.color.copy(p.orig);if(p.mat.vertexColors!==p.vc){p.mat.vertexColors=p.vc;p.mat.needsUpdate=true}}})}
 function partsUI(){const b=$("#partsBox"),mo=$("#mainOpt");if(!b)return;
- if(!cur||!V.parts||!V.parts.length||V.id!==cur.it.id){b.hidden=true;if(mo)mo.hidden=false;return}
+ if(!cur||!V.parts||V.id!==cur.it.id){b.hidden=true;if(mo)mo.hidden=false;return}
  cur.pc=cur.pc||{};const n=V.parts.length;if(cur.pt===undefined||cur.pt>=n)cur.pt=-2;const k=cur.pt,sel=k>=0?(cur.pc[k]||0):0;
- const dot=c=>"#"+c.clone().convertLinearToSRGB().getHexString(),mn=MN[cur.it.id]||"الأساسي",mh=COLORS[cur.color][1]||"#ddd";
+ const dot=c=>"#"+c.clone().convertLinearToSRGB().getHexString(),mn=MN[cur.it.id]||"الجسم",mh=COLORS[cur.color][1]||"#ddd";
  if(mo)mo.hidden=k!==-1;b.hidden=false;
  b.innerHTML=`<span class="lbl">اختر الجزء ثم لونه</span>
   <div class="ptabs" role="tablist"><button type="button" class="ptab" role="tab" data-pt="-2" aria-pressed="${k===-2}"><i style="background:conic-gradient(#e5484d,#f5c542,#46a758,#3e63dd,#e5484d)"></i>اللون الأساسي</button><button type="button" class="ptab" role="tab" data-pt="-1" aria-pressed="${k===-1}"><i style="background:${mh}"></i>${mn}</button>${V.parts.map((p,i)=>`<button type="button" class="ptab" role="tab" data-pt="${i}" aria-pressed="${i===k}"><i style="background:${cur.pc[i]?COLORS[cur.pc[i]][1]:dot(p.orig)}"></i>${pname(i)}</button>`).join("")}</div>
