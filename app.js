@@ -192,7 +192,7 @@ function editView(id){   /* customise page: preview (3D when available) + colour
    <p class="tip3d">${MODELS[it.id]?"🧊 لفّ القطعة بإصبعك وشوفها من كل جهة، واختر اللون من تحت ويتغير عليها مباشرة.":"🎨 اختر اللون من تحت ويتغير على الصورة مباشرة."}</p>
   ${MODELS[it.id]?`<div class="opt" id="partsBox" hidden></div>`:""}
   <div class="opt" id="mainOpt"><span class="lbl">اللون: <span id="cname">${COLORS[0][0]}</span></span><div class="sws">${COLORS.map((c,i)=>`<button type="button" class="sw ${c[1]?"":"orig"}${OUT.has(i)?" out":""}"${OUT.has(i)?` aria-disabled="true" title="${c[0]} — غير متوفر حالياً"`:""} style="${c[1]?"background:"+c[1]:""}" aria-label="${c[0]}" aria-pressed="${i===0}" data-c="${i}"></button>`).join("")}</div></div>${MODELS[it.id]&&MODELS[it.id].two?`
-  <div class="opt"><span class="lbl">لون الغطاء العلوي: <span id="cname2">${COLORS[2][0]}</span></span><div class="sws">${COLORS.map((c,i)=>c[1]&&!OUT.has(i)?`<button type="button" class="sw2" style="background:${c[1]}" aria-label="${c[0]}" aria-pressed="${i===2}" data-s="${i}"></button>`:"").join("")}</div></div>`:""}
+  <div class="opt"${PARTCOL.has(it.id)?" hidden":""}><span class="lbl">لون الغطاء العلوي: <span id="cname2">${COLORS[2][0]}</span></span><div class="sws">${COLORS.map((c,i)=>c[1]&&!OUT.has(i)?`<button type="button" class="sw2" style="background:${c[1]}" aria-label="${c[0]}" aria-pressed="${i===2}" data-s="${i}"></button>`:"").join("")}</div></div>`:""}
   <div class="dims"><div class="dims-hd"><b>تبي مقاس مختلف؟</b><label class="lock"><input type="checkbox" id="sizeOn"> تعديل المقاس</label></div>
    <div id="sizeBox" hidden>
     <div class="axes">${AX.map((a,i)=>`<label class="ax"><span class="k">${a[0]}</span><small>${a[1]} (مم)</small><input type="number" inputmode="decimal" min="1" max="${MAXD}" step="1" id="dim${i}" data-dim="${i}" value="${it.d?it.d[i]:""}" placeholder="مم"><span class="cm" id="cm${i}">${it.d?cm(it.d[i])+" سم":""}</span></label>`).join("")}</div>
@@ -278,7 +278,7 @@ function open3D_(){
    const keep=(m.keep||[]).some(k=>name.includes(k.toLowerCase()));
    const old=o.material&&o.material.color?o.material.color.clone():new THREE.Color(0xffffff);
    o.material=new THREE.MeshStandardMaterial({color:old,roughness:0.5,metalness:0.0,side:THREE.DoubleSide,vertexColors:!!(o.geometry.attributes.color&&keep)});
-   if(m.two&&name==="shade")V.tint2.push(o.material);else if(!keep)V.tint.push(o.material);if(keep&&!m.two)V.parts.push({mat:o.material,orig:old.clone(),vc:o.material.vertexColors})});
+   if(m.two&&name==="shade")V.tint2.push(o.material);else if(!keep)V.tint.push(o.material);if(keep&&!(m.two&&name==="shade"))V.parts.push({mat:o.material,orig:old.clone(),vc:o.material.vertexColors})});
   if(!V.tint.length)obj.traverse(o=>{if(o.isMesh)V.tint.push(o.material)});
   obj.rotation.x=m.up?0:-Math.PI/2;if(m.rotZ)obj.rotation.z=m.rotZ;/* print files are Z-up */
   const box=new THREE.Box3().setFromObject(obj),c=box.getCenter(new THREE.Vector3()),s=box.getSize(new THREE.Vector3());
@@ -319,9 +319,9 @@ function ringGrid(d){if(d.type==="mesh")return meshJson(d);const raw=atob(d.pos)
  for(let l=0;l<R-1;l++)for(let k=0;k<n;k++){const a=l*n+k,bb=l*n+(k+1)%n,c=a+n,e=bb+n;idx[o++]=a;idx[o++]=c;idx[o++]=bb;idx[o++]=bb;idx[o++]=c;idx[o++]=e}
  for(let k=0;k<n;k++){idx[o++]=cen;idx[o++]=k;idx[o++]=(k+1)%n}
  const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(pos,3));g.setIndex(new THREE.BufferAttribute(idx,1));return g}
-const PN={pringles:[["الوجه والكتابة","Face & lettering"],["الشارب والعيون","Moustache & eyes"]],chips:[["الكتابة","Text"]],ttt:[["العلامات (X و O)","Marks (X & O)"]],ltr:[["الاسم والقلوب والزهرة","Name, hearts & flower"]],w1:[["الكأس","Cup"]],clips:[["الصحن الثاني","Second bowl"]]};
+const PN={lampman:[["الغطاء العلوي","Top cover"]],pringles:[["الوجه والكتابة","Face & lettering"],["الشارب والعيون","Moustache & eyes"]],chips:[["الكتابة","Text"]],ttt:[["العلامات (X و O)","Marks (X & O)"]],ltr:[["الاسم والقلوب والزهرة","Name, hearts & flower"]],w1:[["الكأس","Cup"]],clips:[["الصحن الثاني","Second bowl"]]};
 const pname=(i,id)=>{const a=PN[id||cur.it.id];return a&&a[i]?a[i][0]:"الجزء "+(i+2)};
-const MN={pringles:"الجسم",chips:"الحامل",ttt:"اللوحة",ltr:"الحرف",w1:"المقبض",clips:"الصحن الأول"};
+const MN={lampman:"الجسم",pringles:"الجسم",chips:"الحامل",ttt:"اللوحة",ltr:"الحرف",w1:"المقبض",clips:"الصحن الأول"};
 const PNAMES=[...new Set(Object.values(PN).flat().map(x=>x[0]))];
 const partsTxt=()=>{const o=cur.pc||{},ks=Object.keys(o).filter(k=>o[k]);return ks.length?" · "+ks.map(k=>pname(+k)+": "+COLORS[o[k]][0]).join(" · "):""};
 const ctxt=()=>COLORS[cur.color][0]+(MODELS[cur.it.id]&&MODELS[cur.it.id].two?" · غطاء: "+COLORS[cur.color2][0]:"")+partsTxt();
@@ -331,7 +331,7 @@ function applyParts(){if(!cur||!V.parts||V.id!==cur.it.id)return;const pc=cur.pc
   if(hex){p.mat.color.copy(new THREE.Color(hex).convertSRGBToLinear());if(p.mat.vertexColors){p.mat.vertexColors=false;p.mat.needsUpdate=true}}
   else{p.mat.color.copy(p.orig);if(p.mat.vertexColors!==p.vc){p.mat.vertexColors=p.vc;p.mat.needsUpdate=true}}})}
 const FIXED_PARTS=new Set(["snoopy"]); /* parts that keep their colour; only the main mesh changes */
-const PARTCOL=new Set(["pringles","chips","ttt","ltr","w1","clips"]);
+const PARTCOL=new Set(["pringles","chips","ttt","lampman","ltr","w1","clips"]);
 function partsUI(){const b=$("#partsBox"),mo=$("#mainOpt");if(!b)return;
  if(!cur||!V.parts||V.id!==cur.it.id||!PARTCOL.has(cur.it.id)){b.hidden=true;if(mo)mo.hidden=false;const st0=$("#v3dStage"),pv0=$("#pv");if(V.on&&cur&&V.id===cur.it.id){if(st0)st0.hidden=false;if(pv0)pv0.style.visibility="hidden"}return}
 
@@ -392,8 +392,8 @@ document.addEventListener("click",e=>{
  else if(t.classList&&t.classList.contains("out")){toastMsg(COLORS[+(t.dataset.c||t.dataset.c3)][0]+" غير متوفر حالياً")}
  else if(cur&&t.dataset.sp==="3d"){cur.v3=!cur.v3;partsUI()}
  else if(cur&&t.dataset.sp!==undefined){cur.v3=false;const m=MODELS[cur.it.id],c=t.dataset.sp==="base"?0:(cur.color||m.def||1),bt=document.querySelector(`#main .sw[data-c="${c}"]`);if(bt)bt.click();if(c)set3DColor(c);else tintMain(m.def||1);partsUI()}
- else if(cur&&t.dataset.pt!==undefined){cur.pt=+t.dataset.pt;if(cur.pt===-2){cur.v3=false;cur.pc={};cur.pm={};const b0=document.querySelector("#main .sw[data-c=\"0\"]");if(b0)b0.click();tintMain(MODELS[cur.it.id].def||1)}partsUI()}
- else if(cur&&t.dataset.pc!==undefined){cur.pc=cur.pc||{};const k=cur.pt;if(k<0)return;cur.pc[k]=+t.dataset.pc;partsUI();setTimeout(sumUI,0)}
+ else if(cur&&t.dataset.pt!==undefined){cur.pt=+t.dataset.pt;if(cur.pt===-2){cur.v3=false;cur.pc={};cur.pm={};const b0=document.querySelector("#main .sw[data-c=\"0\"]");if(b0)b0.click();tintMain(MODELS[cur.it.id].def||1);if(cur.it.id==="lampman")set3DShade(2)}partsUI()}
+ else if(cur&&t.dataset.pc!==undefined){cur.pc=cur.pc||{};const k=cur.pt;if(k<0)return;cur.pc[k]=+t.dataset.pc;if(cur.it.id==="lampman")set3DShade(cur.pc[k]||2);partsUI();setTimeout(sumUI,0)}
  else if(cur&&t.dataset.s!==undefined){set3DShade(+t.dataset.s);if(!V.on)toastMsg("لون الغطاء يظهر في المعاينة ثلاثية الأبعاد 🧊")}
  else if(cur&&t.dataset.c!==undefined&&V.on&&COLORS[+t.dataset.c][1]){set3DColor(+t.dataset.c)}
  else if(cur&&t.dataset.c!==undefined){cur.color=+t.dataset.c;document.querySelectorAll(".sw").forEach((b,i)=>b.setAttribute("aria-pressed",i===cur.color));$("#cname").textContent=COLORS[cur.color][0];paint();partsUI()}
