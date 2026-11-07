@@ -39,6 +39,7 @@ Do this in the same commit as the product. Never grow either list. Say in the re
 - Page titles come from `seoFor()` (`TI` category map); keep titles unique and <=70 chars.
 
 ## Part colours (owner-approved for 7 models ONLY, 11-07)
-- Only the ids in `PARTCOL` (app.js: pringles, chips, ttt, lampman, ltr, w1, clips) get the part-colour tabs ("اللون الأساسي" = photo look, then the main part, then each fixed part; names in `MN` + `PN`, named from the product photo). Every other model keeps the plain 13-colour grid + rotatable 3D. Do not extend `PARTCOL` unless the owner asks.
+- Only the ids in `PARTCOL` (app.js: pringles, chips, ttt, ltr, w1, clips) get the part-colour tabs ("اللون الأساسي" = photo look, then the main part, then each fixed part; names in `MN` + `PN`, named from the product photo). Every other model keeps the plain 13-colour grid + rotatable 3D. Do not extend `PARTCOL` unless the owner asks.
 - Part names must come from the photo (e.g. pringles: face & lettering / moustache & eyes). clips: second bowl is a split-out `keeps` part (blue).
 - Untested in a real browser: check tabs, base-colour look, cart text (AR + EN).
+- lampman (`two` model): NO part tabs. Plain colour grid for the body + the separate "لون الغطاء العلوي" control; its cream bulb is hidden inside the shade, so it is not offered as a part.

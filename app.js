@@ -278,7 +278,7 @@ function open3D_(){
    const keep=(m.keep||[]).some(k=>name.includes(k.toLowerCase()));
    const old=o.material&&o.material.color?o.material.color.clone():new THREE.Color(0xffffff);
    o.material=new THREE.MeshStandardMaterial({color:old,roughness:0.5,metalness:0.0,side:THREE.DoubleSide,vertexColors:!!(o.geometry.attributes.color&&keep)});
-   if(m.two&&name==="shade")V.tint2.push(o.material);else if(!keep)V.tint.push(o.material);if(keep&&!(m.two&&name==="shade"))V.parts.push({mat:o.material,orig:old.clone(),vc:o.material.vertexColors})});
+   if(m.two&&name==="shade")V.tint2.push(o.material);else if(!keep)V.tint.push(o.material);if(keep&&!m.two)V.parts.push({mat:o.material,orig:old.clone(),vc:o.material.vertexColors})});
   if(!V.tint.length)obj.traverse(o=>{if(o.isMesh)V.tint.push(o.material)});
   obj.rotation.x=m.up?0:-Math.PI/2;if(m.rotZ)obj.rotation.z=m.rotZ;/* print files are Z-up */
   const box=new THREE.Box3().setFromObject(obj),c=box.getCenter(new THREE.Vector3()),s=box.getSize(new THREE.Vector3());
@@ -319,9 +319,9 @@ function ringGrid(d){if(d.type==="mesh")return meshJson(d);const raw=atob(d.pos)
  for(let l=0;l<R-1;l++)for(let k=0;k<n;k++){const a=l*n+k,bb=l*n+(k+1)%n,c=a+n,e=bb+n;idx[o++]=a;idx[o++]=c;idx[o++]=bb;idx[o++]=bb;idx[o++]=c;idx[o++]=e}
  for(let k=0;k<n;k++){idx[o++]=cen;idx[o++]=k;idx[o++]=(k+1)%n}
  const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(pos,3));g.setIndex(new THREE.BufferAttribute(idx,1));return g}
-const PN={pringles:[["الوجه والكتابة","Face & lettering"],["الشارب والعيون","Moustache & eyes"]],chips:[["الكتابة","Text"]],ttt:[["العلامات (X و O)","Marks (X & O)"]],lampman:[["اللمبة","Bulb"]],ltr:[["الاسم والقلوب والزهرة","Name, hearts & flower"]],w1:[["الكأس","Cup"]],clips:[["الصحن الثاني","Second bowl"]]};
+const PN={pringles:[["الوجه والكتابة","Face & lettering"],["الشارب والعيون","Moustache & eyes"]],chips:[["الكتابة","Text"]],ttt:[["العلامات (X و O)","Marks (X & O)"]],ltr:[["الاسم والقلوب والزهرة","Name, hearts & flower"]],w1:[["الكأس","Cup"]],clips:[["الصحن الثاني","Second bowl"]]};
 const pname=(i,id)=>{const a=PN[id||cur.it.id];return a&&a[i]?a[i][0]:"الجزء "+(i+2)};
-const MN={pringles:"الجسم",chips:"الحامل",ttt:"اللوحة",lampman:"الجسم",ltr:"الحرف",w1:"المقبض",clips:"الصحن الأول"};
+const MN={pringles:"الجسم",chips:"الحامل",ttt:"اللوحة",ltr:"الحرف",w1:"المقبض",clips:"الصحن الأول"};
 const PNAMES=[...new Set(Object.values(PN).flat().map(x=>x[0]))];
 const partsTxt=()=>{const o=cur.pc||{},ks=Object.keys(o).filter(k=>o[k]);return ks.length?" · "+ks.map(k=>pname(+k)+": "+COLORS[o[k]][0]).join(" · "):""};
 const ctxt=()=>COLORS[cur.color][0]+(MODELS[cur.it.id]&&MODELS[cur.it.id].two?" · غطاء: "+COLORS[cur.color2][0]:"")+partsTxt();
@@ -331,7 +331,7 @@ function applyParts(){if(!cur||!V.parts||V.id!==cur.it.id)return;const pc=cur.pc
   if(hex){p.mat.color.copy(new THREE.Color(hex).convertSRGBToLinear());if(p.mat.vertexColors){p.mat.vertexColors=false;p.mat.needsUpdate=true}}
   else{p.mat.color.copy(p.orig);if(p.mat.vertexColors!==p.vc){p.mat.vertexColors=p.vc;p.mat.needsUpdate=true}}})}
 const FIXED_PARTS=new Set(["snoopy"]); /* parts that keep their colour; only the main mesh changes */
-const PARTCOL=new Set(["pringles","chips","ttt","lampman","ltr","w1","clips"]);
+const PARTCOL=new Set(["pringles","chips","ttt","ltr","w1","clips"]);
 function partsUI(){const b=$("#partsBox"),mo=$("#mainOpt");if(!b)return;
  if(!cur||!V.parts||V.id!==cur.it.id||!PARTCOL.has(cur.it.id)){b.hidden=true;if(mo)mo.hidden=false;const st0=$("#v3dStage"),pv0=$("#pv");if(V.on&&cur&&V.id===cur.it.id){if(st0)st0.hidden=false;if(pv0)pv0.style.visibility="hidden"}return}
 
