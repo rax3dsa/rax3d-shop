@@ -252,6 +252,21 @@
       "n": "صندوق عدة هارلي (حامل أقلام)",
       "en": "Harley Toolbox (Pen Holder)",
       "g": 255
+    },
+    "hdtray": {
+      "n": "صينية هارلي لحفظ الأغراض",
+      "en": "Harley Catch-All Tray",
+      "g": 135
+    },
+    "hdbuddy": {
+      "n": "مجسم هارلي المتحرك",
+      "en": "Articulated Harley Buddy",
+      "g": 11
+    },
+    "hdtissue": {
+      "n": "غطاء مناديل هارلي",
+      "en": "Harley Tissue Box Cover",
+      "g": 190
     }
   },
   "colors": [
