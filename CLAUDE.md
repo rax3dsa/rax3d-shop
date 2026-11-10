@@ -22,6 +22,14 @@ Do this in the same commit as the product. Never grow either list. Say in the re
 - The owner may set a price by hand; then derive wholesale as about 78% of it.
 - No wholesale tier: set the wholesale number equal to the single price (`[106,106]`). The shop then hides the wholesale line and never applies a discount, and the worker still agrees. Used for pieces whose wholesale margin would be near zero (the Harley clock and toolbox).
 
+## Rule 3: no wholesale price when wholesale would lose money (approved by the owner, permanent)
+For every new or re-priced product, check the wholesale price before publishing:
+- Wholesale net = wholesale - (wholesale x 0.032 + 1.2) - cost (cost as in Pricing; use the estimate if the 3MF is not sliced).
+- If wholesale net is zero or negative (a loss), the wholesale price MUST equal the single price, e.g. `[106,106]`. The shop then hides the wholesale line and never discounts (WQ = Infinity), and the worker agrees. Never leave a loss-making wholesale price.
+- Also apply it when the owner asks for a price at which wholesale would lose money.
+- If wholesale net is positive but under about 10% of the wholesale price, keep it but warn the owner in the reply (it disappears with one failed print).
+- In the reply, state which products had their wholesale removed and why.
+
 ## 3D viewer rules (hard-won)
 - `models/*.json` = welded int16 positions (scale 0.01 mm, within +-327 mm), index arrays, optional `keeps` (fixed-colour parts). The main mesh follows the colour the customer picks.
 - MODELS needs `keep:["keep"]` when the model has `keeps`. `up:1` when the piece is already Y-up/face-forward, otherwise Z-up is rotated.
