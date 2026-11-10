@@ -180,7 +180,7 @@ function itemView(id){   /* the piece page: photo + details only. Editing happen
   <div class="dims"><div class="dims-hd"><b>المقاسات الأصلية</b><button type="button" class="help" id="helpBtn">مم ← سم؟</button></div>
    <div class="axes">${AX.map((a,i)=>`<div class="ax"><span class="k">${a[0]}</span><small>${a[1]}</small><span class="v">${it.d?it.d[i]+" مم":"—"}</span><span class="cm">${it.d?cm(it.d[i])+" سم":"يُضاف قريباً"}</span></div>`).join("")}</div>
    <div class="dims-row"><span>الوزن: ${it.g?`<span class="num">${it.g}</span> غرام`:"يُضاف قريباً"}</span><span>القسم: ${it.cat}</span></div></div>
-  <div class="price">${PRICE[it.id]?`<b>السعر: ${PRICE[it.id][0]} ريال</b>${OLD[it.id]?`<s class="old">${OLD[it.id]} ريال</s>`:""}<span>الجملة: ${PRICE[it.id][1]} ريال للحبة من ${WQ(it.id)} حبة</span>`:`<b>السعر بالخاص</b>`}</div>
+  <div class="price">${PRICE[it.id]?`<b>السعر: ${PRICE[it.id][0]} ريال</b>${OLD[it.id]?`<s class="old">${OLD[it.id]} ريال</s>`:""}${isFinite(WQ(it.id))?`<span>الجملة: ${PRICE[it.id][1]} ريال للحبة من ${WQ(it.id)} حبة</span>`:""}`:`<b>السعر بالخاص</b>`}</div>
   <p class="note">متوفرة بـ ${COLORS.length-1-OUT.size} لون، وتقدر تعدّل مقاسها حتى ${MAXD} مم.</p>
   ${it.vg?`<div class="vsel"><span class="lbl">${it.vt||"نوع التصميم"}</span><div class="vopts">${ITEMS.filter(x=>x.vg===it.vg).map(x=>`<button type="button" data-var="${x.id}" aria-pressed="${x.id===it.id}"><b>${x.vl}</b><small>${x.vs}</small><em>${PRICE[x.id]?SAR(PRICE[x.id][0]):""}</em></button>`).join("")}</div></div>`:""}
   <button type="button" class="btn gold" data-edit="${it.id}">${MODELS[it.id]?"🧊 خصّصها وشوفها ثلاثية الأبعاد":"🎨 اختر اللون والمقاس والعدد"}</button>`;
@@ -358,13 +358,14 @@ function set3DColor(i){setTimeout(sumUI,0);if(!COLORS[i][1])return;
  if(cur){cur.color=i;document.querySelectorAll("#main .sw").forEach((b,j)=>b.setAttribute("aria-pressed",j===i));if($("#cname"))$("#cname").textContent=COLORS[i][0];paint();partsUI();const s3=document.getElementById("v3dStage")&&!document.getElementById("v3dStage").hidden?document.getElementById("v3dStage"):document.getElementById("pv");if(s3){const r3=s3.getBoundingClientRect(),hd=70;if(r3.top<hd||r3.bottom>innerHeight)window.scrollBy({top:r3.top-hd,behavior:"smooth"})}}}
 function close3D(){V.on=false;const s=$("#v3dStage");if(s)s.hidden=true;const p=$("#pv");if(p)p.style.visibility="";const b=$("#v3dOpen");if(b){b.setAttribute("aria-pressed","false");b.innerHTML="<span>3D</span>"}}
 /* wholesale threshold by piece weight: <100 g → 12 pcs, ≥100 g → 6 pcs (unknown weight → 12) */
-const WQ=id=>{const it=ITEMS.find(i=>i.id===id);return it&&it.g>=100?6:12};
+/* a piece whose wholesale price equals its single price has no wholesale tier (WQ = Infinity: nothing is shown or applied) */
+const WQ=id=>{if(PRICE[id]&&PRICE[id][1]>=PRICE[id][0])return Infinity;const it=ITEMS.find(i=>i.id===id);return it&&it.g>=100?6:12};
 const isW=o=>o.qty>=WQ(o.id);
 const UP=(id,q)=>PRICE[id]?(q>=WQ(id)?PRICE[id][1]:PRICE[id][0]):0;
 const LT=o=>UP(o.id,o.qty)*o.qty;
 const SAR=n=>`${n} ريال`;
 const AR=n=>String(n);
-function qtyUI(){setTimeout(sumUI,0);const w=WQ(cur.it.id);$("#qv").textContent=cur.qty;const b=$("#qb");b.className="badge"+(cur.qty>=w?" on":"");b.textContent=cur.qty>=w?"سعر الجملة مفعّل لهذه القطعة ✓":`سعر الجملة من ${AR(w)} حبة من نفس القطعة (باقي ${w-cur.qty})`}
+function qtyUI(){setTimeout(sumUI,0);const w=WQ(cur.it.id);$("#qv").textContent=cur.qty;const b=$("#qb");if(!isFinite(w)){b.className="badge";b.textContent="";return}b.className="badge"+(cur.qty>=w?" on":"");b.textContent=cur.qty>=w?"سعر الجملة مفعّل لهذه القطعة ✓":`سعر الجملة من ${AR(w)} حبة من نفس القطعة (باقي ${w-cur.qty})`}
 function cartUI(){if(!cart.length)OREF="";$("#cartN").textContent=cart.reduce((a,o)=>a+o.qty,0);try{localStorage.setItem("rax3d_cart",JSON.stringify(cart))}catch(_){}}
 try{const s=JSON.parse(localStorage.getItem("rax3d_cart")||"[]");if(Array.isArray(s))s.forEach(o=>{if(o&&IMG[o.id]&&COLORS[o.ci]&&Number.isInteger(o.qty)&&o.qty>0&&o.qty<=9999&&cart.length<30)cart.push({id:o.id,name:String(o.name).slice(0,80),color:COLORS[o.ci][0],ci:o.ci,qty:o.qty,size:o.size||undefined,note:String(o.note||"").slice(0,200)})});if(cart.length)cartUI()}catch(_){}
 /* ---------- order code: short and easy to keep (e.g. RX-7KM3Q). The order details travel in the message text itself,
