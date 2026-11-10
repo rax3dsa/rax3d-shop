@@ -450,6 +450,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
 <script src="lib/ScrollTrigger.min.js"></script>
 <script src="lib/lenis.min.js"></script>
 <script type="text/plain" id="pdata">
+/* STANDING RULE (Nov 10 2026): if the wholesale price would cause a loss, set wholesale = single price ([p,p]); the shop then hides the wholesale line automatically (WQ=Infinity in app.js). */
 /* source of truth for prices and weights. Read by app.js and by the payment worker (worker/src/index.js); keep the two declarations below in exactly this shape. */
 const PRICE={"hdtool":[70,70],"hdclock":[106,106],"wilson":[163,128],"snoopy":[76,60],"pcorn":[83,66],"gmug":[86,68],"d2":[25,20],"drip":[43,34],"knobs":[12,10],"xkit":[145,113],"hood":[33,25],"kcm":[38,30],"ttt":[51,41],"fncs":[60,47],"fish":[131,102],"disney":[40,32],"crown":[91,71],"d5":[20,16],"d6":[28,21],"skel":[29,23],"lamp":[131,104],"lampman":[127,100],"cubea":[150,119],"cubeb":[199,156],"pmaskl":[180,141],"pmaskm":[145,113],"pmasks":[100,78],"ltr":[92,72],"w1":[34,27],"abst":[84,66],"chips":[28,22],"clips":[38,33],"ghost":[84,66],"ks1":[25,20],"ks2":[30,23],"ks3":[24,19],"monk":[84,66],"pringles":[33,28],"vase":[123,96],"vase2":[63,49],"vase3":[30,23],"w2":[40,32],"w3":[79,63],"w4":[25,20],"w5":[43,34]};
 const WEIGHT={
