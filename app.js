@@ -457,11 +457,7 @@ async function loadPts(){PTS=null;if(!CUST){paintPts();return}
  /* 1) the balance comes from the payment worker, which reads it from the private data repo (nothing public lists balances) */
  try{const r=await fetch(PAY.api+"/points",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phone:normPhone(CUST.p)})});
   const j=await r.json();if(j&&j.ok&&j.src==="private"){PTS=Math.max(0,+j.pts||0);paintPts();return}}catch(_){}
- /* 2) until the invoicing app has published points_private.json (or if the worker cannot be reached): the old hashed public file */
- if(window.crypto&&crypto.subtle){
-  try{const r=await fetch("points.json",{cache:"no-store"});if(!r.ok)throw 0;const j=await r.json();
-   const h=await ptsKey(CUST.p);
-   PTS=Math.max(0,+((j.p||{})[h])||0)}catch(_){PTS=null}}
+ /* worker unreachable or no private balance yet: show nothing (the public hashed file was removed) */
  paintPts()}
 function logoutAcc(){CUST=null;PTS=null;try{localStorage.removeItem("rax3d_cust")}catch(_){}$("#abg").hidden=true;render(false)}
 /* ---------- favourites (registered customers only, kept on the device under the customer's mobile) + share / copy link ---------- */
