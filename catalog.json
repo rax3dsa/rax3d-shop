@@ -242,6 +242,16 @@
       "n": "كوب ويلسون تيكي",
       "en": "Wilson Tiki Mug",
       "g": 230
+    },
+    "hdclock": {
+      "n": "ساعة هارلي ديفيدسون الجدارية",
+      "en": "Harley-Davidson Wall Clock",
+      "g": 280
+    },
+    "hdtool": {
+      "n": "صندوق عدة هارلي (حامل أقلام)",
+      "en": "Harley Toolbox (Pen Holder)",
+      "g": 255
     }
   },
   "colors": [
