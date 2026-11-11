@@ -132,6 +132,9 @@ html[lang=en] .promo .track{animation-name:slideL}
 .hero .shop{max-width:320px;width:100%;margin-top:8px}
 .reglink{background:none;border:0;color:var(--accent);font:inherit;font-size:13.5px;font-weight:600;text-decoration:underline;text-underline-offset:3px;padding:10px 8px;min-height:44px;cursor:pointer}
 .perks.out{margin:14px auto 0;text-align:center}
+.modes{border:0;padding:0;margin:10px 0 4px;display:grid;gap:8px;min-width:0}.modes legend{padding:0;margin-bottom:6px}
+.mode{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer;min-height:44px}.mode:has(input:checked){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
+.mode input{margin-top:3px;width:20px;height:20px;accent-color:var(--accent);flex:none}.mode .mt{font-weight:600}.mode .mf{display:block;color:var(--muted);font-size:12.5px}
 .dmsec{display:flex;flex-direction:column;gap:8px;margin-top:6px;padding-top:12px;border-top:1px dashed var(--line)}
 .delchk{display:flex;align-items:center;gap:8px;font-size:14px;min-height:44px;cursor:pointer}.delchk input{width:20px;height:20px;accent-color:var(--accent)}
 .pwrap,.pinfo,.pstage{display:flex;flex-direction:column;gap:16px;min-width:0}
@@ -366,6 +369,10 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
  <div id="payform">
   <label class="flab" for="payName">الاسم</label><input class="fin" id="payName" autocomplete="name" maxlength="40">
   <label class="flab" for="payPhone">رقم الجوال</label><input class="fin" id="payPhone" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="05xxxxxxxx" dir="ltr">
+  <fieldset class="modes" id="payModes" hidden><legend class="flab">طريقة الاستلام (إلزامي)</legend>
+   <label class="mode"><input type="radio" name="payMode" value="delivery"><span><span class="mt">🚚 توصيل</span><small class="mf" id="modeDelFee"></small></span></label>
+   <label class="mode"><input type="radio" name="payMode" value="pickup"><span><span class="mt">🏪 استلام مباشر</span><small class="mf">مجاني، نتفق معك على المكان والموعد</small></span></label>
+  </fieldset>
   <p class="total" id="paytot"></p><div class="dmsg" id="paymsg" aria-live="polite"></div>
   <button type="button" class="btn gold" id="paygo">متابعة للدفع</button>
  </div>
