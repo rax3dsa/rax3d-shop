@@ -142,6 +142,9 @@ html[lang=en] .promo .track{animation-name:slideL}
 .rcpt{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:4px 12px;margin:12px 0 10px}
 .rrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:14px}
 .rrow:last-child{border-bottom:0}.rrow span{color:var(--muted)}.rrow.tot b{color:var(--accent);font-size:16px}
+.steps3{list-style:none;counter-reset:st;margin:2px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.steps3 li{counter-increment:st;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;font-size:12.5px;line-height:1.35;color:var(--muted);padding:8px 4px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.steps3 li::before{content:counter(st);width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-fg);font-weight:700;font-size:12px;display:grid;place-items:center}
 .trust{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:13px;color:var(--muted)}
 @media (min-width:860px){.pwrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}.pwrap>.pic,.pwrap>.pstage{position:sticky;top:16px}}
 @media (max-width:430px){.top .nav,.top .menubtn,.top .langbtn,.top .cartbtn{position:relative}.top .nav::after,.top .menubtn::after,.top .langbtn::after,.top .cartbtn::after{content:"";position:absolute;inset:-5px -2px}}
