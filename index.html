@@ -200,7 +200,7 @@ h2{font-size:18px}
 .pic img{width:100%;height:auto;aspect-ratio:1;max-width:100%;object-fit:cover;border-radius:16px;display:block;background:var(--stage)}
 .pic canvas{width:100%;aspect-ratio:1;height:auto;border-radius:16px;display:block;background:var(--stage)}
 .hd{display:flex;flex-direction:column;gap:2px}
-.hd h2{font-size:21px}
+.hd h1,.hd h2{font-size:21px;margin:0}
 .use{font-size:13px;font-weight:600;color:var(--accent)}
 .pdesc{margin:8px 0 12px;font-size:14.5px;line-height:1.75;color:var(--fg)}
 .opt[hidden]{display:none}
@@ -291,8 +291,8 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
 .tip3d{font-size:13px;line-height:1.7;color:var(--muted);background:var(--surface);border:1px dashed var(--accent);border-radius:12px;padding:8px 12px;margin:0}
 .v3d-stage{position:relative;width:100%;aspect-ratio:1;max-height:62vh;background:radial-gradient(circle at 50% 40%,#fbf6ee,#e9dccb)}
 .v3d-stage canvas{width:100%!important;height:100%!important;display:block;touch-action:none}
-.v3d-msg{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:14px;text-align:center;padding:20px}
-.v3d-hint{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:12px;color:#7a6c5c;pointer-events:none}
+.v3d-msg{position:absolute;inset:0;display:grid;place-items:center;color:var(--fg);opacity:.85;font-size:14px;text-align:center;padding:20px}
+.v3d-hint{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:12px;color:var(--fg);opacity:.82;pointer-events:none}
 .v3d-ft{padding:12px 14px 14px;display:flex;flex-direction:column;gap:8px}
 .price{display:flex;flex-direction:column;gap:4px;margin:10px 0 4px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}.old{color:var(--muted);font-weight:500;text-decoration:line-through;text-decoration-thickness:2px;text-decoration-color:#d9534f;opacity:.8;margin-inline-end:6px}.price .old{font-size:1.05rem;order:-1}.price b{font-size:1.25rem;color:var(--accent)}.price span{font-size:.9rem;color:var(--muted)}.item .pr{display:block;font-style:normal;font-weight:700;color:var(--accent);margin-top:2px}.line .pr{font-style:normal;font-weight:700;color:var(--accent);white-space:nowrap;margin-inline:6px}#sumPrice{display:block;margin:6px 0;color:var(--accent);font-size:1.1rem}.total{font-weight:800;font-size:1.2rem;text-align:center;color:var(--accent);margin:8px 0}
 .ptsbox{margin:10px 0;padding:10px 12px;border:1px solid var(--gold,#c9a24b);border-radius:12px;font-weight:700;text-align:center}

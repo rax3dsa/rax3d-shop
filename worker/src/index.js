@@ -299,6 +299,11 @@ async function confirmCore(b, env, out, flag) {
     }
     if (p.status !== 'paid') return out({ ok: false, reason: 'unpaid', status: p.status });
     flag.paid = true;
+    // every refusal after this point happens AFTER the customer paid: always tell the owner, never fail silently
+    const refuse = async reason => {
+      try { await mail(env, '⚠️ دفعة مدفوعة ما انسجّل طلبها (' + reason + ')', `<p>العميل دفع لكن الطلب رُفض آليًا (<b>${esc(reason)}</b>). تواصل معه وراجع الدفعة، وإن لزم استردها من ميسر.</p><p>رقم الدفعة: <span dir="ltr">${esc(b.paymentId)}</span><br>المبلغ: ${p.amount / 100} ${esc(p.currency)}</p>`) } catch (_) {}
+      return out({ ok: false, reason, paid: true }, 400);
+    };
     const md = p.metadata || {};
     if (!/^RX-[A-Z0-9]{5}$/.test(b.ref || '')) b.ref = md.ref;
     if (!Array.isArray(b.cart) || !b.cart.length) {
@@ -306,13 +311,13 @@ async function confirmCore(b, env, out, flag) {
       b.cart = String(md.items || '').split(',').filter(Boolean).map(s => { const i = s.lastIndexOf('x'); return { id: s.slice(0, i), qty: +s.slice(i + 1), color: cols[s.slice(0, i)] || '' } });
     }
     const c = (b.customer && b.customer.name) ? b.customer : { name: md.name || '', phone: md.phone || '' };
-    if (!/^RX-[A-Z0-9]{5}$/.test(b.ref || '') || !Array.isArray(b.cart) || !b.cart.length || b.cart.length > 40) return out({ ok: false, reason: 'bad' }, 400);
+    if (!/^RX-[A-Z0-9]{5}$/.test(b.ref || '') || !Array.isArray(b.cart) || !b.cart.length || b.cart.length > 40) return refuse('bad');
 
     // 2) what the cart should cost, from the live site prices
     const pr = await prices(); let total = 0; const lines = [], rows = [];
     for (const o of b.cart) {
       const q = Math.floor(+o.qty), u = unit(pr, String(o.id), q);
-      if (!u || !(q >= 1 && q <= 500)) return out({ ok: false, reason: 'item' }, 400);
+      if (!u || !(q >= 1 && q <= 500)) return refuse('item');
       total += u * q; rows.push({ id: String(o.id), q, u, color: String(o.color || '').slice(0, 30) }); lines.push(`${esc(o.id)} × ${q} (${esc(String(o.color || '').slice(0, 30))}) = ${u * q} ريال`);
     }
     const mode = (p.metadata && p.metadata.mode === 'pickup') ? 'pickup' : 'delivery', ship = mode === 'pickup' ? 0 : SHIP_FEE;
