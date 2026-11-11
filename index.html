@@ -132,6 +132,11 @@ html[lang=en] .promo .track{animation-name:slideL}
 .hero .shop{max-width:320px;width:100%;margin-top:8px}
 .reglink{background:none;border:0;color:var(--accent);font:inherit;font-size:13.5px;font-weight:600;text-decoration:underline;text-underline-offset:3px;padding:10px 8px;min-height:44px;cursor:pointer}
 .perks.out{margin:14px auto 0;text-align:center}
+.pwrap,.pinfo,.pstage{display:flex;flex-direction:column;gap:16px;min-width:0}
+.pinfo .price{margin:0}.pinfo .acts{margin:0}
+.trust{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:13px;color:var(--muted)}
+@media (min-width:860px){.pwrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}.pwrap>.pic,.pwrap>.pstage{position:sticky;top:16px}}
+@media (max-width:430px){.top .nav,.top .menubtn,.top .langbtn,.top .cartbtn{position:relative}.top .nav::after,.top .menubtn::after,.top .langbtn::after,.top .cartbtn::after{content:"";position:absolute;inset:-5px -2px}}
 .price .shipn{margin-top:4px;padding-top:8px;border-top:1px dashed var(--line)}
 .perks{list-style:none;padding:0;margin:12px 0 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;max-width:520px}
 .perks li{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 6px;display:grid;gap:2px}
