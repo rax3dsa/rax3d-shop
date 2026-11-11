@@ -49,3 +49,7 @@ For every new or re-priced product, check the wholesale price before publishing:
 
 ## Part colours
 - OWNER CANCELLED part colouring (11-07): `PARTCOL` is empty, every model uses the plain 13-colour grid + rotatable 3D. Multi-part/lettering models show a hint (`#partHint`) telling the customer to mention different part/lettering colours in the "أخرى" box. Do not re-enable tabs unless the owner asks. clips is back to one mesh.
+
+## Owner decisions (do not re-open)
+- Branded-design pieces (Harley and similar) stay in the shop and in the home lists. The owner has decided this (confirmed 11-11); do not raise trademark concerns again or move/remove these pieces unless he asks.
+- Preparation time shown to customers: 2 to 7 days, and 5 to 14 days once a line reaches its wholesale quantity (item page, cart, receipt, "how to order", FAQ). Change all of them together.
