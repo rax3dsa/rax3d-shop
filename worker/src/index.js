@@ -94,11 +94,17 @@ function invoiceHtml(d) {
 }
 
 // Moyasar webhook (payment_refunded): a refunded payment cancels its invoice in the invoicing app
-async function hook(req, env, out) {
+async function hook(req, env, out, ctx) {
   let e; try { e = await req.json() } catch { return out({ ok: false }, 400) }
   if (env.WEBHOOK_SECRET && e.secret_token !== env.WEBHOOK_SECRET) return out({ ok: false }, 401);
-  if (!/refund/i.test(String(e.type || ''))) return out({ ok: true, ignored: true });
   const id = e.data && e.data.id;
+  // payment_paid: wait a little so the customer's own browser confirms first (it shows them the order number); the marker file makes this a no-op then
+  if (/^payment_paid$/i.test(String(e.type || '')) && /^[0-9a-f-]{36}$/i.test(id || '')) {
+    const late = (async () => { await sleep(12000); await confirm({ paymentId: id }, env, out) })().catch(() => {});
+    if (ctx && ctx.waitUntil) ctx.waitUntil(late); else await late;
+    return out({ ok: true, queued: true });
+  }
+  if (!/refund/i.test(String(e.type || ''))) return out({ ok: true, ignored: true });
   if (!/^[0-9a-f-]{36}$/i.test(id || '') || !env.GH_TOKEN || !env.GH_REPO) return out({ ok: true, ignored: true });
   const r = await fetch('https://api.moyasar.com/v1/payments/' + id, { headers: { Authorization: 'Basic ' + btoa(env.MOYASAR_SECRET + ':') } });
   if (!r.ok) return out({ ok: false, reason: 'lookup' }, 502);
@@ -150,7 +156,7 @@ async function cod(req, env, out) {
   const pr = await prices(); let sub = 0; const rows = [];
   for (const o of b.cart) {
     const q = Math.floor(+o.qty), u = unit(pr, String(o.id), q);
-    if (!u || q < 1 || q > 500) return out({ ok: false, reason: 'item' }, 400);
+    if (!u || !(q >= 1 && q <= 500)) return out({ ok: false, reason: 'item' }, 400);
     sub += u * q; rows.push({ id: String(o.id), q, u, color: String(o.color || '').slice(0, 30) });
   }
   const ship = SHIP_FEE, total = sub + ship;
@@ -177,8 +183,9 @@ async function cod(req, env, out) {
       }
       for (const [k, cap] of guards) if (cap > 0) await ghUpdate(env, 'online/' + k + '.json', { t: [] }, d => ({ t: [...(d.t || []).filter(t => now - t < 864e5), now] }), 'حد الطلبات');
       num = await reserveNumber(env);
+      // the marker is created first and acts as a lock: a second identical request (double tap) stops here instead of making a second invoice
+      if (!(await ghCreate(env, 'online/cod_' + b.ref + '.json', { num }, 'ربط الطلب ' + b.ref))) { const w = await ghRead(env, 'online/cod_' + b.ref + '.json'); return out({ ok: true, num: w ? w.data.num : num, dup: true }) }
       await ghCreate(env, 'online/ORD-' + num + '.json', { num, cod: true, ref: b.ref, total, customer: { name, phone, city, address }, cart: rows, at: new Date().toISOString() }, 'طلب دفع عند الاستلام ORD-' + num);
-      await ghCreate(env, 'online/cod_' + b.ref + '.json', { num }, 'ربط الطلب ' + b.ref);
       // the invoice already has its number, so it goes straight into the invoicing app's log (points included)
       const rec = { num, date: riyadhDay(), online: true, cod: true, payId: 'cod_' + b.ref, client: name, phone, code: b.ref,
         desc: rows.map(r => (nm0[r.id]?.n || r.id) + ' (' + r.q + ')').join(' ، '), qty: rows.reduce((a, r) => a + r.q, 0), disc: 0, total: sub, profit: 0, sugg: 0, sub,
@@ -199,7 +206,7 @@ async function cod(req, env, out) {
   return out({ ok: true, num, emailed: sent });
 }
 
-async function handle(req, env) {
+async function handle(req, env, ctx) {
   {
     // answer CORS for both the bare domain and www (the origin checks below already accept both)
     const og0 = req.headers.get('Origin'), allow = og0 === 'https://www.rax3d.com' ? og0 : SITE;
@@ -207,7 +214,7 @@ async function handle(req, env) {
     const out = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
     const path = new URL(req.url).pathname;
-    if (req.method === 'POST' && path === '/webhook') return hook(req, env, out);
+    if (req.method === 'POST' && path === '/webhook') return hook(req, env, out, ctx);
     if (req.method === 'POST' && path === '/cod') return cod(req, env, out);
     if (req.method === 'POST' && path === '/points') return points(req, env, out);
     if (req.method === 'GET' && path === '/config') return out({ ok: true, ship: SHIP_FEE });
@@ -215,7 +222,23 @@ async function handle(req, env) {
 
     { const og = req.headers.get('Origin'); if (og && og !== SITE && og !== 'https://www.rax3d.com') return out({ ok: false, reason: 'origin' }, 403) }
     let b; try { b = await req.json() } catch { return out({ ok: false, reason: 'bad' }, 400) }
-    if (!/^[0-9a-f-]{36}$/i.test(b.paymentId || '')) return out({ ok: false, reason: 'bad' }, 400);
+    return confirm(b, env, out);
+  }
+}
+
+// A payment that Moyasar says is paid must never vanish: if anything breaks after that point, the owner gets an email with the payment id.
+async function confirm(b, env, out) {
+  const flag = { paid: false };
+  try { return await confirmCore(b, env, out, flag) }
+  catch (e) {
+    if (!flag.paid) throw e;
+    try { await mail(env, '⚠️ دفعة مدفوعة تعذّر تأكيدها', `<p>العميل دفع لكن تعذّر تسجيل الطلب تلقائيًا. راجع الدفعة في لوحة ميسر وتواصل مع العميل.</p><p>رقم الدفعة: <span dir="ltr">${esc(b && b.paymentId)}</span><br>الخطأ: ${esc(String(e && e.message || e).slice(0, 200))}</p>`) } catch (_) {}
+    return out({ ok: false, reason: 'error', paid: true }, 500);
+  }
+}
+async function confirmCore(b, env, out, flag) {
+  {
+    if (!b || !/^[0-9a-f-]{36}$/i.test(b.paymentId || '')) return out({ ok: false, reason: 'bad' }, 400);
 
     // 1) what Moyasar says was paid (also carries the order details, so a confirm still works if the browser lost them)
     // Apple Pay / mada can still be "initiated" for a moment right after the sheet closes, so look again a few times
@@ -228,6 +251,7 @@ async function handle(req, env) {
       await sleep(1500);
     }
     if (p.status !== 'paid') return out({ ok: false, reason: 'unpaid', status: p.status });
+    flag.paid = true;
     const md = p.metadata || {};
     if (!/^RX-[A-Z0-9]{5}$/.test(b.ref || '')) b.ref = md.ref;
     if (!Array.isArray(b.cart) || !b.cart.length) {
@@ -241,7 +265,7 @@ async function handle(req, env) {
     const pr = await prices(); let total = 0; const lines = [], rows = [];
     for (const o of b.cart) {
       const q = Math.floor(+o.qty), u = unit(pr, String(o.id), q);
-      if (!u || q < 1 || q > 500) return out({ ok: false, reason: 'item' }, 400);
+      if (!u || !(q >= 1 && q <= 500)) return out({ ok: false, reason: 'item' }, 400);
       total += u * q; rows.push({ id: String(o.id), q, u, color: String(o.color || '').slice(0, 30) }); lines.push(`${esc(o.id)} × ${q} (${esc(String(o.color || '').slice(0, 30))}) = ${u * q} ريال`);
     }
     total += SHIP_FEE;
@@ -262,8 +286,9 @@ async function handle(req, env) {
         else {
           num = await reserveNumber(env);
           const order = { num, paymentId: b.paymentId, ref: b.ref, amount: p.amount / 100, currency: p.currency, method: p.source?.type || '', customer: { name: (c.name || '').slice(0, 60), phone: (c.phone || '').slice(0, 20), city: (c.city || '').slice(0, 40), address: (c.address || '').slice(0, 200) }, cart: b.cart.map(o => ({ id: String(o.id), qty: Math.floor(+o.qty), color: String(o.color || '').slice(0, 30) })), at: new Date().toISOString() };
+          // the payment marker is created first and acts as a lock: a second confirm for the same payment (double tap, or the paid webhook) stops here
+          if (!(await ghCreate(env, 'online/pay_' + b.paymentId + '.json', { num }, 'ربط الدفعة بالطلب ORD-' + num))) { const w = await ghRead(env, 'online/pay_' + b.paymentId + '.json'); return out({ ok: true, num: w ? w.data.num : null, dup: true }) }
           await ghCreate(env, 'online/ORD-' + num + '.json', order, 'طلب مدفوع ORD-' + num);
-          await ghCreate(env, 'online/pay_' + b.paymentId + '.json', { num }, 'ربط الدفعة بالطلب ORD-' + num);
           // the invoice itself goes to the same shared inbox the data-entry phone uses; the app imports it into its log
           const nm0 = await names(), itemsT = total - (SHIP_FEE);
           const rec = { num, date: riyadhDay(), online: true, payId: b.paymentId, client: (c.name || '').slice(0, 60), phone: (c.phone || '').slice(0, 20), code: b.ref,
@@ -291,8 +316,8 @@ async function handle(req, env) {
 
 // any unexpected exception still answers with JSON + CORS, so the page can show its "contact us with your payment number" message
 export default {
-  async fetch(req, env) {
-    try { return await handle(req, env) }
+  async fetch(req, env, ctx) {
+    try { return await handle(req, env, ctx) }
     catch (e) {
       return new Response(JSON.stringify({ ok: false, reason: 'error' }), { status: 500, headers: { 'Access-Control-Allow-Origin': SITE, 'Content-Type': 'application/json', 'Vary': 'Origin' } });
     }
