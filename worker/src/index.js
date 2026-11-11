@@ -27,6 +27,18 @@ async function mail(env, subject, html) {
 }
 
 
+// ---- Cloudflare Turnstile (bot check) for the two public endpoints that can be abused: /cod (fake orders) and /points (balance look-ups).
+// Active only when TURNSTILE_SECRET is set (and TURNSTILE_SITEKEY, which /config hands to the page); otherwise nothing changes.
+async function turnstileOk(env, token, ip) {
+  if (!env.TURNSTILE_SECRET) return true;
+  if (typeof token !== 'string' || !token || token.length > 2048) return false;
+  try {
+    const fd = new FormData(); fd.append('secret', env.TURNSTILE_SECRET); fd.append('response', token); if (ip) fd.append('remoteip', ip);
+    const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body: fd });
+    const j = await r.json(); return !!(j && j.success);
+  } catch (_) { return false }
+}
+
 // ---- invoice numbering (shares counter.json with the invoicing app in the private data repo) ----
 const b64e = s => { const b = new TextEncoder().encode(s); let o = ''; for (let i = 0; i < b.length; i += 0x8000) o += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(o) };
 const b64d = s => new TextDecoder().decode(Uint8Array.from(atob(String(s).replace(/\s/g, '')), c => c.charCodeAt(0)));
@@ -156,14 +168,15 @@ async function hook(req, env, out, ctx) {
 // so no file with everybody's balances has to be public. Answers: {ok, src:'private', pts} | {ok, src:'none'} (file not published yet) | {ok:false}.
 const normPhone = v => { let d = String(v || '').replace(/[٠-٩]/g, c => '٠١٢٣٤٥٦٧٨٩'.indexOf(c)).replace(/\D/g, ''); if (d.startsWith('00966')) d = d.slice(5); else if (d.startsWith('966')) d = d.slice(3); if (d.length === 9 && d[0] === '5') d = '0' + d; return d };
 let PCACHE = { t: 0, d: null };      // per-isolate copy, refreshed at most once a minute
-const PRL = new Map();               // best-effort per-IP limit (30 lookups a minute) against walking through phone numbers
+const PRL = new Map();               // best-effort per-IP limit (12 lookups a minute) against walking through phone numbers
 async function points(req, env, out) {
   { const og = req.headers.get('Origin'); if (og && og !== SITE && og !== 'https://www.rax3d.com') return out({ ok: false, reason: 'origin' }, 403) }
   const ip = req.headers.get('CF-Connecting-IP') || '', now = Date.now();
-  if (ip) { const a = (PRL.get(ip) || []).filter(t => now - t < 60000); if (a.length >= 30) return out({ ok: false, reason: 'limit' }, 429); a.push(now); PRL.set(ip, a); if (PRL.size > 5000) PRL.clear() }
+  if (ip) { const a = (PRL.get(ip) || []).filter(t => now - t < 60000); if (a.length >= 12) return out({ ok: false, reason: 'limit' }, 429); a.push(now); PRL.set(ip, a); if (PRL.size > 5000) PRL.clear() }
   let b; try { b = await req.json() } catch { return out({ ok: false, reason: 'bad' }, 400) }
   const ph = normPhone(b && b.phone);
   if (!/^05\d{8}$/.test(ph)) return out({ ok: false, reason: 'bad' }, 400);
+  if (!(await turnstileOk(env, b && b.ts, ip))) return out({ ok: false, reason: 'captcha' }, 403);
   if (!env.GH_TOKEN || !env.GH_REPO) return out({ ok: true, src: 'none' });
   if (now - PCACHE.t > 60000) {
     try { const f = await ghRead(env, 'points_private.json'); PCACHE = { t: now, d: f ? f.data : null } }
@@ -182,6 +195,7 @@ async function cod(req, env, out) {
   if (!/^RX-[A-Z0-9]{5}$/.test(b.ref || '') || !Array.isArray(b.cart) || !b.cart.length || b.cart.length > 40) return out({ ok: false, reason: 'bad' }, 400);
   { const og = req.headers.get('Origin'); if (og && og !== SITE && og !== 'https://www.rax3d.com') return out({ ok: false, reason: 'origin' }, 403) }
   if (name.length < 2 || !/^(05\d{8}|\+?9665\d{8})$/.test(phone)) return out({ ok: false, reason: 'fields' }, 400);
+  if (!(await turnstileOk(env, b.ts, req.headers.get('CF-Connecting-IP') || ''))) return out({ ok: false, reason: 'captcha' }, 403);
   const pr = await prices(); let sub = 0; const rows = [];
   for (const o of b.cart) {
     const q = Math.floor(+o.qty), u = unit(pr, String(o.id), q);
@@ -264,7 +278,7 @@ async function handle(req, env, ctx) {
     if (req.method === 'POST' && path === '/webhook') return hook(req, env, out, ctx);
     if (req.method === 'POST' && path === '/cod') return cod(req, env, out);
     if (req.method === 'POST' && path === '/points') return points(req, env, out);
-    if (req.method === 'GET' && path === '/config') return out({ ok: true, ship: SHIP_FEE, codShip: COD_SHIP_FEE, modes: true });
+    if (req.method === 'GET' && path === '/config') return out({ ok: true, ship: SHIP_FEE, codShip: COD_SHIP_FEE, modes: true, turnstile: (env.TURNSTILE_SECRET && env.TURNSTILE_SITEKEY) ? String(env.TURNSTILE_SITEKEY) : null });
     if (req.method !== 'POST' || path !== '/confirm') return out({ ok: false }, 404);
 
     { const og = req.headers.get('Origin'); if (og && og !== SITE && og !== 'https://www.rax3d.com') return out({ ok: false, reason: 'origin' }, 403) }
