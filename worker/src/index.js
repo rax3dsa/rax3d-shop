@@ -4,6 +4,8 @@
 const SITE = 'https://rax3d.com';
 // delivery fee added to every online and cash-on-delivery order (riyals). The site reads it from GET /config so both always agree.
 const SHIP_FEE = 25;
+// cash on delivery is a direct handover (no delivery), so it carries no delivery fee. The site reads it from GET /config (codShip).
+const COD_SHIP_FEE = 0;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 async function prices() {
@@ -172,7 +174,7 @@ async function cod(req, env, out) {
     if (!u || !(q >= 1 && q <= 500)) return out({ ok: false, reason: 'item' }, 400);
     sub += u * q; rows.push({ id: String(o.id), q, u, color: String(o.color || '').slice(0, 30) });
   }
-  const ship = SHIP_FEE, total = sub + ship;
+  const ship = COD_SHIP_FEE, total = sub + ship;
   // unpaid COD orders earn loyalty points at once, so one fake order of 40 items x 500 pcs could mint huge points.
   // Cap the COD order value (COD_MAX riyals, default 1500, 0 = no cap); bigger orders pay online or go by DM.
   const codMax = env.COD_MAX === undefined ? 1500 : +env.COD_MAX;
@@ -213,7 +215,7 @@ async function cod(req, env, out) {
     ...rows.map(r => `\n* القطعة: ${r.name}\n* اللون: ${r.color || 'كما بالصورة'}\n* الكمية: ${r.q}`)].join('\n');
   const html = `<p style="font-size:16px"><b>🚚 طلب جديد بالدفع عند الاستلام ${esc(label)}</b><br>الطلب غير مدفوع، تحصّل ${total} ريال عند التسليم. ${logFail ? '⚠️ تعذّر إضافته تلقائيًا لبرنامج الفواتير، الصق الرسالة أسفل في «استيراد الطلب».' : 'الفاتورة انسجلت تلقائيًا في برنامج الفواتير (بنقاط الولاء) أول ما تفتحه. إذا انلغى الطلب ألغ الفاتورة من التطبيق.'}</p>`
     + invoiceHtml({ label, date: riyadhDay(), name, phone, rows, sub, ship, total, cod: true })
-    + `<p>الجوال: <span dir="ltr">${esc(phone)}</span></p><p>العنوان يُتفق عليه بالتواصل مع العميل.</p>`
+    + `<p>الجوال: <span dir="ltr">${esc(phone)}</span></p><p>الاستلام مباشر: المكان والموعد يُتفق عليهما بالتواصل مع العميل.</p>`
     + `<p>للتسجيل في التطبيق بنفس الرقم، الصق هذه الرسالة في «استيراد الطلب»:</p><pre style="background:#f4f1ea;padding:10px;border-radius:8px;white-space:pre-wrap">${esc(msg)}</pre>`;
   const sent = await mail(env, '🚚 طلب دفع عند الاستلام ' + label, html);
   return out({ ok: true, num, emailed: sent });
@@ -230,7 +232,7 @@ async function handle(req, env, ctx) {
     if (req.method === 'POST' && path === '/webhook') return hook(req, env, out, ctx);
     if (req.method === 'POST' && path === '/cod') return cod(req, env, out);
     if (req.method === 'POST' && path === '/points') return points(req, env, out);
-    if (req.method === 'GET' && path === '/config') return out({ ok: true, ship: SHIP_FEE });
+    if (req.method === 'GET' && path === '/config') return out({ ok: true, ship: SHIP_FEE, codShip: COD_SHIP_FEE });
     if (req.method !== 'POST' || path !== '/confirm') return out({ ok: false }, 404);
 
     { const og = req.headers.get('Origin'); if (og && og !== SITE && og !== 'https://www.rax3d.com') return out({ ok: false, reason: 'origin' }, 403) }
