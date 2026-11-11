@@ -94,8 +94,21 @@ function invoiceHtml(d) {
 }
 
 // Moyasar webhook (payment_refunded): a refunded payment cancels its invoice in the invoicing app
+// Moyasar dashboard "Verify Webhook": Moyasar POSTs a webhook_verification event whose data.verification_code (6 digits, valid 30 minutes)
+// must be typed into the dashboard. The code is mailed to the owner. It is handled before the secret check because that event may not carry the
+// secret; only 6 digits are ever mailed, and at most 5 mails an hour per isolate, so it cannot be used to flood the inbox.
+let VRL = [];
 async function hook(req, env, out, ctx) {
   let e; try { e = await req.json() } catch { return out({ ok: false }, 400) }
+  if (e && e.type === 'webhook_verification') {
+    const code = String((e.data && e.data.verification_code) || '');
+    if (!/^\d{6}$/.test(code)) return out({ ok: true, ignored: true });
+    const now = Date.now(); VRL = VRL.filter(t => now - t < 3600e3);
+    if (VRL.length >= 5) return out({ ok: false, reason: 'limit' }, 429);
+    VRL.push(now);
+    await mail(env, '🔑 رمز تحقق Webhook ميسر: ' + code, `<p style="font-size:22px">رمز التحقق: <b dir="ltr">${code}</b></p><p>اكتبه في نافذة «Verify Webhook» في لوحة ميسر. صالح 30 دقيقة.</p>`);
+    return out({ ok: true });
+  }
   if (env.WEBHOOK_SECRET && e.secret_token !== env.WEBHOOK_SECRET) return out({ ok: false }, 401);
   const id = e.data && e.data.id;
   // payment_paid: wait a little so the customer's own browser confirms first (it shows them the order number); the marker file makes this a no-op then
