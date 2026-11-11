@@ -384,8 +384,9 @@ const LT=o=>UP(o.id,o.qty)*o.qty;
 const SAR=n=>`${n} ريال`;
 const AR=n=>String(n);
 function qtyUI(){setTimeout(sumUI,0);const w=WQ(cur.it.id);$("#qv").textContent=cur.qty;const b=$("#qb");if(!isFinite(w)){b.className="badge";b.textContent="";return}b.className="badge"+(cur.qty>=w?" on":"");b.textContent=cur.qty>=w?"سعر الجملة مفعّل لهذه القطعة ✓":`سعر الجملة من ${AR(w)} حبة من نفس القطعة (باقي ${w-cur.qty})`}
+function addLine(o){const ex=cart.find(x=>x.id===o.id&&x.ci===o.ci&&(x.size||"")===(o.size||"")&&(x.note||"")===(o.note||""));if(ex){ex.qty=Math.min(999,ex.qty+o.qty);return ex}cart.push(o);return o}   /* identical lines are merged so the wholesale quantity counts the total */
 function cartUI(){if(!cart.length)OREF="";$("#cartN").textContent=cart.reduce((a,o)=>a+o.qty,0);try{localStorage.setItem("rax3d_cart",JSON.stringify(cart))}catch(_){}}
-try{const s=JSON.parse(localStorage.getItem("rax3d_cart")||"[]");if(Array.isArray(s))s.forEach(o=>{if(o&&IMG[o.id]&&COLORS[o.ci]&&Number.isInteger(o.qty)&&o.qty>0&&o.qty<=9999&&cart.length<30)cart.push({id:o.id,name:String(o.name).slice(0,80),color:COLORS[o.ci][0],ci:o.ci,qty:o.qty,size:o.size||undefined,note:String(o.note||"").slice(0,200)})});if(cart.length)cartUI()}catch(_){}
+try{const s=JSON.parse(localStorage.getItem("rax3d_cart")||"[]");if(Array.isArray(s))s.forEach(o=>{if(o&&IMG[o.id]&&COLORS[o.ci]&&Number.isInteger(o.qty)&&o.qty>0&&o.qty<=9999&&cart.length<30)addLine({id:o.id,name:String(o.name).slice(0,80),color:COLORS[o.ci][0],ci:o.ci,qty:o.qty,size:o.size||undefined,note:String(o.note||"").slice(0,200)})});if(cart.length)cartUI()}catch(_){}
 /* ---------- order code: short and easy to keep (e.g. RX-7KM3Q). The order details travel in the message text itself,
    which the invoicing app reads when the whole message is pasted. Same code for the whole cart. ---------- */
 let OREF="";
@@ -432,9 +433,11 @@ document.addEventListener("click",e=>{
  else if(cur&&t.hasAttribute("data-add")){
   if(cur.sizeOn&&!dimsValid()){$("#dmsg").className="dmsg err";$("#dmsg").textContent="عدّل المقاس: كل محور من 1 إلى "+MAXD+" مم.";$("#sizeBox").scrollIntoView({behavior:"smooth",block:"center"});return}
   const sz=cur.sizeOn?cur.dim.map(v=>fmt(v)).join(" × "):"";
-  if(cart.length>=40){toastMsg("السلة وصلت الحد الأقصى 40 سطرًا، أرسل الطلب بالخاص");return}
-  cart.push({id:cur.it.id,name:cur.it.name+(cur.it.vl?` (${cur.it.vl})`:""),color:ctxt(),ci:cur.color,qty:cur.qty,size:sz,note:cur.other?cur.note.trim():""});cartUI();
-  const a=document.createElement("div");a.className="added";a.textContent="أُضيفت للطلب ✓";document.body.appendChild(a);setTimeout(()=>a.remove(),1400)}
+  const line={id:cur.it.id,name:cur.it.name+(cur.it.vl?` (${cur.it.vl})`:""),color:ctxt(),ci:cur.color,qty:cur.qty,size:sz,note:cur.other?cur.note.trim():""};
+  const same=cart.some(x=>x.id===line.id&&x.ci===line.ci&&(x.size||"")===(line.size||"")&&(x.note||"")===(line.note||""));
+  if(!same&&cart.length>=40){toastMsg("السلة وصلت الحد الأقصى 40 سطرًا، أرسل الطلب بالخاص");return}
+  const L=addLine(line);cartUI();
+  const a=document.createElement("div");a.className="added";a.textContent=L.qty>line.qty?"أُضيفت لنفس القطعة في طلبك: الكمية الآن "+L.qty+(L.qty>=WQ(L.id)?" ✓ سعر الجملة":""):"أُضيفت للطلب ✓";document.body.appendChild(a);setTimeout(()=>a.remove(),L.qty>line.qty?2600:1400)}
 });
 document.addEventListener("click",e=>{const a=e.target.closest("a.dm,#chat");if(!a||!cart.length)return;
  try{navigator.clipboard.writeText(msg()).catch(()=>{})}catch(_){} });
@@ -654,6 +657,7 @@ const MNE={"الكرة":"Ball","الجسم":"Body","القاعدة":"Base","ال
 const WH={"على الشاشة الرئيسية لجوالك":"on your phone's home screen","في الـ Dock وفي مجلد التطبيقات":"in the Dock and the Applications folder","على سطح المكتب وفي قائمة ابدأ":"on the desktop and in the Start menu","بين تطبيقات جهازك":"among your device's apps"};
 const tw=s=>WH[s]||s;
 const RX=[
+ [/^أُضيفت لنفس القطعة في طلبك: الكمية الآن (\d+)( ✓ سعر الجملة)?$/,(m,a,c)=>"Added to the same piece in your order: quantity is now "+a+(c?" ✓ wholesale price":"")],
  [/^رسوم (\d+) ريال$/,"$1 SAR fee"],
  [/^المجموع قبل التوصيل: (\d+) ريال$/,"Subtotal before delivery: $1 SAR"],
  [/^(.*) \(استلام مباشر\)$/,(m,a)=>tr(a)+" (direct pickup)"],
