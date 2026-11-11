@@ -65,6 +65,19 @@ const riyadhDay = () => new Date(Date.now() + 3 * 3600 * 1000).toISOString().sli
 async function names() { try { const j = await (await fetch(SITE + '/catalog.json', { cf: { cacheTtl: 60 } })).json(); return j.items || {} } catch { return {} } }
 
 
+// ---- bank transfer details on the invoice copy: same source the invoicing app uses (settings in shared.json of the private data repo) and the same IBAN rule ----
+function ibanOk(v) { v = String(v || '').replace(/\s+/g, '').toUpperCase(); if (!/^SA\d{22}$/.test(v)) return false; const r = v.slice(4) + v.slice(0, 4); let m = 0; for (const ch of r) m = (m * (/\d/.test(ch) ? 10 : 100) + (/\d/.test(ch) ? +ch : ch.charCodeAt(0) - 55)) % 97; return m === 1 }
+let BCACHE = { t: 0, d: null };      // per-isolate copy, refreshed at most every 5 minutes
+async function bankInfo(env) {
+  if (!env.GH_TOKEN || !env.GH_REPO) return null;
+  const now = Date.now(); if (BCACHE.t && now - BCACHE.t < 300000) return BCACHE.d;
+  try {
+    const f = await ghRead(env, 'shared.json'), st = (f && f.data && f.data.settings) || {}, iban = String(st.bankIban || '').replace(/\s+/g, '').toUpperCase();
+    BCACHE = { t: now, d: ibanOk(iban) ? { bank: String(st.bankName || '').slice(0, 80), holder: String(st.bankHolder || '').slice(0, 80), iban } : null };
+  } catch (e) { if (!BCACHE.t) return null }   // keep the last copy if GitHub hiccups
+  return BCACHE.d;
+}
+
 // ---- the invoice copy in the same look as the invoicing app (gold / cream, RTL) ----
 function invoiceHtml(d) {
   const G = '#B8902A', GL = '#E0B64A', CR = '#FBF5E6', LN = '#D9D2C0', money = v => (Math.round(v * 100) / 100) + ' ر.س';
@@ -73,6 +86,7 @@ function invoiceHtml(d) {
   const lab = s => `<td style="background:#F1ECE0;border:1px solid ${LN};padding:9px 10px;font-weight:bold;width:28%">${s}</td>`;
   const body = d.rows.map((r, i) => `<tr style="background:${i % 2 ? CR : '#fff'}">${td(i + 1, 'text-align:center;color:#888')}${td(esc(r.name) + (r.color ? ` <span style="color:#888">(${esc(r.color)})</span>` : ''))}${td(r.q, 'text-align:center')}${td(money(r.u), 'text-align:center')}${td(money(r.u * r.q), 'text-align:center')}</tr>`).join('');
   const ship = d.ship ? `<tr>${lab('التوصيل')}${td(money(d.ship), 'text-align:center')}</tr>` : '';
+  const bk = d.bank, bank = bk ? `<div style="margin:16px 18px 0;border:1px solid ${G};padding:10px 12px"><b style="color:${G};font-size:14px">بيانات التحويل البنكي</b><table style="width:100%;margin-top:8px;border-collapse:collapse;font-size:14px"><tr>${lab('البنك')}${td(esc(bk.bank || 'مصرف الراجحي'))}</tr>${bk.holder ? `<tr>${lab('اسم المستفيد')}${td(esc(bk.holder))}</tr>` : ''}<tr>${lab('رقم الآيبان (IBAN)')}${td(`<b dir="ltr" style="letter-spacing:1px;font-size:15px">${esc(bk.iban.replace(/(.{4})/g, '$1 ').trim())}</b>`, 'text-align:left')}</tr></table></div>` : '';
   return `<div dir="rtl" style="max-width:640px;margin:auto;background:#fff;border:1px solid ${LN};font-family:Tahoma,Arial,sans-serif;color:#1a1a1a">
 <div style="padding:22px 18px 10px;text-align:center"><img src="${SITE}/icon-192.png" width="84" height="84" alt="RAX3D" style="border-radius:14px"><div style="font-size:26px;font-weight:bold;color:${G};letter-spacing:2px;direction:ltr">RAX3D</div></div>
 <div style="height:4px;background:${G};margin:0 18px"></div>
@@ -86,7 +100,7 @@ function invoiceHtml(d) {
 <tr>${lab('المجموع')}${td(money(d.sub), 'text-align:center')}</tr>${ship}
 <tr>${lab('الخصومات')}${td(money(0), 'text-align:center')}</tr>
 <tr><td style="background:#111;color:${GL};padding:10px;font-weight:bold;border:1px solid #111">المجموع النهائي</td><td style="background:#111;color:${GL};padding:10px;font-weight:bold;text-align:center;border:1px solid #111">${money(d.total)}</td></tr></table>
-<div style="clear:both;padding:14px 18px 0;font-size:13px;color:#2e7d32;font-weight:bold">${d.cod ? '<span style="color:#b26a00">⏳ الدفع عند الاستلام: المطلوب تحصيله ' + money(d.total) + '</span>' : '✓ مدفوعة (' + esc(d.method) + ')'}</div>
+<div style="clear:both;padding:14px 18px 0;font-size:13px;color:#2e7d32;font-weight:bold">${d.cod ? '<span style="color:#b26a00">⏳ الدفع عند الاستلام: المطلوب تحصيله ' + money(d.total) + '</span>' : '✓ مدفوعة (' + esc(d.method) + ')'}</div>${bank}
 <div style="margin:16px 18px 0;background:${CR};border:1px solid ${LN};padding:12px 14px;font-size:12.5px;line-height:1.8;color:#333"><b style="color:${G};font-size:14px">سياسة الاستبدال والاسترجاع</b><br>• إذا وصلتك القطعة مكسورة، أو فيها عيب طباعة، أو تختلف عن طلبك في اللون أو المقاس، راسلنا خلال 3 أيام من الاستلام مع صورة، ونعيد طباعتها أو نستبدلها مجاناً.<br>• لأن القطع تنصنع لك خصيصاً، ما نقبل الإرجاع بسبب تغيير الرأي بعد بدء الطباعة.<br>• تقدر تلغي طلبك مجاناً قبل ما نبدأ الطباعة.<br>• القطع المخصصة (اسم أو عبارة أو مقاس معدّل) تُستبدل فقط إذا فيها عيب.<br>• الفرق البسيط في درجة اللون أو ظهور خطوط الطبقات طبيعي في الطباعة ثلاثية الأبعاد، وما يُعتبر عيب.</div>
 <div style="height:4px;background:${G};margin:18px 18px 0"></div>
 <div style="text-align:center;padding:14px 18px 6px;font-weight:bold;font-size:18px;color:${G}">شكراً لتعاملكم مع RAX3D</div>
@@ -214,7 +228,7 @@ async function cod(req, env, out) {
   const msg = [`طلب ${label} (دفع عند الاستلام)`, `* الاسم: ${name}`, `* الجوال: ${phone}`,
     ...rows.map(r => `\n* القطعة: ${r.name}\n* اللون: ${r.color || 'كما بالصورة'}\n* الكمية: ${r.q}`)].join('\n');
   const html = `<p style="font-size:16px"><b>🚚 طلب جديد بالدفع عند الاستلام ${esc(label)}</b><br>الطلب غير مدفوع، تحصّل ${total} ريال عند التسليم. ${logFail ? '⚠️ تعذّر إضافته تلقائيًا لبرنامج الفواتير، الصق الرسالة أسفل في «استيراد الطلب».' : 'الفاتورة انسجلت تلقائيًا في برنامج الفواتير (بنقاط الولاء) أول ما تفتحه. إذا انلغى الطلب ألغ الفاتورة من التطبيق.'}</p>`
-    + invoiceHtml({ label, date: riyadhDay(), name, phone, rows, sub, ship, total, cod: true })
+    + invoiceHtml({ label, date: riyadhDay(), name, phone, rows, sub, ship, total, cod: true, bank: await bankInfo(env) })
     + `<p>الجوال: <span dir="ltr">${esc(phone)}</span></p><p>الاستلام مباشر: المكان والموعد يُتفق عليهما بالتواصل مع العميل.</p>`
     + `<p>للتسجيل في التطبيق بنفس الرقم، الصق هذه الرسالة في «استيراد الطلب»:</p><pre style="background:#f4f1ea;padding:10px;border-radius:8px;white-space:pre-wrap">${esc(msg)}</pre>`;
   const sent = await mail(env, '🚚 طلب دفع عند الاستلام ' + label, html);
@@ -322,7 +336,7 @@ async function confirmCore(b, env, out, flag) {
     const msg = [`طلب مدفوع ${label}`, `* الاسم: ${(c.name || '').slice(0, 60)}`, `* الجوال: ${(c.phone || '').slice(0, 20)}`,
       ...b.cart.map(o => `\n* القطعة: ${nm[o.id]?.n || o.id}\n* اللون: ${String(o.color || 'كما بالصورة').slice(0, 30)}\n* الكمية: ${Math.floor(+o.qty)}`)].join('\n');
     const today = new Date(Date.now() + 3 * 3600 * 1000).toISOString().slice(0, 10);
-    const invoice = invoiceHtml({ label, date: today, name: c.name || '', phone: c.phone || '', rows: rows.map(r => ({ ...r, name: nm[r.id]?.n || r.id })), sub: total - ship, ship, total, method: p.source?.type === 'applepay' ? 'Apple Pay' : (p.source?.company ? String(p.source.company).toUpperCase() : (p.source?.type || '')) });
+    const invoice = invoiceHtml({ label, date: today, name: c.name || '', phone: c.phone || '', rows: rows.map(r => ({ ...r, name: nm[r.id]?.n || r.id })), sub: total - ship, ship, total, bank: await bankInfo(env), method: p.source?.type === 'applepay' ? 'Apple Pay' : (p.source?.company ? String(p.source.company).toUpperCase() : (p.source?.type || '')) });
     const html = invoice + `<hr style="margin:26px 0;border:0;border-top:1px dashed #ccc"><p>طلب مدفوع <b>${esc(label)}</b>${num ? '' : ' (بدون رقم فاتورة، تعذّر حجز الرقم)'}</p>` + info.replace(esc(b.ref), esc(label)) +
       ((logFail || !num) ? `<p style="color:#b00">⚠️ تعذّر إضافة الفاتورة تلقائيًا لبرنامج الفواتير. الصق الرسالة التالية في التطبيق (استيراد الطلب) عشان تنحفظ بنفس الرقم:</p><pre style="background:#f4f1ea;padding:10px;border-radius:8px;white-space:pre-wrap">${esc(msg)}</pre>` : `<p>✓ الفاتورة دخلت برنامج الفواتير تلقائيًا (تظهر لك أول ما تفتحه).</p>`);
     const sent = await mail(env, '✅ طلب مدفوع ' + label, html);
