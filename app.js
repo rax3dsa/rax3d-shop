@@ -637,7 +637,7 @@ const MNE={"الكرة":"Ball","الجسم":"Body","القاعدة":"Base","ال
 const WH={"على الشاشة الرئيسية لجوالك":"on your phone's home screen","في الـ Dock وفي مجلد التطبيقات":"in the Dock and the Applications folder","على سطح المكتب وفي قائمة ابدأ":"on the desktop and in the Start menu","بين تطبيقات جهازك":"among your device's apps"};
 const tw=s=>WH[s]||s;
 const RX=[
- [/^🚚 التوصيل: ([\d.]+) ريال · (.+)$/,(m,a,b)=>"🚚 Delivery: "+a+" SAR · "+tr(b)],   /* must stay above the generic "label: value" pattern */
+ [/^🚚 التوصيل: ([\d.]+) ريال · (.+)$/,(m,a,b)=>"🚚 Delivery: "+a+" SAR · "+b.split(" · ").map(tr).join(" · ")],   /* must stay above the generic "label: value" pattern */
  [/^(.+) · غطاء: (.+)$/,(m,a,b)=>tr(a)+" · shade: "+tr(b)],
  [/^\+ رسوم التوصيل (\d+) ريال عند الدفع أونلاين أو عند الاستلام، فيكون المطلوب (\d+) ريال\.$/,(m,a,b)=>"+ delivery fee "+a+" SAR for online payment or cash on delivery, so the amount due is "+b+" SAR."],
  [/^(.*) \(يشمل التوصيل (\d+)\)$/,(m,a,b)=>tr(a)+" (incl. delivery "+b+" SAR)"],
