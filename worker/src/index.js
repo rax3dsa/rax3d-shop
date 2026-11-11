@@ -235,14 +235,32 @@ async function cod(req, env, out) {
   return out({ ok: true, num, emailed: sent });
 }
 
+// Invoicing app "forgot PIN": the app makes the 6-digit code itself and keeps only its hash; this just mails the code to the owner (MAIL_TO),
+// because the app's own mail service (FormSubmit) can fail. The code only ever goes to MAIL_TO, so nobody can read it by calling this;
+// the worst a stranger can do is cause mails, so it is limited to 5 an hour per isolate and only digits are accepted.
+const APP_ORIGIN = 'https://rax3dsa.github.io';
+let RRL = [];
+async function recovery(req, env, out) {
+  if (req.headers.get('Origin') !== APP_ORIGIN) return out({ ok: false, reason: 'origin' }, 403);
+  let b; try { b = await req.json() } catch { return out({ ok: false, reason: 'bad' }, 400) }
+  const code = String((b && b.code) || '');
+  if (!/^\d{6,8}$/.test(code)) return out({ ok: false, reason: 'bad' }, 400);
+  const now = Date.now(); RRL = RRL.filter(t => now - t < 3600e3);
+  if (RRL.length >= 5) return out({ ok: false, reason: 'limit' }, 429);
+  RRL.push(now);
+  const sent = await mail(env, '🔑 رمز استرجاع دخول الدعم الفني: ' + code, `<p style="font-size:22px">رمز التحقق: <b dir="ltr">${code}</b></p><p>اكتبه في شاشة «نسيت رمز الدخول» في برنامج الفواتير. صالح 15 دقيقة. إذا ما طلبته فتجاهل هذي الرسالة.</p>`);
+  return out({ ok: sent }, sent ? 200 : 502);
+}
+
 async function handle(req, env, ctx) {
   {
     // answer CORS for both the bare domain and www (the origin checks below already accept both)
-    const og0 = req.headers.get('Origin'), allow = og0 === 'https://www.rax3d.com' ? og0 : SITE;
+    const og0 = req.headers.get('Origin'), path = new URL(req.url).pathname;
+    const allow = og0 === 'https://www.rax3d.com' ? og0 : (og0 === APP_ORIGIN && path === '/recovery') ? og0 : SITE;
     const cors = { 'Access-Control-Allow-Origin': allow, 'Access-Control-Allow-Headers': 'Content-Type', 'Vary': 'Origin' };
     const out = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
-    const path = new URL(req.url).pathname;
+    if (req.method === 'POST' && path === '/recovery') return recovery(req, env, out);
     if (req.method === 'POST' && path === '/webhook') return hook(req, env, out, ctx);
     if (req.method === 'POST' && path === '/cod') return cod(req, env, out);
     if (req.method === 'POST' && path === '/points') return points(req, env, out);
