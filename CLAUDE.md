@@ -40,6 +40,10 @@ For every new or re-priced product, check the wholesale price before publishing:
 - Coplanar parts z-fight: lower the base part by 0.05 to 0.1 mm under the colour layers.
 - The Bambu 3MF stores each part with its own transform (components + build item); apply them, and use the `source_offset` values to reassemble multi-plate parts.
 
+## Heavy 3D models are packed (added 11-12)
+- After adding or changing a model, run `python3 tools/pack-models.py` (needs numpy): models whose gzip is over 300 KB become a small `models/<id>.json` header (`fmt:"dv1"`) plus `models/<id>.bin` (zigzag varints of position deltas per axis, then running index deltas). It verifies each file by decoding it back, and `decodeDV1()` / `unpackModel()` in app.js give the viewer the same typed arrays (identical geometry, checked by hashing every model, 31 of 31). 35 to 70 percent smaller over the wire; decode takes about 26 ms.
+- Never edit a packed header by hand. To change a model, restore its original json from git history, edit it, and pack again. `keeps` in a packed header only hold `color` and `name`; their indices live in the `.bin`.
+
 ## Other rules
 - Never put secrets in the repo (it is public). Payment keys live in the Cloudflare worker.
 - Do not reuse an `id` attribute in the HTML (duplicate ids already broke the points and chat modals once).

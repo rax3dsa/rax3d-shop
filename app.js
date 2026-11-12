@@ -326,18 +326,24 @@ function open3D_(){
   V.controls.target.set(0,0,0);V.controls.autoRotate=true;
   tintMain(ci);set3DShade(cur.color2);partsUI();$("#v3dMsg").hidden=true};
  const fail=()=>{$("#v3dMsg").textContent="ما قدرنا نحمّل المجسم، جرّب مرة ثانية."};
- if(m.grid)fetch(m.file).then(r=>{if(!r.ok)throw 0;return r.json()}).then(d=>{const g=ringGrid(d);done(g.isObject3D?g:new THREE.Mesh(g,new THREE.MeshStandardMaterial()))}).catch(fail);
+ if(m.grid)fetch(m.file).then(r=>{if(!r.ok)throw 0;return r.json()}).then(unpackModel).then(d=>{const g=ringGrid(d);done(g.isObject3D?g:new THREE.Mesh(g,new THREE.MeshStandardMaterial()))}).catch(fail);
  else if(/\.stl$/i.test(m.file))new THREE.STLLoader().load(m.file,g=>{const g2=g;done(new THREE.Mesh(g2,new THREE.MeshStandardMaterial()))},undefined,fail);
  else new THREE.ThreeMFLoader().load(m.file,done,undefined,fail);
 }
 /* ring-grid model: rings of n points (int16, 0.01 mm), Z-up, bottom capped, top open */
+/* packed models (tools/pack-models.py): header json + .bin of zigzag varints (position deltas per axis, then running index deltas). Decodes to the same typed arrays the old base64 json held. */
+function decodeDV1(d,u){let p=0;const n=d.nv*3,pos=new Int16Array(n),rd=()=>{let v=0,s=0,b;do{b=u[p++];v|=(b&127)<<s;s+=7}while(b&128);return v&1?-((v+1)>>1):v>>1};
+ for(let ax=0;ax<3;ax++){let a=0;for(let i=ax;i<n;i+=3){a+=rd();pos[i]=a}}
+ const I=d.i32?Uint32Array:Uint16Array,arr=d.ni.map(c=>{const o=new I(c);let a=0;for(let i=0;i<c;i++){a+=rd();o[i]=a}return o});
+ const o=Object.assign({},d,{posA:pos,idxA:arr[0]});if(d.keeps)o.keeps=d.keeps.map((k,i)=>Object.assign({},k,{idxA:arr[1+i]}));if(d.hasKeep)o.keepA=arr[arr.length-1];return o}
+function unpackModel(d){return d.fmt==="dv1"?fetch(d.bin).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()}).then(b=>decodeDV1(d,new Uint8Array(b))):d}
 function meshJson(d){if(d.keeps){   /* several fixed-colour parts (logo, text) + main body in the chosen colour */
   const grp=new THREE.Group();grp.add(new THREE.Mesh(meshJson(Object.assign({},d,{keeps:null})),new THREE.MeshStandardMaterial()));
-  d.keeps.forEach(k=>{const m=new THREE.Mesh(meshJson(Object.assign({},d,{keeps:null,idx:k.idx})),new THREE.MeshStandardMaterial({color:new THREE.Color(k.color)}));m.name=k.name||"keep";grp.add(m)});return grp}
- if(d.keep){   /* two-colour print: main body follows the chosen colour, "keep" faces (e.g. white text) stay as printed */
-  const grp=new THREE.Group(),a=meshJson(Object.assign({},d,{keep:null})),b=meshJson(Object.assign({},d,{keep:null,idx:d.keep}));
+  d.keeps.forEach(k=>{const m=new THREE.Mesh(meshJson(Object.assign({},d,{keeps:null,idx:k.idx,idxA:k.idxA})),new THREE.MeshStandardMaterial({color:new THREE.Color(k.color)}));m.name=k.name||"keep";grp.add(m)});return grp}
+ if(d.keep||d.keepA){   /* two-colour print: main body follows the chosen colour, "keep" faces (e.g. white text) stay as printed */
+  const grp=new THREE.Group(),a=meshJson(Object.assign({},d,{keep:null,keepA:null})),b=meshJson(Object.assign({},d,{keep:null,keepA:null,idx:d.keep,idxA:d.keepA}));
   grp.add(new THREE.Mesh(a,new THREE.MeshStandardMaterial()));const km=new THREE.Mesh(b,new THREE.MeshStandardMaterial({color:new THREE.Color(d.keepColor||"#ffffff")}));km.name="keep";grp.add(km);return grp}const dec=s=>{const r=atob(s),b=new Uint8Array(r.length);for(let i=0;i<r.length;i++)b[i]=r.charCodeAt(i);return b.buffer};
- const q=new Int16Array(dec(d.pos)),ix=d.i32?new Uint32Array(dec(d.idx)):new Uint16Array(dec(d.idx)),pos=new Float32Array(q.length);for(let i=0;i<q.length;i++)pos[i]=q[i]*d.scale;
+ const q=d.posA||new Int16Array(dec(d.pos)),ix=d.idxA||(d.i32?new Uint32Array(dec(d.idx)):new Uint16Array(dec(d.idx))),pos=new Float32Array(q.length);for(let i=0;i<q.length;i++)pos[i]=q[i]*d.scale;
  const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(pos,3));g.setIndex(new THREE.BufferAttribute(new Uint32Array(ix),1));return g.toNonIndexed()}
 function ringGrid(d){if(d.type==="mesh")return meshJson(d);const raw=atob(d.pos),b=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)b[i]=raw.charCodeAt(i);
  const q=new Int16Array(b.buffer),R=d.rings,n=d.n,pos=new Float32Array(q.length+3);for(let i=0;i<q.length;i++)pos[i]=q[i]*d.scale;
