@@ -227,6 +227,8 @@ h2{font-size:18px}
 .mcsw{width:34px;height:34px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0}
 .mcsw[aria-pressed="true"]{outline:3px solid var(--accent);outline-offset:2px}
 .mcsws{margin:10px 0 4px}
+.mcsw.out{position:relative;opacity:.5;cursor:not-allowed;overflow:hidden}
+.mcsw.out::after{content:"";position:absolute;left:-4px;right:-4px;top:calc(50% - 1.5px);height:3px;background:#c0392b;transform:rotate(-45deg)}
 #mcNote{width:100%;margin-top:8px;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:inherit;resize:vertical}
 .sw.orig{background:conic-gradient(#cc2f2f,#f2c22c,#2f9a57,#2a5cc8,#ee6f9e,#cc2f2f)}
 .qty{display:flex;align-items:center;gap:10px;flex-wrap:wrap}

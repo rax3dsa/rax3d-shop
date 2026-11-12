@@ -204,7 +204,7 @@ function editView(id){   /* customise page: preview (3D when available) + colour
   <div class="opt" hidden><span class="lbl">لون الغطاء العلوي: <span id="cname2">${COLORS[2][0]}</span></span><div class="sws">${COLORS.map((c,i)=>c[1]&&!OUT.has(i)?`<button type="button" class="sw2" style="background:${c[1]}" aria-label="${c[0]}" aria-pressed="${i===2}" data-s="${i}"></button>`:"").join("")}</div></div>`:""}
   <div class="opt mcopt"><button type="button" class="other" id="mcBtn" aria-expanded="false">🎨 ألوان مختلفة للقطع (طلب خاص) <span>+</span></button>
    <div id="mcBox" hidden><small class="pnote">اختر الألوان اللي تبيها، واكتب أي جزء بأي لون. سعر الألوان المتعددة يختلف عن السعر المعروض، ونتواصل معك بالخاص لتأكيد السعر والتفاصيل.</small>
-    <div class="sws mcsws">${COLORS.map((c,i)=>c[1]?`<button type="button" class="mcsw" style="background:${c[1]}" aria-label="${c[0]}" aria-pressed="false" data-mc="${i}"${OUT.has(i)?" hidden":""}></button>`:"").join("")}</div>
+    <div class="sws mcsws">${COLORS.map((c,i)=>c[1]?`<button type="button" class="mcsw${OUT.has(i)?" out":""}" style="background:${c[1]}" aria-label="${c[0]}"${OUT.has(i)?` aria-disabled="true" title="${c[0]} — غير متوفر حالياً"`:""} aria-pressed="false" data-mc="${i}"></button>`:"").join("")}</div>
     <small class="pnote" id="mcSelRow" hidden><span>الألوان المختارة:</span> <b id="mcNames"></b></small>
     <textarea id="mcNote" maxlength="110" rows="2" placeholder="مثال: الغطاء أسود والباقي أبيض"></textarea></div></div>
   <small class="pnote" id="partHint2">💡 تقدر تغيّر الأجزاء أو الكتابات بلون مختلف: اختر «ألوان مختلفة للقطع» تحت.</small>
@@ -415,6 +415,7 @@ function paint(){setTimeout(sumUI,0);const p=$("#pv");if(!p||!cur)return;const s
 document.addEventListener("click",e=>{   /* mixed-colour (special order) option on the item page */
  const t=e.target.closest("#mcBtn,.mcsw");if(!t||!cur)return;
  if(t.id==="mcBtn"){cur.mcOpen=!cur.mcOpen;$("#mcBox").hidden=!cur.mcOpen;t.setAttribute("aria-expanded",cur.mcOpen);t.querySelector("span").textContent=cur.mcOpen?"−":"+";sumUI();return}
+ if(t.classList.contains("out"))return;   /* the general handler below shows the "not available" toast */
  const i=+t.dataset.mc,k=cur.mc.indexOf(i);if(k>=0)cur.mc.splice(k,1);else if(cur.mc.length<6)cur.mc.push(i);else{toastMsg("الحد الأقصى 6 ألوان");return}
  t.setAttribute("aria-pressed",cur.mc.includes(i));const nm=cur.mc.map(x=>LANG==="en"?tr(COLORS[x][0]):COLORS[x][0]);$("#mcSelRow").hidden=!nm.length;$("#mcNames").textContent=nm.join(LANG==="en"?", ":"، ");sumUI()});
 document.addEventListener("click",e=>{
@@ -426,7 +427,7 @@ document.addEventListener("click",e=>{
  else if(t.dataset.open)go({v:"item",id:t.dataset.open})
  else if(t.dataset.del!==undefined){cart.splice(+t.dataset.del,1);cartUI();cartView()}
  else if(t.id==="copy"){navigator.clipboard.writeText(msg()).then(()=>{$("#toast").textContent="تم النسخ، الصقه في الخاص"}).catch(()=>{$("#toast").textContent=msg()})}
- else if(t.classList&&t.classList.contains("out")){toastMsg(COLORS[+(t.dataset.c||t.dataset.c3)][0]+" غير متوفر حالياً")}
+ else if(t.classList&&t.classList.contains("out")){toastMsg(COLORS[+(t.dataset.c||t.dataset.c3||t.dataset.mc)][0]+" غير متوفر حالياً")}
  else if(cur&&t.dataset.sp==="3d"){cur.v3=!cur.v3;partsUI()}
  else if(cur&&t.dataset.sp!==undefined){cur.v3=false;const m=MODELS[cur.it.id],c=t.dataset.sp==="base"?0:(cur.color||m.def||1),bt=document.querySelector(`#main .sw[data-c="${c}"]`);if(bt)bt.click();if(c)set3DColor(c);else tintMain(m.def||1);partsUI()}
  else if(cur&&t.dataset.pt!==undefined){cur.pt=+t.dataset.pt;if(cur.pt===-2){cur.v3=false;cur.pc={};cur.pm={};const b0=document.querySelector("#main .sw[data-c=\"0\"]");if(b0)b0.click();tintMain(MODELS[cur.it.id].def||1);if(cur.it.id==="lampman")set3DShade(2)}partsUI()}
@@ -780,7 +781,7 @@ function applyStock(names){const n=new Set();COLORS.forEach((c,i)=>{if(i&&names.
  OUT.clear();n.forEach(i=>OUT.add(i));try{localStorage.setItem("rax3d_out",JSON.stringify(names))}catch(_){}
  const v=typeof hist!=="undefined"&&hist[hi];if(!v)return;
  if(v.v==="edit"){document.querySelectorAll("#main .sw[data-c]").forEach(b=>{const o=OUT.has(+b.dataset.c);b.classList.toggle("out",o);if(o){b.setAttribute("aria-disabled","true");b.title=COLORS[+b.dataset.c][0]+" — غير متوفر حالياً"}else{b.removeAttribute("aria-disabled");b.removeAttribute("title")}});
-  document.querySelectorAll("#main .mcsw").forEach(b=>{b.hidden=OUT.has(+b.dataset.mc)});if(cur&&OUT.has(cur.color)){const b0=document.querySelector('#main .sw[data-c="0"]');if(b0)b0.click()}}
+  document.querySelectorAll("#main .mcsw").forEach(b=>{const o=OUT.has(+b.dataset.mc);b.classList.toggle("out",o);if(o){b.setAttribute("aria-disabled","true");b.title=COLORS[+b.dataset.mc][0]+" — غير متوفر حالياً";const k=cur&&cur.mc?cur.mc.indexOf(+b.dataset.mc):-1;if(k>=0){cur.mc.splice(k,1);b.setAttribute("aria-pressed","false")}}else{b.removeAttribute("aria-disabled");b.removeAttribute("title")}});if(cur&&cur.mc){const nm=cur.mc.map(x=>LANG==="en"?tr(COLORS[x][0]):COLORS[x][0]),r=$("#mcSelRow");if(r){r.hidden=!nm.length;$("#mcNames").textContent=nm.join(LANG==="en"?", ":"، ")}sumUI()}if(cur&&OUT.has(cur.color)){const b0=document.querySelector('#main .sw[data-c="0"]');if(b0)b0.click()}}
  else if(v.v==="item")render(false)}
 function loadStock(){fetch(PAY.api+"/stock",{cache:"no-store"}).then(r=>r.json()).then(j=>{if(j&&j.ok&&Array.isArray(j.out))applyStock(j.out.filter(x=>typeof x==="string").slice(0,30))}).catch(()=>{})}
 loadStock();setInterval(loadStock,300000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadStock()});
