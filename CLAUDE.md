@@ -50,6 +50,11 @@ For every new or re-priced product, check the wholesale price before publishing:
 ## Part colours
 - OWNER CANCELLED part colouring (11-07): `PARTCOL` is empty, every model uses the plain 13-colour grid + rotatable 3D. Multi-part/lettering models show a hint (`#partHint`) telling the customer to mention different part/lettering colours in the "أخرى" box. Do not re-enable tabs unless the owner asks. clips is back to one mesh.
 
+## Why the old part tabs felt wrong (diagnosed 11-12, read before touching part colours)
+- The tabs were built on `keeps`, and `keeps` are COLOUR GROUPS (one mesh per source filament), not parts. So unrelated pieces that shared a filament became one tab (pringles: face + wordmark), pieces folded into the main mesh could not be coloured at all (pringles banner = 3MF part "DarkRed"), and the tab names were guessed from photos.
+- The real structure is in the 3MF sources (private data repo, `files/*.3mf`), and it differs per model: named parts in one object (pringles: Sign, DarkRed, Black, White, MainBody; also d4, hood, xkit), sets of separate objects (ttt and 9 single-colour sets), brush-painted triangles with no names (chips, ltr, d1, d5, ghost, pcorn), or one fused mesh (16 of the 37 sources). No single rule fits all of them.
+- If the owner asks to bring per-part colouring back: export per 3MF part (never per colour), let the owner name / merge / hide the parts of each model and approve that model before it goes live, and keep it inside the mixed-colour special order (price by message). Never switch it on for the whole catalogue with a generic split.
+
 ## Mixed colours = special order (added 11-12, approved by the owner)
 - Customise page: `#mcBtn` opens `#mcBox` (2 to 6 in-stock colours + a short note). The cart line gets colour "ألوان متعددة" and a note starting with "🎨 طلب خاص".
 - Such a line has NO fixed price (the owner: "the price differs, we agree it by message"): the cart shows "السعر بالخاص", totals skip it (`isSP`, `PU`, `TOT`), and because it carries a note it blocks online payment and cash on delivery, so the order goes by message.
