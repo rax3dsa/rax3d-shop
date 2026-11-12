@@ -50,6 +50,11 @@ For every new or re-priced product, check the wholesale price before publishing:
 ## Part colours
 - OWNER CANCELLED part colouring (11-07): `PARTCOL` is empty, every model uses the plain 13-colour grid + rotatable 3D. Multi-part/lettering models show a hint (`#partHint`) telling the customer to mention different part/lettering colours in the "أخرى" box. Do not re-enable tabs unless the owner asks. clips is back to one mesh.
 
+## Mixed colours = special order (added 11-12, approved by the owner)
+- Customise page: `#mcBtn` opens `#mcBox` (2 to 6 in-stock colours + a short note). The cart line gets colour "ألوان متعددة" and a note starting with "🎨 طلب خاص".
+- Such a line has NO fixed price (the owner: "the price differs, we agree it by message"): the cart shows "السعر بالخاص", totals skip it (`isSP`, `PU`, `TOT`), and because it carries a note it blocks online payment and cash on delivery, so the order goes by message.
+- This is not the old per-part tabs (still off, see Part colours).
+
 ## Owner decisions (do not re-open)
 - Branded-design pieces (Harley and similar) stay in the shop and in the home lists. The owner has decided this (confirmed 11-11); do not raise trademark concerns again or move/remove these pieces unless he asks.
-- Preparation time shown to customers: 2 to 7 days, and 5 to 14 days once a line reaches its wholesale quantity (item page, cart, receipt, "how to order", FAQ). Change all of them together.
+- Preparation time shown to customers (changed by the owner 11-12): 3 to 7 days for normal orders. Wholesale has NO fixed range: "depends on the order and quantity, we contact you by message" (item page, cart, receipt, "how to order", FAQ, English dictionary). Change all of them together.
