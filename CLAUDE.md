@@ -68,6 +68,12 @@ For every new or re-priced product, check the wholesale price before publishing:
 - No answer (worker down, no stock file, `out:null`) keeps the last known list, else the built-in default `[9]` (purple). Never hard-code availability in app.js any more.
 - Fortnightly stock reminder: worker `scheduled()` (Cloudflare Cron Trigger, daily) mails the owner when `next` in stock.json has arrived (optional STOCK_MAIL_EXTRA var for more addresses).
 
+## Review notes (11-12, keep these true)
+- Layout shift: `#main` is empty until app.js renders, so the footer is hidden until `body.rdy` (set at the end of `render()`); do not show it earlier (it caused a 0.39 shift, now 0.005). The first 4 cards of every list load with `fetchpriority="high"`, the rest lazily.
+- Order backup files `online/ORD-n.json` are written with overwrite (`ghSave`), because a freed number can be reused; the daily Cron also prunes expired `rl_*` / `ip_*` rate-limit files.
+- Worker redeploys are manual (paste into Cloudflare): batch Worker changes into one paste, and tell the owner each time.
+- Shop and invoicing app are edited from more than one session: always `git pull` before editing or pushing, and never force-push.
+
 ## Owner decisions (do not re-open)
 - Branded-design pieces (Harley and similar) stay in the shop and in the home lists. The owner has decided this (confirmed 11-11); do not raise trademark concerns again or move/remove these pieces unless he asks.
 - Preparation time shown to customers (changed by the owner 11-12): 3 to 7 days for normal orders. Wholesale has NO fixed range: "depends on the order and quantity, we contact you by message" (item page, cart, receipt, "how to order", FAQ, English dictionary). Change all of them together.
