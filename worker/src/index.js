@@ -232,7 +232,7 @@ async function cod(req, env, out) {
       // the invoice already has its number, so it goes straight into the invoicing app's log (points included)
       const rec = { num, date: riyadhDay(), online: true, cod: true, payId: 'cod_' + b.ref, client: name, phone, code: b.ref,
         desc: rows.map(r => (nm0[r.id]?.n || r.id) + ' (' + r.q + ')').join(' ، '), qty: rows.reduce((a, r) => a + r.q, 0), disc: 0, total: sub, profit: 0, sugg: 0, sub,
-        items: rows.map(r => ({ desc: nm0[r.id]?.n || r.id, q: r.q, unit: r.u, line: r.u * r.q, cost: 0, w: +pr.W[r.id] || 0, h: 0, m: 0, sec: 0, type: 'واحدة', auto: false, dp: 0 })) };
+        items: rows.map(r => ({ desc: nm0[r.id]?.n || r.id, color: /^(اللون الأساسي|كما بالصورة)?$/.test(r.color) ? '' : r.color, q: r.q, unit: r.u, line: r.u * r.q, cost: 0, w: +pr.W[r.id] || 0, h: 0, m: 0, sec: 0, type: 'واحدة', auto: false, dp: 0 })) };
       try { await ghUpdate(env, 'partner_log.json', [], arr => { arr = Array.isArray(arr) ? arr : []; if (!arr.some(x => x && Number(x.num) === num)) arr.push(rec); return arr }, 'فاتورة دفع عند الاستلام ORD-' + num) } catch (e) { logFail = true }
     }
   } catch (e) { return out({ ok: false, reason: 'number' }, 502) }
@@ -360,7 +360,7 @@ async function confirmCore(b, env, out, flag) {
           const nm0 = await names(), itemsT = total - ship;
           const rec = { num, date: riyadhDay(), online: true, payId: b.paymentId, client: (c.name || '').slice(0, 60), phone: (c.phone || '').slice(0, 20), code: b.ref,
             desc: rows.map(r => (nm0[r.id]?.n || r.id) + ' (' + r.q + ')').join(' ، '), qty: rows.reduce((a, r) => a + r.q, 0), disc: 0, total: itemsT, profit: 0, sugg: 0, sub: itemsT,
-            items: rows.map(r => ({ desc: nm0[r.id]?.n || r.id, q: r.q, unit: r.u, line: r.u * r.q, cost: 0, w: +pr.W[r.id] || 0, h: 0, m: 0, sec: 0, type: 'واحدة', auto: false, dp: 0 })) };
+            items: rows.map(r => ({ desc: nm0[r.id]?.n || r.id, color: /^(اللون الأساسي|كما بالصورة)?$/.test(r.color) ? '' : r.color, q: r.q, unit: r.u, line: r.u * r.q, cost: 0, w: +pr.W[r.id] || 0, h: 0, m: 0, sec: 0, type: 'واحدة', auto: false, dp: 0 })) };
           try { await ghUpdate(env, 'partner_log.json', [], arr => { arr = Array.isArray(arr) ? arr : []; if (!arr.some(x => x && Number(x.num) === num)) arr.push(rec); return arr }, 'فاتورة طلب مدفوع ORD-' + num) } catch (e) { logFail = true }
         }
       } catch (e) { num = null }
