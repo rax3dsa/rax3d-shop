@@ -214,6 +214,20 @@ async function stockOut(env) {
   catch (e) { if (!SCACHE.t) return null }   // keep the last copy if GitHub hiccups
   return SCACHE.d;
 }
+// Daily hygiene (same Cron Trigger): the per-phone / per-IP rate-limit files in online/ (rl_*, ip_*) only matter for 24 hours, but they never went away.
+// Delete the ones with no entry in the last 24 hours (at most 20 a run), so phone numbers and hashed addresses are not kept forever in the data repo.
+async function pruneGuards(env) {
+  if (!env.GH_TOKEN || !env.GH_REPO) return 0;
+  const r = await gh(env, 'GET', 'online'); if (!r.ok) return 0; const list = await r.json(); if (!Array.isArray(list)) return 0;
+  const now = Date.now(); let n = 0;
+  for (const f of list) {
+    if (n >= 20) break; if (!f || !/^(rl|ip)_[0-9a-f]+\.json$/.test(String(f.name))) continue;
+    const g = await ghRead(env, 'online/' + f.name).catch(() => null); if (!g || !g.data) continue;
+    if ((Array.isArray(g.data.t) ? g.data.t : []).some(t => now - t < 864e5)) continue;
+    const d = await gh(env, 'DELETE', 'online/' + f.name, { message: 'حذف حد قديم (أكثر من 24 ساعة)', sha: g.sha }); if (d.ok) n++;
+  }
+  return n;
+}
 // Fortnightly stock reminder (Cron Trigger, once a day): mails the owner (MAIL_TO, plus optional STOCK_MAIL_EXTRA = comma separated, max 3) when `next` has arrived.
 // The reminder is claimed in stock.json (mailedFor = next) before mailing, so two runs, or the app's own fallback mail, never send it twice.
 async function stockReminder(env) {
@@ -428,7 +442,7 @@ async function confirmCore(b, env, out, flag) {
 
 // any unexpected exception still answers with JSON + CORS, so the page can show its "contact us with your payment number" message
 export default {
-  async scheduled(ev, env, ctx) { ctx.waitUntil(stockReminder(env).catch(() => {})) },
+  async scheduled(ev, env, ctx) { ctx.waitUntil(Promise.all([stockReminder(env).catch(() => {}), pruneGuards(env).catch(() => {})])) },
   async fetch(req, env, ctx) {
     try { return await handle(req, env, ctx) }
     catch (e) {
