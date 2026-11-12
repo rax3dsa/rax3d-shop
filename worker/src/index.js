@@ -17,11 +17,11 @@ async function prices() {
 }
 const unit = ({ P, W }, id, q) => P[id] ? (q >= (W[id] >= 100 ? 6 : 12) ? P[id][1] : P[id][0]) : 0;
 
-async function mail(env, subject, html) {
+async function mail(env, subject, html, extra) {
   const r = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + env.RESEND_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: env.MAIL_FROM || 'RAX3D <onboarding@resend.dev>', to: [env.MAIL_TO], subject, html })
+    body: JSON.stringify({ from: env.MAIL_FROM || 'RAX3D <onboarding@resend.dev>', to: [env.MAIL_TO, ...(extra || [])], subject, html })
   });
   return r.ok;
 }
@@ -186,6 +186,41 @@ async function points(req, env, out) {
   return out({ ok: true, src: 'private', pts: Math.max(0, Math.floor(+((PCACHE.d.p || {})[ph]) || 0)) });
 }
 
+// ---- live colour availability ----
+// The invoicing app's stock tab keeps stock.json in the private data repo: { types:[{name,site}], rows:[{t,c,q,buy}], next, mailedFor }.
+// The shop asks GET /stock which colours are out: a colour is out when EVERY row of that colour in a site-linked type is marked "buy" (طلب شراء).
+// Answers { ok, out: [names] } or { ok, out: null } when there is no stock file yet (the page keeps its built-in default).
+function outColours(d) {
+  if (!d || !Array.isArray(d.rows)) return null;
+  const linked = new Set((Array.isArray(d.types) ? d.types : []).filter(t => t && t.site).map(t => String(t.name)));
+  const by = new Map();
+  for (const r of d.rows) { if (!r || !linked.has(String(r.t))) continue; const c = String(r.c || '').slice(0, 30); if (!c) continue; const a = by.get(c) || []; a.push(!!r.buy); by.set(c, a) }
+  return [...by].filter(([, a]) => a.length && a.every(Boolean)).map(([c]) => c);
+}
+let SCACHE = { t: 0, d: null };      // per-isolate copy, refreshed at most once a minute
+async function stockOut(env) {
+  if (!env.GH_TOKEN || !env.GH_REPO) return null;
+  const now = Date.now(); if (SCACHE.t && now - SCACHE.t < 60000) return SCACHE.d;
+  try { const f = await ghRead(env, 'stock.json'); SCACHE = { t: now, d: f ? outColours(f.data) : null } }
+  catch (e) { if (!SCACHE.t) return null }   // keep the last copy if GitHub hiccups
+  return SCACHE.d;
+}
+// Fortnightly stock reminder (Cron Trigger, once a day): mails the owner (MAIL_TO, plus optional STOCK_MAIL_EXTRA = comma separated, max 3) when `next` has arrived.
+// The reminder is claimed in stock.json (mailedFor = next) before mailing, so two runs, or the app's own fallback mail, never send it twice.
+async function stockReminder(env) {
+  if (!env.GH_TOKEN || !env.GH_REPO || !env.RESEND_KEY || !env.MAIL_TO) return 'config';
+  const today = riyadhDay(), f = await ghRead(env, 'stock.json'); if (!f || !f.data) return 'nofile';
+  const ok = x => x && /^\d{4}-\d{2}-\d{2}$/.test(x.next || '') && today >= x.next && x.mailedFor !== x.next;
+  if (!ok(f.data)) return 'notdue';
+  let claimed = null;
+  await ghUpdate(env, 'stock.json', null, x => { if (!ok(x)) return undefined; claimed = x; x.mailedFor = x.next; return x }, 'تذكير جرد الفلمنت');
+  if (!claimed) return 'taken';
+  const need = (claimed.rows || []).filter(r => r && r.buy).map(r => esc(String(r.t || '') + ' ' + String(r.c || '')));
+  const extra = String(env.STOCK_MAIL_EXTRA || '').split(',').map(e => e.trim()).filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)).slice(0, 3);
+  await mail(env, '🧾 موعد جرد الفلمنت — RAX3D', `<p style="font-size:17px"><b>🧾 موعد الجرد الدوري (كل أسبوعين)</b></p><p>افتح تبويب «الجرد» في برنامج الفواتير، راجع الكميات وحدّث «طلب شراء»، ثم اضغط «تم الجرد».</p><p>بحاجة شراء الآن: <b>${need.length ? need.join('، ') : 'لا شيء'}</b></p>`, extra);
+  return 'sent';
+}
+
 // Cash on delivery: no payment to verify. The order gets its ORD number, goes into the invoicing app's log (with loyalty points)
 // and is emailed to the owner. If the order is cancelled, the owner cancels the invoice in the app.
 async function cod(req, env, out) {
@@ -278,6 +313,7 @@ async function handle(req, env, ctx) {
     if (req.method === 'POST' && path === '/webhook') return hook(req, env, out, ctx);
     if (req.method === 'POST' && path === '/cod') return cod(req, env, out);
     if (req.method === 'POST' && path === '/points') return points(req, env, out);
+    if (req.method === 'GET' && path === '/stock') return out({ ok: true, out: await stockOut(env) });
     if (req.method === 'GET' && path === '/config') return out({ ok: true, ship: SHIP_FEE, codShip: COD_SHIP_FEE, modes: true, turnstile: (env.TURNSTILE_SECRET && env.TURNSTILE_SITEKEY) ? String(env.TURNSTILE_SITEKEY) : null });
     if (req.method !== 'POST' || path !== '/confirm') return out({ ok: false }, 404);
 
@@ -383,6 +419,7 @@ async function confirmCore(b, env, out, flag) {
 
 // any unexpected exception still answers with JSON + CORS, so the page can show its "contact us with your payment number" message
 export default {
+  async scheduled(ev, env, ctx) { ctx.waitUntil(stockReminder(env).catch(() => {})) },
   async fetch(req, env, ctx) {
     try { return await handle(req, env, ctx) }
     catch (e) {

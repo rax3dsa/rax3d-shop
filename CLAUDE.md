@@ -63,6 +63,11 @@ For every new or re-priced product, check the wholesale price before publishing:
 - Such a line has NO fixed price (the owner: "the price differs, we agree it by message"): the cart shows "السعر بالخاص", totals skip it (`isSP`, `PU`, `TOT`), and because it carries a note it blocks online payment and cash on delivery, so the order goes by message.
 - This is not the old per-part tabs (still off, see Part colours).
 
+## Colour availability is live (added 11-12)
+- `OUT` (colours shown struck through, like purple) is no longer fixed: the invoicing app's stock tab (الجرد) writes `stock.json` in the private data repo, the worker answers `GET /stock` ({ok,out:[names]}), and `loadStock()` / `applyStock()` in app.js update `OUT` live (every 5 minutes, on tab focus, and from the last list kept in localStorage `rax3d_out`). A colour is out when every row of it in a site-linked stock type is marked "buy".
+- No answer (worker down, no stock file, `out:null`) keeps the last known list, else the built-in default `[9]` (purple). Never hard-code availability in app.js any more.
+- Fortnightly stock reminder: worker `scheduled()` (Cloudflare Cron Trigger, daily) mails the owner when `next` in stock.json has arrived (optional STOCK_MAIL_EXTRA var for more addresses).
+
 ## Owner decisions (do not re-open)
 - Branded-design pieces (Harley and similar) stay in the shop and in the home lists. The owner has decided this (confirmed 11-11); do not raise trademark concerns again or move/remove these pieces unless he asks.
 - Preparation time shown to customers (changed by the owner 11-12): 3 to 7 days for normal orders. Wholesale has NO fixed range: "depends on the order and quantity, we contact you by message" (item page, cart, receipt, "how to order", FAQ, English dictionary). Change all of them together.
