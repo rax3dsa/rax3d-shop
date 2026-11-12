@@ -133,7 +133,7 @@ function render(scroll){
   const activeCat=v.v==="cat"?v.cat:(v.v==="item"||v.v==="edit")?ITEMS.find(i=>i.id===v.id).cat:null;
   rail(activeCat);
   cur=null;V.on=false;
-  if(v.v==="home")home();else if(v.v==="cat")catView(v.cat);else if(v.v==="item")itemView(v.id);else if(v.v==="edit")editView(v.id);else if(v.v==="fav")favView();else cartView();
+  if(v.v==="home")home();else if(v.v==="cat")catView(v.cat);else if(v.v==="item")itemView(v.id);else if(v.v==="edit")editView(v.id);else if(v.v==="fav")favView();else cartView();document.body.classList.add("rdy");
   seoFor(v.v==="item"||v.v==="edit"?v.id:null);
   if(scroll){if(window.LENIS)LENIS.scrollTo(0,{immediate:true,force:true});else window.scrollTo(0,0)}
   if(window.motionView)motionView();
@@ -145,7 +145,7 @@ function rail(active){
   $("#rail").innerHTML=`<div class="rail-hd"><b>الأقسام</b><button type="button" id="railClose" aria-label="إغلاق">×</button></div><button type="button" data-home aria-current="${active===null&&hist[hi].v==="home"}"><span class="homeic"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg></span>الرئيسية</button>`+`<button type="button" class="inst" data-acc>👤 ${CUST?esc(CUST.n):"سجّل واكسب نقاط"}${CUST?`<span data-ptsn>${PTS==null?"":" · ⭐ "+PTS}</span>`:""}</button>`+(CUST?`<button type="button" class="inst" data-favs>❤️ <span>مفضلتي</span> <span>(${favs().length})</span></button>`:"")+(INST.standalone?"":`<button type="button" class="inst" data-inst><img src="icon-192.png" alt="">حمّل التطبيق</button>`)+
   CATS.map(c=>`<button type="button" data-cat="${c}" aria-current="${c===active}"><img src="${IMG[ITEMS.find(i=>i.cat===c).id].thumb}" alt="">${c}</button>`).join("");
 }
-const card=i=>`<button type="button" class="item" data-open="${i.id}">${CUST?`<span class="fv" role="button" data-fav="${i.id}" aria-label="المفضلة">${isFav(i.id)?"♥":"♡"}</span>`:""}<img src="${IMG[i.id].thumb}" alt="${i.name}" loading="lazy"><span class="cap"><b>${i.name}</b><small>${i.use}</small>${PRICE[i.id]?`<em class="pr">${OLD[i.id]?`<s class="old">${SAR(OLD[i.id])}</s> `:""}${SAR(PRICE[i.id][0])}</em>`:""}</span></button>`;
+const card=(i,k)=>`<button type="button" class="item" data-open="${i.id}">${CUST?`<span class="fv" role="button" data-fav="${i.id}" aria-label="المفضلة">${isFav(i.id)?"♥":"♡"}</span>`:""}<img src="${IMG[i.id].thumb}" alt="${i.name}" width="320" height="320"${k<4?` fetchpriority="high"`:` loading="lazy"`}><span class="cap"><b>${i.name}</b><small>${i.use}</small>${PRICE[i.id]?`<em class="pr">${OLD[i.id]?`<s class="old">${SAR(OLD[i.id])}</s> `:""}${SAR(PRICE[i.id][0])}</em>`:""}</span></button>`;
 const carousel=(ids,n=4)=>`<div class="car" data-car>${ids.slice(0,n).map(id=>ITEMS.find(i=>i.id===id)).filter(Boolean).map(card).join("")}</div>`;
 /* شريط يتحرك لوحده كل 3.5 ثانية، يوقف عند اللمس أو خروجه من الشاشة أو لو الجوال مفعّل تقليل الحركة، والعميل يقدر يسحبه بإصبعه */
 let carT=null;

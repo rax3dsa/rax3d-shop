@@ -48,6 +48,15 @@ const gh = (env, method, path, body) => fetch('https://api.github.com/repos/' + 
 const ghRead = async (env, path) => { const r = await gh(env, 'GET', path); if (r.status === 404) return null; if (!r.ok) throw new Error('gh ' + r.status); const j = await r.json(); return { data: JSON.parse(b64d(j.content)), sha: j.sha } };
 const ghCreate = async (env, path, data, msg) => { const r = await gh(env, 'PUT', path, { message: msg, content: b64e(JSON.stringify(data)) }); if (r.status === 422 || r.status === 409) return false; if (!r.ok) throw new Error('gh ' + r.status); return true };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+// create OR overwrite a file (the order backup ORD-n.json can already exist when a number was freed and reused)
+async function ghSave(env, path, data, msg) {
+  for (let i = 0; i < 3; i++) {
+    const cur = await ghRead(env, path), body = { message: msg, content: b64e(JSON.stringify(data)) }; if (cur) body.sha = cur.sha;
+    const r = await gh(env, 'PUT', path, body); if (r.ok) return true; if (r.status !== 409 && r.status !== 422) throw new Error('gh ' + r.status);
+    await sleep(300);
+  }
+  return false;
+}
 // reserve the next invoice number the same way the app does (optimistic write with the file sha)
 async function reserveNumber(env) {
   for (let i = 0; i < 6; i++) {
@@ -263,7 +272,7 @@ async function cod(req, env, out) {
       num = await reserveNumber(env);
       // the marker is created first and acts as a lock: a second identical request (double tap) stops here instead of making a second invoice
       if (!(await ghCreate(env, 'online/cod_' + b.ref + '.json', { num }, 'ربط الطلب ' + b.ref))) { const w = await ghRead(env, 'online/cod_' + b.ref + '.json'); return out({ ok: true, num: w ? w.data.num : num, dup: true }) }
-      await ghCreate(env, 'online/ORD-' + num + '.json', { num, cod: true, ref: b.ref, total, customer: { name, phone, city, address }, cart: rows, at: new Date().toISOString() }, 'طلب دفع عند الاستلام ORD-' + num);
+      await ghSave(env, 'online/ORD-' + num + '.json', { num, cod: true, ref: b.ref, total, customer: { name, phone, city, address }, cart: rows, at: new Date().toISOString() }, 'طلب دفع عند الاستلام ORD-' + num).catch(() => {});
       // the invoice already has its number, so it goes straight into the invoicing app's log (points included)
       const rec = { num, date: riyadhDay(), online: true, cod: true, payId: 'cod_' + b.ref, client: name, phone, code: b.ref,
         desc: rows.map(r => (nm0[r.id]?.n || r.id) + ' (' + r.q + ')').join(' ، '), qty: rows.reduce((a, r) => a + r.q, 0), disc: 0, total: sub, profit: 0, sugg: 0, sub,
@@ -391,7 +400,7 @@ async function confirmCore(b, env, out, flag) {
           const order = { num, paymentId: b.paymentId, ref: b.ref, amount: p.amount / 100, currency: p.currency, method: p.source?.type || '', customer: { name: (c.name || '').slice(0, 60), phone: (c.phone || '').slice(0, 20), city: (c.city || '').slice(0, 40), address: (c.address || '').slice(0, 200) }, cart: b.cart.map(o => ({ id: String(o.id), qty: Math.floor(+o.qty), color: String(o.color || '').slice(0, 30) })), at: new Date().toISOString() };
           // the payment marker is created first and acts as a lock: a second confirm for the same payment (double tap, or the paid webhook) stops here
           if (!(await ghCreate(env, 'online/pay_' + b.paymentId + '.json', { num }, 'ربط الدفعة بالطلب ORD-' + num))) { const w = await ghRead(env, 'online/pay_' + b.paymentId + '.json'); return out({ ok: true, num: w ? w.data.num : null, dup: true }) }
-          await ghCreate(env, 'online/ORD-' + num + '.json', order, 'طلب مدفوع ORD-' + num);
+          await ghSave(env, 'online/ORD-' + num + '.json', order, 'طلب مدفوع ORD-' + num).catch(() => {});
           // the invoice itself goes to the same shared inbox the data-entry phone uses; the app imports it into its log
           const nm0 = await names(), itemsT = total - ship;
           const rec = { num, date: riyadhDay(), online: true, payId: b.paymentId, client: (c.name || '').slice(0, 60), phone: (c.phone || '').slice(0, 20), code: b.ref,
