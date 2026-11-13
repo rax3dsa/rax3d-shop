@@ -205,7 +205,7 @@ const COL_EN = { white: 'أبيض', black: 'أسود', gray: 'رمادي', grey:
 function siteColor(c) {   // «اسود» ← «أسود»، «اخضر ريميدي» ← «أخضر» (أول كلمة)؛ غير معروف يبقى كما هو
   const n = CN(c), w = n.split(' ')[0], by = x => SITE_COLS.find(s => CN(s) === x) || COL_ALIAS[x];
   if (by(n) || by(w)) return by(n) || by(w);
-  for (const x of n.toLowerCase().split(/[^a-z]+/)) if (COL_EN[x]) return COL_EN[x];   // English as on the filament sticker: "Matte Ice Blue 10100"
+  const hit = [...new Set(n.toLowerCase().split(/[^a-z]+/).map(x => COL_EN[x]).filter(Boolean))]; if (hit.length === 1) return hit[0];   // two colours (Blue Green): inventory only, never linked to the site   // English as on the filament sticker: "Matte Ice Blue 10100"
   return String(c);
 }
 function outColours(d) {
