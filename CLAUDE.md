@@ -16,6 +16,11 @@ Do this in the same commit as the product. Never grow either list. Say in the re
 - `catalog.json` (`n`, `en`, `g`), `sitemap.xml` (`?p=<id>`), bump the cache version in `sw.js`.
 - Test in a browser before pushing: item page (AR + EN), 3D view, a colour change, cart price, no console errors.
 
+## Pricing: use the invoicing app's calculator (owner's standing order, 11-13)
+- Price every piece with `python3 tools/price-calc.py <grams> <hours> [acc]`: it is the invoicing app's calculator (`calcItem` in rax3dsa.github.io) with the same formulas and rounding. Live settings come from the data repo (`shared.json` -> `/settings`): spool 115 per 1000 g, waste 20%, machine 1.15 per hour, packaging 3, x4.5 single, x3.5 set, gateway 3.2% + 1.2. The app rounds the suggested price UP first, then covers the gateway fee: shop price = `ceil((suggested + 1.2) / 0.968)`. Extra parts (`acc`) are added at cost with no multiplier. Use `--settings` to read the settings live if they changed.
+- Lowest-loss rule: the default shop price is the app's suggested shop price (zero gap, no loss against the suggestion). Go below it only when the owner sets a price by hand.
+- BEFORE the owner confirms any price, tell him: the single price, the wholesale price, and the net profit in SAR and in % for both (and the gap against the suggested price when he set it by hand). Apply Rule 3 to the wholesale. Nothing goes live before he confirms. (Example: hdcookie, 14.27 g, 0.92 h, cost 6.03: app price 31 / 24, owner chose 30 by hand.)
+
 ## Pricing
 - Cost = grams x 0.115 x 1.2 + print hours x 1.15 + 3 (packaging). Single = cost x 4.5, wholesale = cost x 3.5, then cover the gateway fee: `ceil((p + 1.2) / 0.968)`.
 - Wholesale threshold: 12 pieces, or 6 when the weight is 100 g or more. If the 3MF is not sliced, the weight/time are estimates: say so and ask the owner to slice.
