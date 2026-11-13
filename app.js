@@ -401,7 +401,7 @@ const PU=o=>isSP(o)?0:UP(o.id,o.qty);
 const TOT=()=>cart.reduce((a,o)=>a+(isSP(o)?0:LT(o)),0);
 function addLine(o){const ex=cart.find(x=>x.id===o.id&&x.ci===o.ci&&(x.size||"")===(o.size||"")&&(x.note||"")===(o.note||""));if(ex){ex.qty=Math.min(999,ex.qty+o.qty);return ex}cart.push(o);return o}   /* identical lines are merged so the wholesale quantity counts the total */
 function cartUI(){if(!cart.length)OREF="";$("#cartN").textContent=cart.reduce((a,o)=>a+o.qty,0);try{localStorage.setItem("rax3d_cart",JSON.stringify(cart))}catch(_){}}
-try{const s=JSON.parse(localStorage.getItem("rax3d_cart")||"[]");if(Array.isArray(s))s.forEach(o=>{if(o&&IMG[o.id]&&COLORS[o.ci]&&Number.isInteger(o.qty)&&o.qty>0&&o.qty<=9999&&cart.length<30)addLine({id:o.id,name:String(o.name).slice(0,80),color:/^🎨 طلب خاص/.test(String(o.note||""))?"ألوان متعددة":COLORS[o.ci][0],ci:o.ci,qty:o.qty,size:o.size||undefined,note:String(o.note||"").slice(0,200)})});if(cart.length)cartUI()}catch(_){}
+try{const s=JSON.parse(localStorage.getItem("rax3d_cart")||"[]");if(Array.isArray(s))s.forEach(o=>{if(o&&IMG[o.id]&&COLORS[o.ci]&&!HID.has(o.ci)&&Number.isInteger(o.qty)&&o.qty>0&&o.qty<=9999&&cart.length<30)addLine({id:o.id,name:String(o.name).slice(0,80),color:/^🎨 طلب خاص/.test(String(o.note||""))?"ألوان متعددة":COLORS[o.ci][0],ci:o.ci,qty:o.qty,size:o.size||undefined,note:String(o.note||"").slice(0,200)})});if(cart.length)cartUI()}catch(_){}
 /* ---------- order code: short and easy to keep (e.g. RX-7KM3Q). The order details travel in the message text itself,
    which the invoicing app reads when the whole message is pasted. Same code for the whole cart. ---------- */
 let OREF="";
