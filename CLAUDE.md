@@ -2,6 +2,10 @@
 
 The shop is static (GitHub Pages, rax3d.com). Products live in `app.js`; prices and weights live in `index.html`; the payment worker is in `worker/`.
 
+## Publish command (owner's standing order, 11-13)
+- The phrases «ارفع للموقع» / «ارفعهم للموقع» = the owner's explicit go-ahead to publish (open the PR and merge it to main) the work shown to him in this conversation, including the price already told to him. Before that phrase do not publish: work on the branch, test, show, wait.
+- The phrase does not cover deleting products or data, prices he was not shown, money actions or messages. If anything changed after the show, tell him before publishing.
+
 ## Rule 1: "وصل حديثاً" (NEW) and "الأكثر طلباً" (FEATURED) rotate on every new product (approved by the owner, permanent)
 When a new product is added to the shop:
 1. Put its id FIRST in `NEW` (app.js).
