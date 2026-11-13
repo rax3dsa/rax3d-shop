@@ -347,7 +347,8 @@ async function customGet(id, env, out) {
   const f = await ghRead(env, 'custom/' + id + '.json');
   if (!f) return out({ ok: false, reason: 'none' }, 404);
   const c = f.data;
-  return out({ ok: true, status: c.status || 'open', name: String(c.name || '').slice(0, 60), desc: String(c.desc || '').slice(0, 1200), price: +c.price, img: String(c.img || '').slice(0, 400000), num: c.status && c.status !== 'open' ? c.num || null : null });
+  const lp = /^05\d{8}$/.test(String(c.phone || '')) ? String(c.phone).slice(0, 2) + '•••••' + String(c.phone).slice(-3) : '';
+  return out({ ok: true, status: c.status || 'open', name: String(c.name || '').slice(0, 60), phoneMask: lp, desc: String(c.desc || '').slice(0, 1200), price: +c.price, img: String(c.img || '').slice(0, 400000), num: c.status && c.status !== 'open' ? c.num || null : null });
 }
 // the order number is only handed out after the payment/COD, so the record also keeps it for the second visit to the link
 async function customDone(env, id, status, num, extra) {
@@ -356,9 +357,8 @@ async function customDone(env, id, status, num, extra) {
 async function customCod(req, env, out) {
   let b; try { b = await req.json() } catch { return out({ ok: false, reason: 'bad' }, 400) }
   { const og = req.headers.get('Origin'); if (og && og !== SITE && og !== 'https://www.rax3d.com') return out({ ok: false, reason: 'origin' }, 403) }
-  const id = String(b.id || ''), cu = b.customer || {}, name = String(cu.name || '').trim().slice(0, 60), phone = String(cu.phone || '').replace(/\s/g, '').slice(0, 20);
+  const id = String(b.id || ''), cu = b.customer || {}; let name = String(cu.name || '').trim().slice(0, 60), phone = String(cu.phone || '').replace(/\s/g, '').slice(0, 20);
   if (!CID.test(id) || !env.GH_TOKEN || !env.GH_REPO) return out({ ok: false, reason: 'bad' }, 400);
-  if (name.length < 2 || !/^(05\d{8}|\+?9665\d{8})$/.test(phone)) return out({ ok: false, reason: 'fields' }, 400);
   const mode = b.mode === 'pickup' ? 'pickup' : b.mode === 'delivery' ? 'delivery' : '';
   if (!mode) return out({ ok: false, reason: 'mode' }, 400);
   const fee = mode === 'pickup' ? 0 : COD_SHIP_FEE;
@@ -368,6 +368,9 @@ async function customCod(req, env, out) {
   const c = f.data, price = Math.round(+c.price);
   if (!(price >= 1 && price <= 50000)) return out({ ok: false, reason: 'bad' }, 400);
   if ((c.status || 'open') !== 'open') return out({ ok: false, reason: 'used', num: c.num || null }, 409);
+  // the client the owner typed in the invoicing app wins: loyalty points follow that phone
+  if (/^05\d{8}$/.test(String(c.phone || ''))) { name = String(c.name || name).slice(0, 60); phone = String(c.phone) }
+  if (name.length < 2 || !/^(05\d{8}|\+?9665\d{8})$/.test(phone)) return out({ ok: false, reason: 'fields' }, 400);
   let num;
   try {
     num = await reserveNumber(env);
@@ -395,7 +398,8 @@ async function customPaid(b, p, md, env, out, refuse) {
   const done = await ghRead(env, 'online/pay_' + p.id + '.json');
   if (done) return out({ ok: true, num: done.data.num, dup: true });
   if ((c.status || 'open') !== 'open') return refuse('used');
-  const name = String(md.name || (b.customer && b.customer.name) || '').slice(0, 60), phone = String(md.phone || (b.customer && b.customer.phone) || '').slice(0, 20);
+  let name = String(md.name || (b.customer && b.customer.name) || '').slice(0, 60), phone = String(md.phone || (b.customer && b.customer.phone) || '').slice(0, 20);
+  if (/^05\d{8}$/.test(String(c.phone || ''))) { name = String(c.name || name).slice(0, 60); phone = String(c.phone) }
   const num = await reserveNumber(env);
   if (!(await ghCreate(env, 'online/pay_' + p.id + '.json', { num }, 'ربط الدفعة بالطلب الخاص ORD-' + num))) { const w = await ghRead(env, 'online/pay_' + p.id + '.json'); return out({ ok: true, num: w ? w.data.num : null, dup: true }) }
   await ghSave(env, 'online/ORD-' + num + '.json', { num, paymentId: p.id, custom: id, mode, ship: fee, amount: p.amount / 100, currency: p.currency, method: p.source?.type || '', customer: { name, phone }, desc: c.desc, at: new Date().toISOString() }, 'طلب خاص مدفوع ORD-' + num).catch(() => {});
