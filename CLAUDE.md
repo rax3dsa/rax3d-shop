@@ -55,6 +55,7 @@ For every new or re-priced product, check the wholesale price before publishing:
 - Photos must look like the original photo (real photo cut out, light effects kept), NOT a 3D render, unless no photo exists. Keep the glow/lighting of the original and only replace the background with the site's cream background.
 - A piece with two designs (A/B, e.g. cubea/cubeb) gets its own photo per design, each clearly showing that design.
 - Pieces that hold or show something (batteries, cups) get an extra image that shows it in use.
+- Always centre the piece in the 800x800 frame with at least 10% margin on every side (never touching or crossing an edge). Keep any label the owner put in the image that tells the customer which design it is (e.g. "A Design A"); recolour only the piece, never the label.
 
 ## Product descriptions and SEO (added)
 - Every new product needs an Arabic entry in `DESC` and an English one in `DESC_EN` (app.js, <=125 chars, sells the piece). Hidden variants (`vg`) inherit from the lead item.
