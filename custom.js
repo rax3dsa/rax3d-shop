@@ -24,8 +24,8 @@
   const img=/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(c.img||"")?`<img src="${c.img}" alt="" style="width:100%;border-radius:14px;max-height:260px;object-fit:contain;background:var(--bg)">`:"";
   B().innerHTML=`${c.name?`<p class="inote">الطلب باسم <b>${esc(c.name)}</b></p>`:""}${img}<p style="white-space:pre-wrap;line-height:1.8;margin:0">${esc(c.desc)}</p>
    <p class="total" id="cutot">المبلغ: ${S(c.price)}</p><p class="inote">السعر شامل التجهيز.</p>
-   <div id="cuform"><label class="flab" for="cuName">الاسم</label><input class="fin" id="cuName" autocomplete="name" maxlength="40" value="${esc(c.name||"")}">
-   <label class="flab" for="cuPhone">رقم الجوال</label><input class="fin" id="cuPhone" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="05xxxxxxxx" dir="ltr">
+   <div id="cuform">${c.phoneMask?`<p class="inote">الطلب مسجّل باسم <b>${esc(c.name||"")}</b> · الجوال <b dir="ltr">${esc(c.phoneMask)}</b><br>تُحسب نقاط الولاء على هذا الرقم.</p>`:`<label class="flab" for="cuName">الاسم</label><input class="fin" id="cuName" autocomplete="name" maxlength="40" value="${esc(c.name||"")}">
+   <label class="flab" for="cuPhone">رقم الجوال</label><input class="fin" id="cuPhone" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="05xxxxxxxx" dir="ltr">`}
    <fieldset class="modes" id="cuModes"><legend class="flab">طريقة الاستلام (إلزامي)</legend>
     <label class="mode"><input type="radio" name="cuMode" value="delivery"><span><span class="mt">🚚 توصيل</span><small class="mf">رسوم ${PAY.ship} ريال</small></span></label>
     <label class="mode"><input type="radio" name="cuMode" value="pickup"><span><span class="mt">🏪 استلام مباشر</span><small class="mf">مجاني، نتفق معك على المكان والموعد</small></span></label></fieldset>
@@ -37,7 +37,7 @@
   const feeOf=(m,cod)=>m==="pickup"?0:(cod?(PAY.codShip==null?PAY.ship:PAY.codShip):PAY.ship);
   const upd=()=>{const m=mode(),t=document.getElementById("cutot");if(t)t.textContent=m?`المبلغ: ${S(c.price+feeOf(m,false))}`+(feeOf(m,false)?` (يشمل التوصيل ${PAY.ship})`:""):`المبلغ قبل التوصيل: ${S(c.price)}`};
   document.querySelectorAll("input[name=cuMode]").forEach(i=>i.onchange=upd);upd();
-  const read=cod=>{const n=document.getElementById("cuName").value.trim(),p=document.getElementById("cuPhone").value.replace(/\s/g,"");if(n.length<2||!/^(05\d{8}|\+?9665\d{8})$/.test(p)){msg("عبّي الاسم والجوال (05xxxxxxxx).",true);return null}const m=mode();if(!m){msg("اختر طريقة الاستلام: توصيل أو استلام مباشر.",true);return null}return{n,p,m,fee:feeOf(m,cod)}};
+  const read=cod=>{const locked=!!c.phoneMask,n=locked?String(c.name||""):document.getElementById("cuName").value.trim(),p=locked?"":document.getElementById("cuPhone").value.replace(/\s/g,"");if(!locked&&(n.length<2||!/^(05\d{8}|\+?9665\d{8})$/.test(p))){msg("عبّي الاسم والجوال (05xxxxxxxx).",true);return null}const m=mode();if(!m){msg("اختر طريقة الاستلام: توصيل أو استلام مباشر.",true);return null}return{n,p,m,fee:feeOf(m,cod)}};
   document.getElementById("cuPay").onclick=async()=>{const v=read(false);if(!v)return;try{localStorage.setItem(KEY,JSON.stringify({name:v.n,phone:v.p,mode:v.m}))}catch(_){}
    try{await payLoad()}catch(_){msg("تعذر تحميل بوابة الدفع، جرّب مرة ثانية.",true);return}
    document.getElementById("cuform").hidden=true;const f=document.getElementById("cumysr");f.hidden=false;f.innerHTML="";
