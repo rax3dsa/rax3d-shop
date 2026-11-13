@@ -257,6 +257,11 @@
       "n": "غطاء مناديل هارلي",
       "en": "Harley Tissue Box Cover",
       "g": 190
+    },
+    "batbox": {
+      "n": "علبة تخزين البطاريات",
+      "en": "Battery Storage Box",
+      "g": 258.5
     }
   },
   "colors": [
