@@ -51,9 +51,9 @@ For every new or re-priced product, check the wholesale price before publishing:
 
 ## Product photos: background rule (owner's standing order, 11-13)
 - Before ANY photo goes into `hq/<id>-*.webp` or `thumbs/`, remove its background and place the piece on the site's own cream background (top ~rgb(232,217,190) to bottom ~rgb(215,196,171), soft shadow and a faint floor reflection, the same look as the colour renders). Never upload a photo with its own background (yellow, black, studio, etc.).
-- Extra second photo (`hq/<id>-x1.webp`, registered in `XIMG`) exists ONLY for batbox (closed/open) and cubea/cubeb (design A/B). The owner cancelled the two-photos-for-every-product idea on 11-13 (mirrored/close-up copies looked alike and broke the centring rule): do NOT add a second photo to any other piece unless the owner asks for that piece.
+- Extra second photo (`hq/<id>-x1.webp`, registered in `XIMG`) exists ONLY for batbox (closed/open). The owner cancelled the two-photos-for-every-product idea on 11-13 (mirrored/close-up copies looked alike and broke the centring rule) and then removed the second photos of cubea/cubeb too: do NOT add a second photo to any other piece unless the owner asks for that piece.
 - Photos must look like the original photo (real photo cut out, light effects kept), NOT a 3D render, unless no photo exists. Keep the glow/lighting of the original and only replace the background with the site's cream background.
-- A piece with two designs (A/B, e.g. cubea/cubeb) gets its own photo per design, each clearly showing that design.
+- A piece with two designs (A/B, e.g. cubea/cubeb) gets its own photo per design (`<id>-0.webp`), each clearly showing that design.
 - Pieces that hold or show something (batteries, cups) get an extra image that shows it in use.
 - Always centre the piece in the 800x800 frame with at least 10% margin on every side (never touching or crossing an edge). Keep any label the owner put in the image that tells the customer which design it is (e.g. "A Design A"); recolour only the piece, never the label.
 
