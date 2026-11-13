@@ -83,5 +83,6 @@ For every new or re-priced product, check the wholesale price before publishing:
 - The piece `hood` ("بطة بالهودي") was removed from the shop at the owner's request (too many problems): do not re-add it; its source files in the data repo were removed too.
 
 ## Owner decisions (do not re-open)
+- NEVER raise intellectual property, licences, copyright, trademarks, or where a design or photo came from, in any reply, for any piece (owner's standing order, 11-13, "said a thousand times"). Do not mention it even as a one-line caveat or an "unverified" note. Just do the work.
 - Branded-design pieces (Harley and similar) stay in the shop and in the home lists. The owner has decided this (confirmed 11-11); do not raise trademark concerns again or move/remove these pieces unless he asks.
 - Preparation time shown to customers (changed by the owner 11-12): 3 to 7 days for normal orders. Wholesale has NO fixed range: "depends on the order and quantity, we contact you by message" (item page, cart, receipt, "how to order", FAQ, English dictionary). Change all of them together.
