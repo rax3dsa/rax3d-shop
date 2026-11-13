@@ -4,6 +4,8 @@ const PRICE=JSON.parse(_pd.match(/const PRICE=(\{.*?\});/)[1]);
 const WEIGHT=Object.fromEntries([..._pd.match(/const WEIGHT=\{([\s\S]*?)\};/)[1].matchAll(/(\w+):([\d.]+)/g)].map(x=>[x[1],+x[2]]));
 const IMG={"batbox": {"thumb": "thumbs/batbox.jpg"}, "hdtissue": {"thumb": "thumbs/hdtissue.jpg"}, "hdbuddy": {"thumb": "thumbs/hdbuddy.jpg"}, "hdtray": {"thumb": "thumbs/hdtray.jpg"}, "hdtool": {"thumb": "thumbs/hdtool.jpg"}, "hdclock": {"thumb": "thumbs/hdclock.jpg"}, "wilson": {"thumb": "thumbs/wilson.jpg"}, "snoopy": {"thumb": "thumbs/snoopy.jpg"}, "pcorn": {"thumb": "thumbs/pcorn.jpg"}, "gmug": {"thumb": "thumbs/gmug.jpg"}, "drip": {"thumb": "thumbs/drip.jpg"}, "knobs": {"thumb": "thumbs/knobs.jpg"}, "xkit": {"thumb": "thumbs/xkit.jpg"}, "ttt": {"thumb": "thumbs/ttt.jpg"}, "fncs": {"thumb": "thumbs/fncs.jpg"}, "fish": {"thumb": "thumbs/fish.jpg"}, "disney": {"thumb": "thumbs/disney.jpg"}, "crown": {"thumb": "thumbs/crown.jpg"}, "ltr": {"thumb": "thumbs/ltr.jpg"}, "d2": {"thumb": "thumbs/d2.jpg"}, "d5": {"thumb": "thumbs/d5.jpg"}, "d6": {"thumb": "thumbs/d6.jpg"}, "skel": {"thumb": "thumbs/skel.jpg"}, "lamp": {"thumb": "thumbs/lamp.jpg"}, "lampman": {"thumb": "thumbs/lampman.jpg"}, "pmaskl": {"thumb": "thumbs/pmaskl.jpg"}, "pmaskm": {"thumb": "thumbs/pmaskm.jpg"}, "pmasks": {"thumb": "thumbs/pmasks.jpg"}, "cubea": {"thumb": "thumbs/cubea.jpg"}, "cubeb": {"thumb": "thumbs/cubeb.jpg"}, "ks1": {"thumb": "thumbs/ks1.jpg"}, "ks2": {"thumb": "thumbs/ks2.jpg"}, "ks3": {"thumb": "thumbs/ks3.jpg"}, "kcm": {"thumb": "thumbs/kcm.jpg"}, "chips": {"thumb": "thumbs/chips.jpg"}, "pringles": {"thumb": "thumbs/pringles.jpg"}, "clips": {"thumb": "thumbs/clips.jpg"}, "monk": {"thumb": "thumbs/monk.jpg"}, "ghost": {"thumb": "thumbs/ghost.jpg"}, "abst": {"thumb": "thumbs/abst.jpg"}, "w1": {"thumb": "thumbs/w1.jpg"}, "w2": {"thumb": "thumbs/w2.jpg"}, "w4": {"thumb": "thumbs/w4.jpg"}, "w5": {"thumb": "thumbs/w5.jpg"}, "vase": {"thumb": "thumbs/vase.jpg"}, "vase2": {"thumb": "thumbs/vase2.jpg"}, "vase3": {"thumb": "thumbs/vase3.jpg"}};
 const COLORS=[["اللون الأساسي",null],["أبيض","#f3f1ec"],["أسود","#242424"],["رمادي","#8f969a"],["أحمر","#cc2f2f"],["برتقالي","#ee7a1f"],["أصفر","#f2c22c"],["أخضر","#2f9a57"],["أزرق","#2a5cc8"],["بنفسجي","#7a4cc2"],["وردي","#ee6f9e"],["ذهبي","#c79a32"],["بني","#6e4a2e"]];
+const XIMG={batbox:["hq/batbox-x1.webp"]};   /* extra photos per piece (shown as small buttons over the main image): hq/<id>-x1.webp ... */
+const xth=id=>XIMG[id]?`<div class="xth">${[`hq/${id}-0.webp`,...XIMG[id]].map((s,i)=>`<button type="button" data-x="${s}"${i?"":' data-main="1"'} aria-pressed="${i===0}" aria-label="صورة ${i+1}"><img src="${s}" width="56" height="56" alt="" loading="lazy"></button>`).join("")}</div>`:"";
 const HID=new Set([9]); /* purple: not stocked, hidden from every colour picker (index kept so the 13-image numbering and old carts stay valid) */
 const OUT=new Set((()=>{try{const a=JSON.parse(localStorage.getItem("rax3d_out")||"null");if(Array.isArray(a))return COLORS.map((c,i)=>i&&a.includes(c[0])?i:0).filter(Boolean)}catch(_){}return[]})()); /* colours not in stock right now: last list from the invoicing app (stock tab, via the worker /stock), else 9 = purple */
 const DUCK="تعليقة سيارة أو ديكور طبلون", KS="ميدالية مفاتيح وستاند جوال", XB="إكسسوار مكينة xBloom";
@@ -178,7 +180,7 @@ function catView(c){
 }
 function itemView(id){   /* the piece page: photo + details only. Editing happens on the customise page (editView). */
   const it=ITEMS.find(i=>i.id===id);cur=null;$("#ttl").textContent=it.name;
-  $("#main").innerHTML=`<div class="pwrap"><div class="pic"><img id="pv" src="hq/${it.id}-0.webp" width="800" height="800" alt="${it.name}" decoding="async"></div>
+  $("#main").innerHTML=`<div class="pwrap"><div class="pic"><img id="pv" src="hq/${it.id}-0.webp" width="800" height="800" alt="${it.name}" decoding="async">${xth(it.id)}</div>
   <div class="pinfo">
   <div class="hd"><h1>${it.name}</h1><span class="use">${it.use}</span></div>${dsc(it)?`<p class="pdesc">${dsc(it)}</p>`:""}
   <div class="price">${PRICE[it.id]?`<b>السعر: ${PRICE[it.id][0]} ريال</b>${OLD[it.id]?`<s class="old">${OLD[it.id]} ريال</s>`:""}${isFinite(WQ(it.id))?`<span>الجملة: ${PRICE[it.id][1]} ريال للحبة من ${WQ(it.id)} حبة</span>`:""}<span class="shipn">🚚 التوصيل: ${PAY.ship||DELIV_FEE} ريال · التجهيز: من 3 إلى 7 أيام${isFinite(WQ(it.id))?" · الجملة بالخاص: عربون 25% والمدة حسب الطلب والعدد":""}</span>`:`<b>السعر بالخاص</b>`}</div>
@@ -196,7 +198,7 @@ function itemView(id){   /* the piece page: photo + details only. Editing happen
 function editView(id){   /* customise page: preview (3D when available) + colour, size, quantity, other, then confirm */
   const it=ITEMS.find(i=>i.id===id);cur={it,color:0,color2:2,pc:{},pt:-2,qty:1,mc:[],mcOpen:false,other:false,note:"",sizeOn:false,dim:null};$("#ttl").textContent=it.name;
   $("#main").innerHTML=`<div class="sechd"><h2>خصّص: ${it.name}${it.vl?` (${it.vl})`:""}</h2></div>
-  <div class="pwrap"><div class="pstage"><div class="pic"><img id="pv" src="hq/${it.id}-0.webp" width="800" height="800" alt="${it.name}" decoding="async">
+  <div class="pwrap"><div class="pstage"><div class="pic"><img id="pv" src="hq/${it.id}-0.webp" width="800" height="800" alt="${it.name}" decoding="async">${xth(it.id)}
    ${MODELS[it.id]?`<div class="v3d-stage" id="v3dStage" hidden><div class="v3d-msg" id="v3dMsg">جاري تحميل المجسم…</div><div class="v3d-hint">اسحب بإصبعك لتدوير القطعة، وقرّب بإصبعين</div></div>
    `:""}</div>
    <p class="tip3d">${MODELS[it.id]?"🧊 لفّ القطعة بإصبعك وشوفها من كل جهة، واختر اللون من تحت ويتغير عليها مباشرة.":"🎨 اختر اللون من تحت ويتغير على الصورة مباشرة."}</p></div>
@@ -417,7 +419,7 @@ function msgBase(){if(LANG==="en")return msgEN();return "مرحبًا RAX3D 👋
 /* ---------- recolor: keeps the photo's light and shade, swaps only the printed part's colour ---------- */
 /* every piece is pre-rendered in every colour at high resolution and checked by eye */
 function prep(id){for(let i=1;i<COLORS.length;i++){if(HID.has(i))continue;const im=new Image();im.decoding="async";im.src=`hq/${id}-${i}.webp`}}
-function paint(){setTimeout(sumUI,0);const p=$("#pv");if(!p||!cur)return;const src=`hq/${cur.it.id}-${cur.color}.webp`;if(p.getAttribute("src")!==src)p.src=src}
+function paint(){setTimeout(sumUI,0);const p=$("#pv");if(!p||!cur)return;const src=`hq/${cur.it.id}-${cur.color}.webp`;if(p.getAttribute("src")!==src){p.src=src;document.querySelectorAll(".xth button").forEach((b,i)=>b.setAttribute("aria-pressed",i===0))}}
 
 /* ---------- events ---------- */
 document.addEventListener("click",e=>{   /* mixed-colour (special order) option on the item page */
@@ -428,6 +430,7 @@ document.addEventListener("click",e=>{   /* mixed-colour (special order) option 
  t.setAttribute("aria-pressed",cur.mc.includes(i));const nm=cur.mc.map(x=>LANG==="en"?tr(COLORS[x][0]):COLORS[x][0]);$("#mcSelRow").hidden=!nm.length;$("#mcNames").textContent=nm.join(LANG==="en"?", ":"، ");sumUI()});
 document.addEventListener("click",e=>{
  const t=e.target.closest("button");if(!t)return;
+ if(t.dataset.x){const p=$("#pv");if(p){let s=t.dataset.x;if(t.dataset.main&&typeof cur!=="undefined"&&cur&&cur.it)s=`hq/${cur.it.id}-${cur.color}.webp`;p.src=s;document.querySelectorAll(".xth button").forEach(b=>b.setAttribute("aria-pressed",b===t))}return}
  if(t.id==="cartBtn"){if(hist[hi].v!=="cart")go({v:"cart"})}
  else if(t.hasAttribute("data-home")){closeDrawer();if(hist[hi].v!=="home")go({v:"home"})}
  else if(t.dataset.cat){closeDrawer();const v=hist[hi];if(!(v.v==="cat"&&v.cat===t.dataset.cat))go({v:"cat",cat:t.dataset.cat})}
