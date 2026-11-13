@@ -199,11 +199,17 @@ async function points(req, env, out) {
 // The invoicing app's stock tab keeps stock.json in the private data repo: { types:[{name,site}], rows:[{t,c,q,buy}], next, mailedFor }.
 // The shop asks GET /stock which colours are out: a colour is out when EVERY row of that colour in a site-linked type is marked "buy" (طلب شراء).
 // Answers { ok, out: [names] } or { ok, out: null } when there is no stock file yet (the page keeps its built-in default).
+const CN = s => String(s || '').replace(/[ً-ٟـ]/g, '').replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/\s+/g, ' ').trim();
+const SITE_COLS = ['أبيض', 'أسود', 'رمادي', 'أحمر', 'برتقالي', 'أصفر', 'أخضر', 'أزرق', 'بنفسجي', 'وردي', 'ذهبي', 'بني'], COL_ALIAS = { 'رصاصي': 'رمادي', 'كحلي': 'أزرق', 'سماوي': 'أزرق', 'زهري': 'وردي', 'قهوائي': 'بني', 'بنفسجى': 'بنفسجي' };
+function siteColor(c) {   // «اسود» ← «أسود»، «اخضر ريميدي» ← «أخضر» (أول كلمة)؛ غير معروف يبقى كما هو
+  const n = CN(c), w = n.split(' ')[0], by = x => SITE_COLS.find(s => CN(s) === x) || COL_ALIAS[x];
+  return by(n) || by(w) || String(c);
+}
 function outColours(d) {
   if (!d || !Array.isArray(d.rows)) return null;
   const linked = new Set((Array.isArray(d.types) ? d.types : []).filter(t => t && t.site).map(t => String(t.name)));
   const by = new Map();
-  for (const r of d.rows) { if (!r || !linked.has(String(r.t))) continue; const c = String(r.c || '').slice(0, 30); if (!c) continue; const a = by.get(c) || []; a.push(!!r.buy); by.set(c, a) }
+  for (const r of d.rows) { if (!r || !linked.has(String(r.t))) continue; const c = siteColor(String(r.c || '').slice(0, 30)); if (!c) continue; const a = by.get(c) || []; a.push(!!r.buy); by.set(c, a) }
   return [...by].filter(([, a]) => a.length && a.every(Boolean)).map(([c]) => c);
 }
 let SCACHE = { t: 0, d: null };      // per-isolate copy, refreshed at most once a minute

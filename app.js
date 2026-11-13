@@ -782,7 +782,8 @@ const payable=()=>!!(PAY.pk&&PAY.api&&withinLimits()&&((!PAY.pk.startsWith("pk_t
 /* the delivery fee comes from the worker so the site and the amount the worker checks can never disagree (no answer = no fee) */
 const CFGP=fetch(PAY.api+"/config",{cache:"no-store"}).then(r=>r.json()).then(j=>{if(j&&j.ok&&Number.isFinite(+j.ship)&&+j.ship>=0&&+j.ship<=200){PAY.ship=+j.ship;if(j.codShip!=null&&Number.isFinite(+j.codShip)&&+j.codShip>=0&&+j.codShip<=200)PAY.codShip=+j.codShip;PAY.modes=j.modes===true;if(typeof j.turnstile==="string"&&/^[0-9A-Za-z_-]{10,64}$/.test(j.turnstile))PAY.ts=j.turnstile;if(hist[hi]&&hist[hi].v==="cart")render(false)}}).catch(()=>{});
 /* live colour availability: the owner's stock tab -> worker GET /stock -> here. A colour marked "buy" shows struck through (like purple); when it is restocked the strike disappears. No answer = keep what we have. */
-function applyStock(names){const n=new Set();COLORS.forEach((c,i)=>{if(i&&names.includes(c[0]))n.add(i)});if(n.size===OUT.size&&[...n].every(i=>OUT.has(i)))return;
+const CN=s=>String(s||"").replace(/[\u064B-\u065F\u0640]/g,"").replace(/[أإآٱ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/\s+/g," ").trim();
+function applyStock(names){const nn=names.map(CN),n=new Set();COLORS.forEach((c,i)=>{if(i&&nn.includes(CN(c[0])))n.add(i)});if(n.size===OUT.size&&[...n].every(i=>OUT.has(i)))return;
  OUT.clear();n.forEach(i=>OUT.add(i));try{localStorage.setItem("rax3d_out",JSON.stringify(names))}catch(_){}
  const v=typeof hist!=="undefined"&&hist[hi];if(!v)return;
  if(v.v==="edit"){document.querySelectorAll("#main .sw[data-c]").forEach(b=>{const o=OUT.has(+b.dataset.c);b.classList.toggle("out",o);if(o){b.setAttribute("aria-disabled","true");b.title=COLORS[+b.dataset.c][0]+" — غير متوفر حالياً"}else{b.removeAttribute("aria-disabled");b.removeAttribute("title")}});
