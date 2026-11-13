@@ -212,7 +212,8 @@ function outColours(d) {
   if (!d || !Array.isArray(d.rows)) return null;
   const linked = new Set((Array.isArray(d.types) ? d.types : []).filter(t => t && t.site).map(t => String(t.name)));
   const by = new Map();
-  for (const r of d.rows) { if (!r || !linked.has(String(r.t))) continue; const raw = String(r.c || '').slice(0, 30); if (!raw) continue; const c = siteColor(raw, 1) || siteColor(String(r.code || '').slice(0, 30), 1) || raw;   // name first, then the sticker code (BROWN 10100) const a = by.get(c) || []; a.push(!!r.buy); by.set(c, a) }
+  // colour = the name first, then the sticker number/code field (BROWN 10100)
+  for (const r of d.rows) { if (!r || !linked.has(String(r.t))) continue; const raw = String(r.c || '').slice(0, 30); if (!raw) continue; const c = siteColor(raw, 1) || siteColor(String(r.code || '').slice(0, 30), 1) || raw; const a = by.get(c) || []; a.push(!!r.buy); by.set(c, a) }
   return [...by].filter(([, a]) => a.length && a.every(Boolean)).map(([c]) => c);
 }
 let SCACHE = { t: 0, d: null };      // per-isolate copy, refreshed at most once a minute
