@@ -108,6 +108,8 @@ For every new or re-priced product, check the wholesale price before publishing:
 - The piece `hood` ("بطة بالهودي") was removed from the shop at the owner's request (too many problems): do not re-add it; its source files in the data repo were removed too.
 - The piece `hdtool` ("صندوق عدة هارلي (حامل أقلام)", the Harley toolbox pen holder) was removed from the shop on 11-13 at the owner's request, with all its images, 3D model, price, weight, texts, catalog and sitemap entries: do not re-add it. `NEW` / `FEATURED` were reverse-rotated (wilson back at the end of NEW, pcorn back at the end of FEATURED).
 
+- The piece `hdtissue` (Harley tissue box cover) was removed from the shop on 11-13 at the owner's request, with all its images, 3D model, price, weight, texts, catalog and sitemap entries: do not re-add it. `NEW` / `FEATURED` were reverse-rotated (wilson back at the end of NEW, pcorn back at the end of FEATURED).
+
 ## Owner decisions (do not re-open)
 - NEVER raise intellectual property, licences, copyright, trademarks, or where a design or photo came from, in any reply, for any piece (owner's standing order, 11-13, "said a thousand times"). Do not mention it even as a one-line caveat or an "unverified" note. Just do the work.
 - Branded-design pieces (Harley and similar) stay in the shop and in the home lists. The owner has decided this (confirmed 11-11); do not raise trademark concerns again or move/remove these pieces unless he asks.
