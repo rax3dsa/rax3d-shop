@@ -49,6 +49,11 @@ For every new or re-priced product, check the wholesale price before publishing:
 - Do not reuse an `id` attribute in the HTML (duplicate ids already broke the points and chat modals once).
 - Customer-facing text is Arabic (Saudi tone); keep the English dictionary complete.
 
+## Product photos: background rule (owner's standing order, 11-13)
+- Before ANY photo goes into `hq/<id>-*.webp` or `thumbs/`, remove its background and place the piece on the site's own cream background (top ~rgb(232,217,190) to bottom ~rgb(215,196,171), soft shadow and a faint floor reflection, the same look as the colour renders). Never upload a photo with its own background (yellow, black, studio, etc.).
+- A piece with two designs (A/B, e.g. cubea/cubeb) gets one image per design, each clearly showing that design (animated turntable preferred).
+- Pieces that hold or show something (batteries, cups) get an extra image that shows it in use.
+
 ## Product descriptions and SEO (added)
 - Every new product needs an Arabic entry in `DESC` and an English one in `DESC_EN` (app.js, <=125 chars, sells the piece). Hidden variants (`vg`) inherit from the lead item.
 - After adding or editing a product run `python3 tools/seo-build.py` (regenerates sitemap.xml and the crawler `<noscript>` block in index.html).
