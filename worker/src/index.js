@@ -334,6 +334,77 @@ async function recovery(req, env, out) {
   return out({ ok: sent }, sent ? 200 : 502);
 }
 
+// ---- custom orders (طلب خاص) ----
+// The invoicing app (owner only) writes custom/<id>.json to the data repo: { id, name, desc, price, img, status:'open', at }.
+// The customer opens https://rax3d.com/?c=<id>; the page reads it from GET /custom/<id> and pays online (/confirm, metadata.custom) or picks cash on delivery (POST /custom/cod).
+// The link works once: the file's status moves to 'paid' or 'cod'. The price is all-in (no delivery fee is added automatically).
+const CID = /^[A-Za-z0-9]{16}$/;
+const customLog = (id, c, price, label, name, phone, payId, cod) => ({ num: label, date: riyadhDay(), online: true, ...(cod ? { cod: true } : {}), payId, client: name, phone, code: 'CU-' + id.slice(0, 5).toUpperCase(),
+  desc: 'طلب خاص: ' + String(c.desc || '').slice(0, 120), qty: 1, disc: 0, total: price, profit: 0, sugg: 0, sub: price,
+  items: [{ desc: 'طلب خاص: ' + String(c.desc || '').slice(0, 120), color: '', q: 1, unit: price, line: price, cost: 0, w: 0, h: 0, m: 0, sec: 0, type: 'واحدة', auto: false, dp: 0 }] });
+async function customGet(id, env, out) {
+  if (!CID.test(id) || !env.GH_TOKEN || !env.GH_REPO) return out({ ok: false, reason: 'bad' }, 404);
+  const f = await ghRead(env, 'custom/' + id + '.json');
+  if (!f) return out({ ok: false, reason: 'none' }, 404);
+  const c = f.data;
+  return out({ ok: true, status: c.status || 'open', name: String(c.name || '').slice(0, 60), desc: String(c.desc || '').slice(0, 1200), price: +c.price, img: String(c.img || '').slice(0, 400000), num: c.status && c.status !== 'open' ? c.num || null : null });
+}
+// the order number is only handed out after the payment/COD, so the record also keeps it for the second visit to the link
+async function customDone(env, id, status, num, extra) {
+  await ghUpdate(env, 'custom/' + id + '.json', null, d => d ? ({ ...d, status, num, doneAt: new Date().toISOString(), ...extra }) : undefined, 'طلب خاص ' + id.slice(0, 5) + ' ← ' + status);
+}
+async function customCod(req, env, out) {
+  let b; try { b = await req.json() } catch { return out({ ok: false, reason: 'bad' }, 400) }
+  { const og = req.headers.get('Origin'); if (og && og !== SITE && og !== 'https://www.rax3d.com') return out({ ok: false, reason: 'origin' }, 403) }
+  const id = String(b.id || ''), cu = b.customer || {}, name = String(cu.name || '').trim().slice(0, 60), phone = String(cu.phone || '').replace(/\s/g, '').slice(0, 20);
+  if (!CID.test(id) || !env.GH_TOKEN || !env.GH_REPO) return out({ ok: false, reason: 'bad' }, 400);
+  if (name.length < 2 || !/^(05\d{8}|\+?9665\d{8})$/.test(phone)) return out({ ok: false, reason: 'fields' }, 400);
+  if (!(await turnstileOk(env, b.ts, req.headers.get('CF-Connecting-IP') || ''))) return out({ ok: false, reason: 'captcha' }, 403);
+  const f = await ghRead(env, 'custom/' + id + '.json');
+  if (!f) return out({ ok: false, reason: 'none' }, 404);
+  const c = f.data, price = Math.round(+c.price);
+  if (!(price >= 1 && price <= 50000)) return out({ ok: false, reason: 'bad' }, 400);
+  if ((c.status || 'open') !== 'open') return out({ ok: false, reason: 'used', num: c.num || null }, 409);
+  let num;
+  try {
+    num = await reserveNumber(env);
+    // the marker acts as a lock: a double tap stops here instead of making a second invoice
+    if (!(await ghCreate(env, 'online/cod_custom_' + id + '.json', { num }, 'ربط الطلب الخاص ' + id.slice(0, 5)))) { const w = await ghRead(env, 'online/cod_custom_' + id + '.json'); return out({ ok: true, num: w ? w.data.num : num, dup: true }) }
+    await ghSave(env, 'online/ORD-' + num + '.json', { num, cod: true, custom: id, total: price, customer: { name, phone }, desc: c.desc, at: new Date().toISOString() }, 'طلب خاص دفع عند الاستلام ORD-' + num).catch(() => {});
+    const rec = customLog(id, c, price, num, name, phone, 'cod_custom_' + id, true);
+    try { await ghUpdate(env, 'partner_log.json', [], arr => { arr = Array.isArray(arr) ? arr : []; if (!arr.some(x => x && Number(x.num) === num)) arr.push(rec); return arr }, 'فاتورة طلب خاص ORD-' + num) } catch (e) {}
+    await customDone(env, id, 'cod', num, { customer: { name, phone } }).catch(() => {});
+  } catch (e) { return out({ ok: false, reason: 'number' }, 502) }
+  const label = 'ORD-' + num;
+  const html = `<p style="font-size:16px"><b>🚚 طلب خاص بالدفع عند الاستلام ${esc(label)}</b><br>الطلب غير مدفوع، تحصّل ${price} ريال عند التسليم.</p><p>الاسم: ${esc(name)}<br>الجوال: <span dir="ltr">${esc(phone)}</span></p><p>الوصف:<br>${esc(String(c.desc || '')).replace(/\n/g, '<br>')}</p>`;
+  const sent = await mail(env, '🚚 طلب خاص (دفع عند الاستلام) ' + label, html);
+  return out({ ok: true, num, price, emailed: sent });
+}
+// called from confirmCore when the payment's metadata carries custom=<id>; the payment is already known to be paid
+async function customPaid(b, p, md, env, out, refuse) {
+  const id = String(md.custom || '');
+  if (!CID.test(id) || !env.GH_TOKEN || !env.GH_REPO) return refuse('bad');
+  const f = await ghRead(env, 'custom/' + id + '.json');
+  if (!f) return refuse('none');
+  const c = f.data, price = Math.round(+c.price);
+  if (p.currency !== 'SAR' || p.amount !== price * 100) { await mail(env, '⚠️ دفعة طلب خاص تحتاج مراجعة', `<p>المتوقع: ${price} ريال، المدفوع: ${p.amount / 100} ${esc(p.currency)}.<br>رقم الدفعة: <span dir="ltr">${esc(p.id)}</span></p>`); return out({ ok: false, reason: 'mismatch', paid: true }) }
+  const done = await ghRead(env, 'online/pay_' + p.id + '.json');
+  if (done) return out({ ok: true, num: done.data.num, dup: true });
+  if ((c.status || 'open') !== 'open') return refuse('used');
+  const name = String(md.name || (b.customer && b.customer.name) || '').slice(0, 60), phone = String(md.phone || (b.customer && b.customer.phone) || '').slice(0, 20);
+  const num = await reserveNumber(env);
+  if (!(await ghCreate(env, 'online/pay_' + p.id + '.json', { num }, 'ربط الدفعة بالطلب الخاص ORD-' + num))) { const w = await ghRead(env, 'online/pay_' + p.id + '.json'); return out({ ok: true, num: w ? w.data.num : null, dup: true }) }
+  await ghSave(env, 'online/ORD-' + num + '.json', { num, paymentId: p.id, custom: id, amount: p.amount / 100, currency: p.currency, method: p.source?.type || '', customer: { name, phone }, desc: c.desc, at: new Date().toISOString() }, 'طلب خاص مدفوع ORD-' + num).catch(() => {});
+  let logFail = false;
+  try { await ghUpdate(env, 'partner_log.json', [], arr => { arr = Array.isArray(arr) ? arr : []; if (!arr.some(x => x && Number(x.num) === num)) arr.push(customLog(id, c, price, num, name, phone, p.id, false)); return arr }, 'فاتورة طلب خاص مدفوع ORD-' + num) } catch (e) { logFail = true }
+  await customDone(env, id, 'paid', num, { payId: p.id, customer: { name, phone } }).catch(() => {});
+  const label = 'ORD-' + num;
+  const invoice = invoiceHtml({ label, date: riyadhDay(), name, phone, rows: [{ name: 'طلب خاص: ' + String(c.desc || '').slice(0, 120), q: 1, u: price, color: '' }], sub: price, ship: 0, total: price, bank: await bankInfo(env), method: p.source?.type === 'applepay' ? 'Apple Pay' : (p.source?.company ? String(p.source.company).toUpperCase() : 'Card') });
+  const html = invoice + `<hr style="margin:26px 0;border:0;border-top:1px dashed #ccc"><p>✅ طلب خاص مدفوع <b>${esc(label)}</b>${logFail ? ' (⚠️ تعذّر إضافة الفاتورة لبرنامج الفواتير، أضفها يدوياً)' : ''}</p><p>الوصف:<br>${esc(String(c.desc || '')).replace(/\n/g, '<br>')}</p><p>الجوال: <span dir="ltr">${esc(phone)}</span></p>`;
+  const sent = await mail(env, '✅ طلب خاص مدفوع ' + label, html);
+  return out({ ok: true, num, price, emailed: sent });
+}
+
 async function handle(req, env, ctx) {
   {
     // answer CORS for both the bare domain and www (the origin checks below already accept both)
@@ -345,6 +416,8 @@ async function handle(req, env, ctx) {
     if (req.method === 'POST' && path === '/recovery') return recovery(req, env, out);
     if (req.method === 'POST' && path === '/webhook') return hook(req, env, out, ctx);
     if (req.method === 'POST' && path === '/cod') return cod(req, env, out);
+    if (req.method === 'POST' && path === '/custom/cod') return customCod(req, env, out);
+    if (req.method === 'GET' && path.startsWith('/custom/')) return customGet(path.slice(8), env, out);
     if (req.method === 'POST' && path === '/points') return points(req, env, out);
     if (req.method === 'GET' && path === '/stock') return out({ ok: true, out: await stockOut(env) });
     if (req.method === 'GET' && path === '/config') return out({ ok: true, ship: SHIP_FEE, codShip: COD_SHIP_FEE, modes: true, turnstile: (env.TURNSTILE_SECRET && env.TURNSTILE_SITEKEY) ? String(env.TURNSTILE_SITEKEY) : null });
@@ -388,6 +461,7 @@ async function confirmCore(b, env, out, flag) {
       return out({ ok: false, reason, paid: true }, 400);
     };
     const md = p.metadata || {};
+    if (md.custom) return customPaid(b, p, md, env, out, refuse);
     if (!/^RX-[A-Z0-9]{5}$/.test(b.ref || '')) b.ref = md.ref;
     if (!Array.isArray(b.cart) || !b.cart.length) {
       const cols = {}; String(md.cols || '').split(',').forEach(s => { const i = s.indexOf(':'); if (i > 0) cols[s.slice(0, i)] = s.slice(i + 1) });
