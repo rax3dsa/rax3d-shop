@@ -57,6 +57,13 @@ For every new or re-priced product, check the wholesale price before publishing:
 - Pieces that hold or show something (batteries, cups) get an extra image that shows it in use.
 - Always centre the piece in the 800x800 frame with at least 10% margin on every side (never touching or crossing an edge). Keep any label the owner put in the image that tells the customer which design it is (e.g. "A Design A"); recolour only the piece, never the label.
 
+## Design and professional images (owner's standing order, 11-13)
+- Pick the method that gives a professional result from the start, not the fastest one. Never collage elements from sources with different lighting or perspective: build one consistent scene (one light, shadow set and perspective). When the source file exists (3MF/STL/model) extract the real shape from it instead of approximating.
+- Never show a first draft. Critique it hard (centring, margins, shadows, background, realistic sizes, text readable and not mirrored) and improve it internally until it is deliverable, then show it.
+- RAX3D identity: the site's cream background, the piece centred with at least 10% margin on every side, no change to the product's colour or logo.
+- If an image is computer-generated, say so plainly; never imply it is a manufactured piece or a real photo.
+- If an essential input is missing ask once, never guess. State the method used and what was not achieved.
+
 ## Product descriptions and SEO (added)
 - Every new product needs an Arabic entry in `DESC` and an English one in `DESC_EN` (app.js, <=125 chars, sells the piece). Hidden variants (`vg`) inherit from the lead item.
 - After adding or editing a product run `python3 tools/seo-build.py` (regenerates sitemap.xml and the crawler `<noscript>` block in index.html).
