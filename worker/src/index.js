@@ -201,9 +201,12 @@ async function points(req, env, out) {
 // Answers { ok, out: [names] } or { ok, out: null } when there is no stock file yet (the page keeps its built-in default).
 const CN = s => String(s || '').replace(/[ً-ٟـ]/g, '').replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/\s+/g, ' ').trim();
 const SITE_COLS = ['أبيض', 'أسود', 'رمادي', 'أحمر', 'برتقالي', 'أصفر', 'أخضر', 'أزرق', 'بنفسجي', 'وردي', 'ذهبي', 'بني'], COL_ALIAS = { 'رصاصي': 'رمادي', 'كحلي': 'أزرق', 'سماوي': 'أزرق', 'زهري': 'وردي', 'قهوائي': 'بني', 'بنفسجى': 'بنفسجي' };
+const COL_EN = { white: 'أبيض', black: 'أسود', gray: 'رمادي', grey: 'رمادي', silver: 'رمادي', graphite: 'رمادي', charcoal: 'رمادي', red: 'أحمر', orange: 'برتقالي', yellow: 'أصفر', green: 'أخضر', lime: 'أخضر', olive: 'أخضر', mint: 'أخضر', blue: 'أزرق', navy: 'أزرق', cyan: 'أزرق', sky: 'أزرق', purple: 'بنفسجي', violet: 'بنفسجي', lavender: 'بنفسجي', pink: 'وردي', magenta: 'وردي', rose: 'وردي', gold: 'ذهبي', brown: 'بني', coffee: 'بني', bronze: 'بني', chocolate: 'بني' };
 function siteColor(c) {   // «اسود» ← «أسود»، «اخضر ريميدي» ← «أخضر» (أول كلمة)؛ غير معروف يبقى كما هو
   const n = CN(c), w = n.split(' ')[0], by = x => SITE_COLS.find(s => CN(s) === x) || COL_ALIAS[x];
-  return by(n) || by(w) || String(c);
+  if (by(n) || by(w)) return by(n) || by(w);
+  for (const x of n.toLowerCase().split(/[^a-z]+/)) if (COL_EN[x]) return COL_EN[x];   // English as on the filament sticker: "Matte Ice Blue 10100"
+  return String(c);
 }
 function outColours(d) {
   if (!d || !Array.isArray(d.rows)) return null;
