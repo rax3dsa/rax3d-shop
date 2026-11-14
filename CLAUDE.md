@@ -141,6 +141,11 @@ For every new or re-priced product, check the wholesale price before publishing:
 ## Keep this file current (owner's standing order, 11-14)
 - When a piece of work is finished (prices approved, a piece added or removed, a decision taken), update this CLAUDE.md in the SAME session so every other chat reads the same facts, then commit it. Never leave a finished result only in the conversation.
 
+## Chats are linked (owner's standing order, 11-14)
+- All chats, old and new, work as one: never start from zero. Before any work read this file, the sliced-pieces table above and `rax3d-data/sliced-pieces.json`; the same rule is in the CLAUDE.md of the other four repos (RAX3D, rax3d-data, rax3d-posts, rax3dsa.github.io).
+- When a piece of work is finished, record it here in the same session and push it. Chats cannot see each other; the files in the repos are the only shared memory.
+- Never say a piece is "not sliced" before checking the table above. Pieces really WITHOUT slice data (checked 11-14 against the 3MFs in the data repo): d2, disney, drip, fish, fncs, gmug, kcm, knobs, pcorn, ttt, xkit (11 pieces: their 3MFs carry no print time or weight) and crown (its 3MF holds a slice: 101.25 g, 12472 s = 3h27m52s, but `files/crown.json` has no time). cool, hdcookie and batbox have no file in `files/` at all. The 12 pieces listed in the table above ARE sliced.
+
 ## Owner decisions (do not re-open)
 - Loyalty points (owner, 11-13): 1000 points = 10 SAR off, 2500 points = free delivery (the 25 SAR delivery fee is waived; only offered when the visitor chose delivery), 5000 points = a free piece worth up to 250 SAR. Change them in ALL places together: app.js (how-to-order bullets, FAQ AR + `POL_EN`, EN dictionary, `openPtsOffer`, the `data-predeem` click handler, `msg()`), index.html bullets, and the invoicing app (`PTS_RULES`, redeem sheet `openRedeem`, rules text). The worker only returns balances.
 - NEVER raise intellectual property, licences, copyright, trademarks, or where a design or photo came from, in any reply, for any piece (owner's standing order, 11-13, "said a thousand times"). Do not mention it even as a one-line caveat or an "unverified" note. Just do the work.
