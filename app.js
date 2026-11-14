@@ -137,7 +137,7 @@ function render(scroll){
   const activeCat=v.v==="cat"?v.cat:(v.v==="item"||v.v==="edit")?ITEMS.find(i=>i.id===v.id).cat:null;
   rail(activeCat);
   cur=null;V.on=false;
-  if(v.v==="home")home();else if(v.v==="cat")catView(v.cat);else if(v.v==="item")itemView(v.id);else if(v.v==="edit")editView(v.id);else if(v.v==="fav")favView();else cartView();document.body.classList.add("rdy");
+  if(v.v==="home")home();else if(v.v==="cat")catView(v.cat);else if(v.v==="item")itemView(v.id);else if(v.v==="edit")editView(v.id);else if(v.v==="fav")favView();else cartView();document.body.classList.toggle("nofoot",v.v!=="home");document.body.classList.add("rdy");
   seoFor(v.v==="item"||v.v==="edit"?v.id:null);
   if(scroll){if(window.LENIS)LENIS.scrollTo(0,{immediate:true,force:true});else window.scrollTo(0,0)}
   if(window.motionView)motionView();
