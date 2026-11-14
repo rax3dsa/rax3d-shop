@@ -158,7 +158,7 @@ function startCars(){clearInterval(carT);const cars=[...document.querySelectorAl
  cars.forEach(c=>{const s=st.get(c);["touchstart","pointerdown","mouseenter","focusin"].forEach(e=>c.addEventListener(e,()=>{s.pause=true},{passive:true}));["touchend","mouseleave","focusout"].forEach(e=>c.addEventListener(e,()=>{setTimeout(()=>{s.pause=false},4000)},{passive:true}));
   if("IntersectionObserver" in window)new IntersectionObserver(en=>{s.vis=en[0].isIntersecting}).observe(c)});
  carT=setInterval(()=>{if(!document.querySelector("[data-car]")){clearInterval(carT);return}cars.forEach(c=>{const s=st.get(c);if(s.pause||!s.vis||document.hidden)return;const its=c.children;if(its.length<3)return;
-  s.i=(s.i+1)%(its.length-1);const x=its[s.i];if(!x)return;x.scrollIntoView({inline:"start",block:"nearest",behavior:"smooth"})})},3500)}
+  s.i=(s.i+1)%(its.length-1);const x=its[s.i];if(!x)return;{const rtl=getComputedStyle(c).direction==="rtl",d=rtl?x.getBoundingClientRect().right-c.getBoundingClientRect().right:x.getBoundingClientRect().left-c.getBoundingClientRect().left;c.scrollBy({left:d,behavior:"smooth"})}})},3500)}
 function home(){
   $("#ttl").innerHTML='<span><img src="icon-192.png" alt="">RAX3D</span>';
   $("#main").innerHTML=`<section class="hero"><img class="mark" src="icon-192.png" alt="شعار RAX3D" width="76" height="76">
