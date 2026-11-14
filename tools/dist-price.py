@@ -3,7 +3,7 @@
     python3 tools/dist-price.py <grams> [hours] [--pack 0.5] [--fail 5] [--qty N] [--printers P]
 Unit cost = (grams x 0.115 x 1.2 + hours x 1.15) x (1 + failure allowance 5%) + bulk packaging (0.5). If hours is missing it is ESTIMATED as 0.25 + 0.042 x grams (from the owner's own files): say so.
 Unit price = ((cost + 1.2 / qty) / (0.968 - target net margin)) rounded UP to 0.05 SAR. Target net margin after gateway fees: 50 pcs 25%, 100 pcs 20%, 500 pcs 15%, 1000 pcs 10%.
-Minimum order 50 pieces. The 5% failure allowance is ON by default (--fail 0 turns it off). Same formula as distUnit() in the invoicing app."""
+Minimum order 50 pieces. Per-piece FLOOR per tier 3.75 / 3.40 / 3.00 / 2.65: the price is the higher of the margin price and the floor. The 5% failure allowance is ON by default (--fail 0 turns it off). Same formula as distUnit() in the invoicing app."""
 import math, sys
 a = sys.argv[1:]
 def opt(name, default):
@@ -15,8 +15,11 @@ if not a: sys.exit(__doc__)
 g = float(a[0]); est = len(a) < 2; h = float(a[1]) if not est else 0.25 + 0.042 * g
 SPOOL, WASTE, RUN, FEE, FIX = 0.115, 0.2, 1.15, 0.032, 1.2
 TIERS = [(50, 0.25), (100, 0.20), (500, 0.15), (1000, 0.10)]
+FLOOR = [(50, 3.75), (100, 3.40), (500, 3.00), (1000, 2.65)]   # per-piece minimum per tier (owner 11-14): price = max(margin price, floor)
 cost = (g * SPOOL * (1 + WASTE) + h * RUN) * (1 + fail / 100) + pack
-price = lambda q, m: math.ceil(((cost + FIX / q) / (1 - FEE - m)) / 0.05 - 1e-9) * 0.05
+def floor_of(q): return [f for t, f in FLOOR if t <= q][-1]
+raw_price = lambda q, m: math.ceil(((cost + FIX / q) / (1 - FEE - m)) / 0.05 - 1e-9) * 0.05
+price = lambda q, m: max(raw_price(q, m), floor_of(q))
 net = lambda p, q: p - (p * FEE + FIX / q) - cost
 print(f'unit cost {cost:.2f}  (material+waste {g*SPOOL*(1+WASTE)*(1+fail/100):.2f}, machine {h*RUN*(1+fail/100):.2f}, failure allowance {fail:g}%{" ESTIMATED time "+str(round(h*60))+" min" if est else ""}, packaging {pack:.2f})')
 for q, m in TIERS:
