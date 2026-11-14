@@ -25,6 +25,11 @@ Do this in the same commit as the product. Never grow either list. Say in the re
 - Lowest-loss rule: the default shop price is the app's suggested shop price (zero gap, no loss against the suggestion). Go below it only when the owner sets a price by hand.
 - BEFORE the owner confirms any price, tell him: the single price, the wholesale price, and the net profit in SAR and in % for both (and the gap against the suggested price when he set it by hand). Apply Rule 3 to the wholesale. Nothing goes live before he confirms. (Example: hdcookie, 14.27 g, 0.92 h, cost 6.03: app price 31 / 24, owner chose 30 by hand.)
 
+## Giveaway (التوزيعات) product photos (owner's standing order, 11-14)
+- The main image (`hq/<id>-0.webp`, 800x800) of EVERY giveaway product is a crowd scene: many identical copies of the piece in receding rows, ONE sharp hero copy front and centre, the rows behind smaller, softer and fading into the site's cream background (no hard cut at the frame, no studio/white background), so the customer understands at a glance that it is sold in bulk and with the same brand look.
+- Build it with `python3 tools/crowd-scene.py <id> [--src photo] [--rect x,y,w,h]` (cuts the piece out of its own photo with GrabCut, needs opencv-python-headless; also writes `thumbs/<id>.jpg`). Look at the result, check the cut-out edges and the hero centring before showing it. The image is computer-composed from one photo: say so when presenting it.
+- The same applies to the home strip card (thumb). Colour images are not needed for giveaways ordered by message.
+
 ## Distribution (bulk giveaway) pricing (owner's standing order, 11-13)
 - Distributions (orders of 50+ pieces of one piece) have their own pricing, NOT the normal wholesale tier. Unit cost = (grams x 0.115 x 1.2 + hours x 1.15) x 1.05 (5% failure allowance, always included) + 0.5 (bulk packaging).
 - Unit price = `((cost + 1.2 / qty) / (0.968 - target net margin))` rounded UP to 0.05 SAR. Target net margin: 50 pcs 40%, 100 pcs 37%, 500 pcs 33%, 1000 pcs 30% (about cost x 1.76 / 1.67 / 1.57 / 1.50). Minimum order 50 pieces.
