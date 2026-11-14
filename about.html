@@ -30,11 +30,13 @@
 @media (prefers-color-scheme:dark){:root{--bg:#2a2118;--surface:#352a1f;--fg:#f3e8d6;--muted:#c4ad8c;--line:#4a3b2b;--accent:#d9a84f;--accent-fg:#241a10}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);line-height:1.9;font-size:16px}
-.wrap{max-width:760px;margin:0 auto;padding:20px 16px calc(40px + env(safe-area-inset-bottom,0px))}
-.top{display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:22px}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px calc(40px + env(safe-area-inset-bottom,0px))}
+.top{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 -16px 22px;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 .top a{color:var(--fg);text-decoration:none}
 .logo{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:.5px}
-.back{font-size:14px;color:var(--accent)!important;font-weight:600}
+.back{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border:1.5px solid var(--accent);border-radius:999px;font-size:15px;color:var(--accent)!important;font-weight:600;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.back:active{background:var(--accent);color:var(--accent-fg)!important}
+.logo{display:inline-flex;align-items:center;min-height:44px}
 h1{font-family:var(--display);font-size:clamp(24px,5.5vw,32px);line-height:1.5;margin:0 0 10px}
 h2{font-family:var(--display);font-size:19px;margin:30px 0 8px;padding-inline-start:10px;border-inline-start:3px solid var(--accent)}
 p{margin:0 0 12px;color:var(--muted)}
@@ -42,7 +44,7 @@ p{margin:0 0 12px;color:var(--muted)}
 ul{margin:0 0 12px;padding-inline-start:20px;color:var(--muted)}
 li{margin-bottom:4px}
 li b{color:var(--fg)}
-.cta{display:inline-block;margin-top:10px;background:var(--accent);color:var(--accent-fg);text-decoration:none;font-weight:600;padding:12px 22px;border-radius:999px}
+.cta{display:inline-flex;align-items:center;justify-content:center;min-height:48px;touch-action:manipulation;margin-top:10px;background:var(--accent);color:var(--accent-fg);text-decoration:none;font-weight:600;padding:12px 22px;border-radius:999px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin-top:10px}
 .card p{margin:0 0 4px}
 a{color:var(--accent)}
@@ -53,7 +55,7 @@ a{color:var(--accent)}
 </head>
 <body>
 <div class="wrap">
- <header class="top"><a class="logo" href="/" aria-label="RAX3D">RAX3D</a><a class="back" href="/">العودة للمتجر</a></header>
+ <header class="top"><a class="logo" href="/" aria-label="RAX3D">RAX3D</a><a class="back" href="/">← العودة للمتجر</a></header>
  <main>
   <h1>من نحن: RAX3D للطباعة ثلاثية الأبعاد في السعودية</h1>
   <p class="lead">RAX3D متجر سعودي متخصص في الطباعة ثلاثية الأبعاد (طباعة 3D). نحوّل التصاميم إلى قطع عملية وأنيقة للبيت والمكتب والهدايا، ونطبع كل قطعة حسب طلبك بالمقاس واللون الذي تختاره.</p>
@@ -94,6 +96,7 @@ a{color:var(--accent)}
    <p><a href="/">Browse the shop</a> · <a href="https://www.instagram.com/rax3d.sa/" rel="noopener">Instagram @rax3d.sa</a> · <a href="mailto:rax3d.sa@hotmail.com">rax3d.sa@hotmail.com</a></p>
   </section>
  </main>
+ <p class="foot"><a class="cta" href="/">← العودة للمتجر</a></p>
  <p class="foot">RAX3D · طباعة ثلاثية الأبعاد · السعودية</p>
 </div>
 </body>
