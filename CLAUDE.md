@@ -26,10 +26,11 @@ Do this in the same commit as the product. Never grow either list. Say in the re
 - BEFORE the owner confirms any price, tell him: the single price, the wholesale price, and the net profit in SAR and in % for both (and the gap against the suggested price when he set it by hand). Apply Rule 3 to the wholesale. Nothing goes live before he confirms. (Example: hdcookie, 14.27 g, 0.92 h, cost 6.03: app price 31 / 24, owner chose 30 by hand.)
 
 ## Distribution (bulk giveaway) pricing (owner's standing order, 11-13)
-- Distributions (orders of 50+ pieces of one piece) have their own pricing, NOT the normal wholesale tier. Unit cost = grams x 0.115 x 1.2 + hours x 1.15 + 0.5 (bulk packaging).
+- Distributions (orders of 50+ pieces of one piece) have their own pricing, NOT the normal wholesale tier. Unit cost = (grams x 0.115 x 1.2 + hours x 1.15) x 1.05 (5% failure allowance, always included) + 0.5 (bulk packaging).
 - Unit price = `((cost + 1.2 / qty) / (0.968 - target net margin))` rounded UP to 0.05 SAR. Target net margin: 50 pcs 40%, 100 pcs 37%, 500 pcs 33%, 1000 pcs 30% (about cost x 1.76 / 1.67 / 1.57 / 1.50). Minimum order 50 pieces.
-- Use `python3 tools/dist-price.py <grams> [hours] [--pack 0.5] [--qty N] [--printers P]`. If the hours are unknown they are estimated (0.25 + 0.042 x grams): say it is an estimate. Add a 5% failure allowance for hard prints.
+- Use `python3 tools/dist-price.py <grams> [hours] [--pack 0.5] [--qty N] [--printers P]`. If the hours are unknown they are estimated (0.25 + 0.042 x grams): say it is an estimate. The 5% failure allowance is included by default (`--fail 0` turns it off).
 - BEFORE the owner confirms: tell him the unit price, the total and the net profit for each tier, and the print time needed (pieces x time per piece / printers). Nothing goes live before he confirms.
+- Lowest loss (owner, 11-14): in the invoicing app every invoice line of 50+ pieces (not type «مجموعة») takes its suggested price and its cost from this same formula (`distUnit`), so the «الخسارة عن السعر المقترح» card shows no phantom loss against the normal wholesale suggestion (a 200 pcs line of 8 g was suggested 17 SAR per piece by the wholesale formula vs about 4.00 by this one). Lines of 12 to 49 pieces keep the normal wholesale formula.
 - The same rule lives in the invoicing app as the admin tab «التوزيعات» (`distCalc`, `DIST_TIERS` in rax3dsa.github.io; it reads the app's live settings). Change the tiers in BOTH places together: this section, `tools/dist-price.py` and that tab.
 
 ## Pricing
