@@ -30,6 +30,7 @@ Do this in the same commit as the product. Never grow either list. Say in the re
 - Unit price = `((cost + 1.2 / qty) / (0.968 - target net margin))` rounded UP to 0.05 SAR. Target net margin: 50 pcs 40%, 100 pcs 37%, 500 pcs 33%, 1000 pcs 30% (about cost x 1.76 / 1.67 / 1.57 / 1.50). Minimum order 50 pieces.
 - Use `python3 tools/dist-price.py <grams> [hours] [--pack 0.5] [--qty N] [--printers P]`. If the hours are unknown they are estimated (0.25 + 0.042 x grams): say it is an estimate. Add a 5% failure allowance for hard prints.
 - BEFORE the owner confirms: tell him the unit price, the total and the net profit for each tier, and the print time needed (pieces x time per piece / printers). Nothing goes live before he confirms.
+- The same rule lives in the invoicing app as the admin tab «التوزيعات» (`distCalc`, `DIST_TIERS` in rax3dsa.github.io; it reads the app's live settings). Change the tiers in BOTH places together: this section, `tools/dist-price.py` and that tab.
 
 ## Pricing
 - Cost = grams x 0.115 x 1.2 + print hours x 1.15 + 3 (packaging). Single = cost x 4.5, wholesale = cost x 3.5, then cover the gateway fee: `ceil((p + 1.2) / 0.968)`.
