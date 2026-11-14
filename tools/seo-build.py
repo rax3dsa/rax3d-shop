@@ -29,6 +29,8 @@ rows = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sit
 for i in items:
     lm = today if touch else last.get(i['id'], today)
     rows.append(f'  <url><loc>https://rax3d.com/?p={i["id"]}</loc><lastmod>{lm}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>')
+for pth in ('about/', 'about/en/'):
+    rows.append(f'  <url><loc>https://rax3d.com/{pth}</loc><lastmod>{today if touch else (re.search(r"<loc>https://rax3d\.com/" + pth + r"</loc><lastmod>([\d-]+)</lastmod>", old) or [None, today])[1]}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>')
 rows.append('</urlset>')
 open('sitemap.xml', 'w', encoding='utf-8').write('\n'.join(rows) + '\n')
 # ---- crawler link list
@@ -45,6 +47,7 @@ for c in cats:
             p = price.get(i['id'])
             out.append(f'<li><a href="?p={i["id"]}">{html.escape(i["name"])}</a>' + (f' - من {p[1]} ريال' if p else '') + (f'. {html.escape(dsc(i))}' if dsc(i) else '') + '</li>')
     out.append('</ul>')
+out.append('<h2>عن المتجر</h2><ul><li><a href="about/">من نحن</a></li><li><a href="about/en/" hreflang="en">About us (English)</a></li></ul>')
 out.append('</section></noscript><!--SEO-END-->')
 block = '\n'.join(out)
 if '<!--SEO-START-->' in idx:

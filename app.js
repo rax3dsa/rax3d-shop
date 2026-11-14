@@ -536,20 +536,6 @@ document.getElementById("abg").addEventListener("click",e=>{if(e.target.id==="ab
 document.getElementById("abg").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.classList.contains("fin"))saveAcc()});
 /* ---------- trust pages: returns, privacy, order tracking, contact ---------- */
 const POL={
- about:["من نحن",`<p><b>RAX3D</b> متجر سعودي متخصص في الطباعة ثلاثية الأبعاد. نحوّل التصاميم إلى قطع عملية وأنيقة، نطبعها لك خصيصاً بالألوان والمقاسات التي تختارها.</p>
-  <p><b>ماذا نقدّم</b></p><ul>
-  <li>ديكور للمنزل والمكتب: مزهريات وقطع تزيينية.</li>
-  <li>هدايا مميزة وكؤوس.</li>
-  <li>ميداليات مفاتيح وصفارات.</li>
-  <li>إكسسوارات قهوة xBloom.</li></ul>
-  <p><b>كيف نعمل</b></p><ul>
-  <li>تختار القطعة واللون والمقاس والعدد.</li>
-  <li>تعاين القطعة بالأبعاد الثلاثية قبل الطلب.</li>
-  <li>نطبعها لك بعد تأكيد الطلب، ونجهزها خلال 3 إلى 7 أيام.</li>
-  <li>تستلمها توصيلاً، أو استلاماً مباشراً بالاتفاق معنا.</li></ul>
-  <p><b>للمحلات والتوزيعات</b></p>
-  <p>نقبل الطلبات بالقطعة وبالجملة. يتفعّل سعر الجملة تلقائياً من 12 حبة، ومن 6 حبات للقطع التي يبلغ وزنها 100 غرام فأكثر. ومدة طلبات الجملة نتفق عليها معك بحسب الكمية.</p>
-  <p class="muted">عندك فكرة أو طلب خاص؟ راسلنا من «تواصل معنا».</p>`],
  ret:["سياسة الاستبدال والاسترجاع",`<p>كل قطعة نطبعها لك عند الطلب، باللون والمقاس اللي تختاره.</p><ul>
   <li>إذا وصلتك القطعة مكسورة، أو فيها عيب طباعة، أو تختلف عن طلبك في اللون أو المقاس، راسلنا خلال <b>3 أيام</b> من الاستلام مع صورة، ونعيد طباعتها أو نستبدلها مجاناً.</li>
   <li>لأن القطع تنصنع لك خصيصاً، ما نقبل الإرجاع بسبب تغيير الرأي بعد بدء الطباعة.</li>
@@ -590,20 +576,6 @@ const POL={
 <p class="muted">التسليم نتفق عليه معك قبل الطباعة. عندك سؤال ثاني؟ راسلنا من «تواصل معنا».</p>`],
 };
 const POL_EN={
- about:["About us",`<p><b>RAX3D</b> is a Saudi 3D printing shop. We turn designs into practical, good-looking pieces, printed to order in the colours and sizes you choose.</p>
-  <p><b>What we offer</b></p><ul>
-  <li>Home and office decor: vases and decorative pieces.</li>
-  <li>Distinctive gifts and cups.</li>
-  <li>Key chains and whistles.</li>
-  <li>xBloom coffee accessories.</li></ul>
-  <p><b>How it works</b></p><ul>
-  <li>Pick the piece, colour, size and quantity.</li>
-  <li>Preview it in 3D before you order.</li>
-  <li>We print it after your order is confirmed and prepare it within 3 to 7 days.</li>
-  <li>Receive it by delivery, or arrange a direct pickup with us.</li></ul>
-  <p><b>For shops and giveaways</b></p>
-  <p>We take orders by the piece and in bulk. The wholesale price applies automatically from 12 pieces, or from 6 pieces for items weighing 100 g or more. Lead time for wholesale orders is agreed with you based on quantity.</p>
-  <p class="muted">Have an idea or a custom order? Message us from "Contact us".</p>`],
  ret:["Returns & exchanges",`<p>Every piece is printed to order, in the colour and size you choose.</p><ul><li>If your piece arrives broken, with a print defect, or different from your order (colour or size), message us within <b>3 days</b> of delivery with a photo and we'll reprint or replace it free.</li><li>Because pieces are made for you, we can't accept returns for a change of mind once printing has started.</li><li>You can cancel free of charge before printing starts.</li><li>Custom pieces (names, text or a changed size) are replaced only if defective.</li><li>Slight colour variation or visible layer lines are normal in 3D printing and aren't defects.</li></ul>`],
  priv:["Privacy policy",`<ul><li>The site only asks for your name and mobile, and signing in is optional.</li><li>Your details stay on your own device and only reach us inside your order message.</li><li>We use them only to prepare your order, invoice and loyalty points, and never share or sell them.</li><li>No ads and no tracking cookies.</li><li>Clear your details from “My account → Sign out”, or ask us by DM to delete your record.</li></ul>`],
  track:["Track your order",`<p>Once we confirm your order and issue the invoice, your order gets an <b>order number</b> like ORD-125, printed on the invoice.</p><ul><li>Send us your order number by DM any time and we'll reply with your order status.</li><li>Stages: received → price confirmed → printing → ready for delivery.</li><li>On delivery you get an invoice showing your loyalty points balance.</li></ul>`],
@@ -770,6 +742,7 @@ const MO=new MutationObserver(ms=>{if(LANG!=="en")return;MO.disconnect();
  MO.observe(document.body,{childList:true,subtree:true,characterData:true})});
 function applyLang(){const en=LANG==="en";document.documentElement.lang=en?"en":"ar";document.documentElement.dir=en?"ltr":"rtl";
  if(typeof render==="function"&&typeof hist!=="undefined"&&hist[hi]){seoFor(hist[hi].v==="item"||hist[hi].v==="edit"?hist[hi].id:null)}else document.title=en?"RAX3D | Order your piece":"RAX3D | متجر طباعة ثلاثية الأبعاد في السعودية";
+ const ab=$("#aboutLink");if(ab)ab.href=en?"/about/en/":"/about/";
  const b=$("#langBtn");b.textContent=en?"ع":"EN";b.setAttribute("aria-label",en?"العربية":"English");
  if(en){trNode(document.body);MO.observe(document.body,{childList:true,subtree:true,characterData:true})}}
 $("#langBtn").onclick=()=>{LANG=LANG==="en"?"ar":"en";try{localStorage.setItem("rax3d_lang",LANG)}catch(_){}
