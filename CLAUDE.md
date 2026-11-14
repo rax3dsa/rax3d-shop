@@ -45,7 +45,22 @@ Do this in the same commit as the product. Never grow either list. Say in the re
 - Hand-set prices are the owner's (decision of 11-12): he raised the 9 pieces furthest below the formula (hdclock, hdtissue, hdtray, hdbuddy, cubea, cubeb, lampman; `hood` and `hdtool` were in this group and have since been removed from the shop) by 13% and 6 more (chips, pringles, clips, abst, wilson, knobs) by 10%, both tiers, rounded half up. They stay far below the formula on purpose: never re-derive them from the formula, and change them only when he gives a number or a percentage. Tell him the result table before anything goes live. Exception chosen with his go-ahead: cubeb wholesale is 205 (91% of the single price, not the usual ~78%), because at +13% (176) one failed print (about 124 SAR of filament and machine time) cost the profit of 3.7 sales; at 205 it is 2.
 - "Loss" in the owner's words = how far a shop price sits below the formula price (the same idea as the invoicing app's card «الخسارة عن السعر المقترح»), not a sale below cost. On 11-12 no piece was below cost.
 - Approved pieces (owner's standing order, 11-13): once the owner adopts a piece's price (e.g. lampman 144/113 kept, weight left as is, price entered in the invoicing app's custom-price field), never ask him to slice that piece again.
-- 13 pieces have no sliced piece file in the data repo (`files/<id>.json`): hdtissue, hdbuddy, hdtray, hdclock, wilson, snoopy, lamp, lampman, cubea, cubeb, pmaskl, pmaskm, pmasks. Their cost can only be estimated from the first formula price in the shop history; say so whenever their margin is discussed.
+- SLICED AND APPROVED (11-13): the owner sliced these 12 pieces in Bambu Studio and approved their shop prices. Never ask him to slice them again and never call their cost an estimate (except cubea, see below). Weights in `index.html` `WEIGHT` were left as they were on purpose (his decision); the invoicing app gets the price through its per-line "custom price" field, which the owner fills by hand.
+  | id | name | g | print time | single / wholesale (live) |
+  |---|---|---|---|---|
+  | lampman | مصباح الرجل الصغير | 318.77 | 25h06m | 144 / 113 |
+  | wilson | كوب ويلسون تيكي | 281.17 | 21h09m | 179 / 141 |
+  | hdbuddy | مجسم هارلي المتحرك | 12.85 | 1h12m | 24 / 16 |
+  | snoopy | لوحة سنوبي تشيل | 54.44 | 3h58m | 72 / 56 |
+  | cubeb | مصباح المكعبات B | 596.77 | 45h32m | 205 / 160 |
+  | cubea | مصباح المكعبات A | about 366 (ESTIMATE) | about 28h (ESTIMATE) | 134 / 105 |
+  | pmaskm | قناع اليقطين M | 146.07 | 12h44m | 145 / 113 |
+  | pmasks | قناع اليقطين S | 107.58 | 9h27m | 100 / 78 |
+  | pmaskl | قناع اليقطين L | 195.64 | 16h39m | 141 / 110 |
+  | lamp | مصباح اللولب | 86.51 | 7h31m | 112 / 87 |
+  | hdtray | صينية هارلي لحفظ الأغراض | 152.21 | 11h14m | 117 / 91 |
+  | hdclock | ساعة هارلي ديفيدسون الجدارية | 136.91 | 10h09m | 124 / 97 |
+  cubea was never sliced: its figures come from the cube-lamp 3MF (modules of 27 mm: A = bottom + top + 3 middle trays, B = bottom + top + 6 middle) scaled from cubeb's slice by mesh volume; slice it for real if exactness matters. hdclock's slice showed an empty-layer warning (thin part), so its figures may be low. Prices were set by the owner by hand (wholesale about 78% of single), not by the calculator. The source STLs were exported from the shop's 3D models, not from original 3MFs, which do not exist in the data repo. `hdtissue` is gone (see below).
 - No wholesale tier: set the wholesale number equal to the single price (`[106,106]`). The shop then hides the wholesale line and never applies a discount, and the worker still agrees. Used for pieces whose wholesale margin would be near zero (the Harley clock; the toolbox is gone).
 
 ## Rule 3: no wholesale price when wholesale would lose money (approved by the owner, permanent)
@@ -122,6 +137,9 @@ For every new or re-priced product, check the wholesale price before publishing:
 - The piece `hdtool` ("صندوق عدة هارلي (حامل أقلام)", the Harley toolbox pen holder) was removed from the shop on 11-13 at the owner's request, with all its images, 3D model, price, weight, texts, catalog and sitemap entries: do not re-add it. `NEW` / `FEATURED` were reverse-rotated (wilson back at the end of NEW, pcorn back at the end of FEATURED).
 
 - The piece `hdtissue` (Harley tissue box cover) was removed from the shop on 11-13 at the owner's request, with all its images, 3D model, price, weight, texts, catalog and sitemap entries: do not re-add it. `NEW` / `FEATURED` were reverse-rotated (wilson back at the end of NEW, pcorn back at the end of FEATURED).
+
+## Keep this file current (owner's standing order, 11-14)
+- When a piece of work is finished (prices approved, a piece added or removed, a decision taken), update this CLAUDE.md in the SAME session so every other chat reads the same facts, then commit it. Never leave a finished result only in the conversation.
 
 ## Owner decisions (do not re-open)
 - Loyalty points (owner, 11-13): 1000 points = 10 SAR off, 2500 points = free delivery (the 25 SAR delivery fee is waived; only offered when the visitor chose delivery), 5000 points = a free piece worth up to 250 SAR. Change them in ALL places together: app.js (how-to-order bullets, FAQ AR + `POL_EN`, EN dictionary, `openPtsOffer`, the `data-predeem` click handler, `msg()`), index.html bullets, and the invoicing app (`PTS_RULES`, redeem sheet `openRedeem`, rules text). The worker only returns balances.
