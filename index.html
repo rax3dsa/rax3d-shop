@@ -160,7 +160,28 @@ html[lang=en] .promo .track{animation-name:slideL}
 .foot{max-width:900px;margin:8px auto 0;padding:18px 16px calc(96px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);text-align:center;color:var(--muted);font-size:13px;display:grid;gap:6px}
 .foot p{margin:0}.foot a{color:var(--accent);text-decoration:none}
 .flinks{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;margin-bottom:6px}
-.flinks button{background:none;border:0;color:var(--fg);font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:6px 0;text-decoration:underline;text-underline-offset:3px}
+.flinks a,.flinks button{background:none;border:0;color:var(--fg);font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:6px 0;text-decoration:underline;text-underline-offset:3px}
+.flinks a{color:var(--fg)}
+.hgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.hs{aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:6px 4px;background:var(--surface);border:1px solid var(--line);border-radius:14px;color:var(--fg);font:inherit;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:border-color .2s,background .2s,transform .2s}
+.hs i{font-style:normal;width:30px;height:30px;border-radius:999px;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;font-weight:700;font-size:14px}
+.hs b{font-size:12.5px;line-height:1.4;text-align:center}
+.hs[aria-expanded="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
+.hs:active{transform:scale(.97)}
+.hdet{margin-top:8px}
+.hd{margin:0;background:var(--surface);border:1px solid var(--accent);border-radius:14px;padding:12px 14px;font-size:13.5px;line-height:1.8;color:var(--muted)}
+.hd b{color:var(--fg)}.hd span{color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.hd:not([hidden]){animation:hdin .25s ease}@keyframes hdin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}}
+.pts{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.pts li{grid-column:span 2;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 8px;font-weight:600;font-size:12.5px;line-height:1.6;color:var(--fg);text-align:center}
+.pts li::before{display:block;font-size:18px;margin-bottom:2px}
+.pts li:nth-child(-n+3)::before{content:"⭐"}
+.pts li:nth-child(n+4){grid-column:span 3}
+.pts li:nth-child(4)::before{content:"⏳"}
+.pts li:nth-child(5)::before{content:"🚫"}
+.flinks{gap:0 4px}.flinks a,.flinks button{display:inline-flex;align-items:center;min-height:44px;padding:0 8px;font-size:13px;touch-action:manipulation}
+.fsoc{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:6px}
+.fsoc a{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--accent);font-weight:600;font-size:13px;touch-action:manipulation}
 .pol{display:grid;gap:8px;font-size:14px;line-height:1.75}.pol ul{margin:0;padding-inline-start:20px;display:grid;gap:6px}.pol p{margin:0}
 .pol .muted{color:var(--muted);font-size:12.5px}
 .sendnote{background:var(--surface);border:1px dashed var(--accent);border-radius:12px;padding:10px 12px;line-height:1.7;text-align:start}
@@ -341,7 +362,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
  <button type="button" class="xbtn" id="aclose" aria-label="إغلاق">×</button>
  <h3 id="at">حسابي</h3>
  <p class="inote">سجّل باسمك وجوالك بدون رقم سري، ويوصلنا طلبك جاهز باسمك. وكل ريال تشتري فيه يعطيك نقطة ولاء ⭐</p>
- <ul class="inote" style="margin:8px 0 0;padding-inline-start:18px;line-height:1.7"><li>كل 1000 نقطة = خصم 10 ريال</li><li>5000 نقطة = قطعة مجانية بقيمة حتى 250 ريال</li><li>تنتهي كل نقطة بعد 12 شهراً من تاريخ كسبها</li><li>النقاط لا تُستبدل بمبالغ مالية</li></ul>
+ <ul class="inote" style="margin:8px 0 0;padding-inline-start:18px;line-height:1.7"><li>كل 1000 نقطة = خصم 10 ريال</li><li>2500 نقطة = توصيل مجاني</li><li>5000 نقطة = قطعة مجانية بقيمة حتى 250 ريال</li><li>تنتهي كل نقطة بعد 12 شهراً من تاريخ كسبها</li><li>النقاط لا تُستبدل بمبالغ مالية</li></ul>
  <label class="flab" for="cn">الاسم</label><input class="fin" id="cn" autocomplete="name" maxlength="40">
  <label class="flab" for="cp">رقم الجوال</label><input class="fin" id="cp" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="05xxxxxxxx" dir="ltr">
  <div class="ptsbox" id="ptsbox" data-pts hidden></div>
@@ -409,6 +430,9 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
 <!--SEO-START--><noscript><section dir="rtl" style="padding:16px;max-width:760px;margin:auto">
 <h1>RAX3D | متجر طباعة ثلاثية الأبعاد في السعودية</h1>
 <p>هدايا وديكور وإكسسوارات مطبوعة بتقنية الطباعة ثلاثية الأبعاد. اختر القطعة واللون والمقاس واطلبها بالإفراد أو بالجملة. الموقع يحتاج تفعيل JavaScript لعرض المجسمات واختيار الألوان.</p>
+<h2>التوزيعات</h2><ul>
+<li><a href="?p=cool">البطة الكول</a>. بطة صفراء بنظارة سوداء وقبعة، مطبوعة بالأبعاد الثلاثية. توزيعات مميزة لمناسباتك وفعالياتك، من 50 حبة والطلب بالخاص.</li>
+</ul>
 <h2>سناك وضيافة</h2><ul>
 <li><a href="?p=hdcookie">قاطعة كوكيز هارلي</a> - من 24 ريال. قاطعة كوكيز بشعار هارلي تقص العجين وتطبع الشعار بارزًا على كل قطعة، مقاسها 10×7 سم تقريبًا.</li>
 <li><a href="?p=chips">حامل علبة الشيبس</a> - من 24 ريال. حامل علبة شيبس مع صينية، والعبارة عليه تكتبها أنت. ضيافة مرتبة وهدية مميزة لمحبي السناكات.</li>
@@ -448,14 +472,14 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
 <li><a href="?p=pmaskl">قناع اليقطين</a> - من 110 ريال. قناع يقطين مرعب للهالوين، للارتداء أو التعليق. متوفر بثلاثة مقاسات (L وM وS) حسب استخدامك.</li>
 <li><a href="?p=disney">لوحة ميكي وميني الجدارية</a> - من 32 ريال. لوحة جدارية بنقش ستنسل لميكي وميني، تُثبت بلاصق بدون مسامير. تضيف مرحًا للغرفة أو المكتب.</li>
 <li><a href="?p=snoopy">لوحة سنوبي تشيل</a> - من 56 ريال. لوحة سنوبي تشيل بأربعة ألوان، وكلمة CHILL بلونك المفضل. تهدّي أجواء غرفتك أو مكتبك.</li>
-<li><a href="?p=hdclock">ساعة هارلي ديفيدسون الجدارية</a> - من 120 ريال. ساعة جدارية بشعار هارلي ديفيدسون ثلاثي الأبعاد مع ميكانيزم الساعة، ديكور مميز لمحبي الدراجات والمرآب.</li>
+<li><a href="?p=hdclock">ساعة هارلي ديفيدسون الجدارية</a> - من 97 ريال. ساعة جدارية بشعار هارلي ديفيدسون ثلاثي الأبعاد مع ميكانيزم الساعة، ديكور مميز لمحبي الدراجات والمرآب.</li>
 <li><a href="?p=gmug">كوب الجمجمة الصارخة</a> - من 68 ريال. كوب بوجه جمجمة وزخارف، لحفظ الأقلام أو ديكور بطابع جريء.</li>
 <li><a href="?p=ltr">حرف باسمك</a> - من 72 ريال. حرف باسمك مع قلوب وزهرة، والاسم حسب طلبك. هدية شخصية تفرّح من تحب.</li>
 </ul>
 <h2>الإضاءات</h2><ul>
 <li><a href="?p=lamp">مصباح اللولب</a> - من 87 ريال. مصباح طاولة بتصميم لولبي مع إضاءة LED، ينوّر زاويتك بدفء ويضيف لمسة ديكور. تختار لونه.</li>
 <li><a href="?p=lampman">مصباح الرجل الصغير</a> - من 113 ريال. مصباح طاولة على شكل رجل جالس بغطاء أسود مع إضاءة LED، قطعة ديكور تفتح الحديث.</li>
-<li><a href="?p=cubea">مصباح المكعبات</a> - من 134 ريال. مصباح طاولة من مكعبات معلّقة بإضاءة LED تعطي المكان أجواء هادئة. متوفر بتصميمين: A بارتفاع 13.5 سم وB بارتفاع 21.6 سم.</li>
+<li><a href="?p=cubea">مصباح المكعبات</a> - من 105 ريال. مصباح طاولة من مكعبات معلّقة بإضاءة LED تعطي المكان أجواء هادئة. متوفر بتصميمين: A بارتفاع 13.5 سم وB بارتفاع 21.6 سم.</li>
 </ul>
 <h2>ألعاب وصفارات</h2><ul>
 <li><a href="?p=ttt">لعبة إكس أو</a> - من 41 ريال. لعبة إكس أو بحجم الجيب، تركيبها بدون غراء. خذها معك وتسلّى مع أصحابك في أي مكان.</li>
@@ -476,11 +500,10 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
   <main class="main" id="main"></main>
 </div>
 <footer class="foot" dir="rtl">
- <div class="flinks"><button type="button" data-pol="faq">الأسئلة الشائعة</button><button type="button" data-pol="ret">الاستبدال والاسترجاع</button><button type="button" data-pol="priv">سياسة الخصوصية</button><button type="button" data-pol="track">متابعة الطلب</button><button type="button" data-pol="contact">تواصل معنا</button></div>
+ <div class="flinks"><a href="about.html">من نحن</a><button type="button" data-pol="faq">الأسئلة الشائعة</button><button type="button" data-pol="ret">الاستبدال والاسترجاع</button><button type="button" data-pol="priv">سياسة الخصوصية</button><button type="button" data-pol="track">متابعة الطلب</button><button type="button" data-pol="contact">تواصل معنا</button><button type="button" data-inst>حمّل التطبيق</button></div>
  <p>RAX3D · طباعة ثلاثية الأبعاد · السعودية</p>
  <p>وثيقة العمل الحر: <span dir="ltr">FL-255870895</span></p>
- <p dir="ltr"><a href="https://www.instagram.com/rax3d.sa/" target="_blank" rel="noopener">Instagram @rax3d.sa</a> · <a href="https://www.tiktok.com/@rax3d.sa" target="_blank" rel="noopener">TikTok @rax3d.sa</a></p>
- <p><a href="mailto:rax3d.sa@hotmail.com" dir="ltr">rax3d.sa@hotmail.com</a></p>
+ <div class="fsoc" dir="ltr"><a href="https://www.instagram.com/rax3d.sa/" target="_blank" rel="noopener">Instagram @rax3d.sa</a><a href="https://www.tiktok.com/@rax3d.sa" target="_blank" rel="noopener">TikTok @rax3d.sa</a><a href="mailto:rax3d.sa@hotmail.com">rax3d.sa@hotmail.com</a></div>
 </footer>
 
 <!-- three.js + loaders load on demand the first time the 3D viewer opens (load3D below) -->
@@ -518,3 +541,4 @@ const WEIGHT={
 };
 </script>
 <script src="app.js"></script>
+<script src="custom.js"></script>

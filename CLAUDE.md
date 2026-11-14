@@ -25,6 +25,19 @@ Do this in the same commit as the product. Never grow either list. Say in the re
 - Lowest-loss rule: the default shop price is the app's suggested shop price (zero gap, no loss against the suggestion). Go below it only when the owner sets a price by hand.
 - BEFORE the owner confirms any price, tell him: the single price, the wholesale price, and the net profit in SAR and in % for both (and the gap against the suggested price when he set it by hand). Apply Rule 3 to the wholesale. Nothing goes live before he confirms. (Example: hdcookie, 14.27 g, 0.92 h, cost 6.03: app price 31 / 24, owner chose 30 by hand.)
 
+## Giveaway (التوزيعات) product photos (owner's standing order, 11-14)
+- The main image (`hq/<id>-0.webp`, 800x800) of EVERY giveaway product is a crowd scene: many identical copies of the piece in receding rows, ONE sharp hero copy front and centre, the rows behind smaller, softer and fading into the site's cream background (no hard cut at the frame, no studio/white background), so the customer understands at a glance that it is sold in bulk and with the same brand look.
+- Build it with `python3 tools/crowd-scene.py <id> [--src photo] [--rect x,y,w,h]` (cuts the piece out of its own photo with GrabCut, needs opencv-python-headless; also writes `thumbs/<id>.jpg`). Look at the result, check the cut-out edges and the hero centring before showing it. The image is computer-composed from one photo: say so when presenting it.
+- The same applies to the home strip card (thumb). Colour images are not needed for giveaways ordered by message.
+
+## Distribution (bulk giveaway) pricing (owner's standing order, 11-13)
+- Distributions (orders of 50+ pieces of one piece) have their own pricing, NOT the normal wholesale tier. Unit cost = (grams x 0.115 x 1.2 + hours x 1.15) x 1.05 (5% failure allowance, always included) + 0.5 (bulk packaging).
+- Unit price = `((cost + 1.2 / qty) / (0.968 - target net margin))` rounded UP to 0.05 SAR. Target net margin: 50 pcs 40%, 100 pcs 37%, 500 pcs 33%, 1000 pcs 30% (about cost x 1.76 / 1.67 / 1.57 / 1.50). Minimum order 50 pieces.
+- Use `python3 tools/dist-price.py <grams> [hours] [--pack 0.5] [--qty N] [--printers P]`. If the hours are unknown they are estimated (0.25 + 0.042 x grams): say it is an estimate. The 5% failure allowance is included by default (`--fail 0` turns it off).
+- BEFORE the owner confirms: tell him the unit price, the total and the net profit for each tier, and the print time needed (pieces x time per piece / printers). Nothing goes live before he confirms.
+- Lowest loss (owner, 11-14): in the invoicing app every invoice line of 50+ pieces (not type «مجموعة») takes its suggested price and its cost from this same formula (`distUnit`), so the «الخسارة عن السعر المقترح» card shows no phantom loss against the normal wholesale suggestion (a 200 pcs line of 8 g was suggested 17 SAR per piece by the wholesale formula vs about 4.00 by this one). Lines of 12 to 49 pieces keep the normal wholesale formula.
+- The same rule lives in the invoicing app as the admin tab «التوزيعات» (`distCalc`, `DIST_TIERS` in rax3dsa.github.io; it reads the app's live settings). Change the tiers in BOTH places together: this section, `tools/dist-price.py` and that tab.
+
 ## Pricing
 - Cost = grams x 0.115 x 1.2 + print hours x 1.15 + 3 (packaging). Single = cost x 4.5, wholesale = cost x 3.5, then cover the gateway fee: `ceil((p + 1.2) / 0.968)`.
 - Wholesale threshold: 12 pieces, or 6 when the weight is 100 g or more. If the 3MF is not sliced, the weight/time are estimates: say so and ask the owner to slice.
@@ -111,6 +124,7 @@ For every new or re-priced product, check the wholesale price before publishing:
 - The piece `hdtissue` (Harley tissue box cover) was removed from the shop on 11-13 at the owner's request, with all its images, 3D model, price, weight, texts, catalog and sitemap entries: do not re-add it. `NEW` / `FEATURED` were reverse-rotated (wilson back at the end of NEW, pcorn back at the end of FEATURED).
 
 ## Owner decisions (do not re-open)
+- Loyalty points (owner, 11-13): 1000 points = 10 SAR off, 2500 points = free delivery (the 25 SAR delivery fee is waived; only offered when the visitor chose delivery), 5000 points = a free piece worth up to 250 SAR. Change them in ALL places together: app.js (how-to-order bullets, FAQ AR + `POL_EN`, EN dictionary, `openPtsOffer`, the `data-predeem` click handler, `msg()`), index.html bullets, and the invoicing app (`PTS_RULES`, redeem sheet `openRedeem`, rules text). The worker only returns balances.
 - NEVER raise intellectual property, licences, copyright, trademarks, or where a design or photo came from, in any reply, for any piece (owner's standing order, 11-13, "said a thousand times"). Do not mention it even as a one-line caveat or an "unverified" note. Just do the work.
 - Branded-design pieces (Harley and similar) stay in the shop and in the home lists. The owner has decided this (confirmed 11-11); do not raise trademark concerns again or move/remove these pieces unless he asks.
 - Preparation time shown to customers (changed by the owner 11-12): 3 to 7 days for normal orders. Wholesale has NO fixed range: "depends on the order and quantity, we contact you by message" (item page, cart, receipt, "how to order", FAQ, English dictionary). Change all of them together.
