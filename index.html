@@ -172,11 +172,13 @@ html[lang=en] .promo .track{animation-name:slideL}
 .hd{margin:0;background:var(--surface);border:1px solid var(--accent);border-radius:14px;padding:12px 14px;font-size:13.5px;line-height:1.8;color:var(--muted)}
 .hd b{color:var(--fg)}.hd span{color:var(--muted)}
 @media (prefers-reduced-motion:no-preference){.hd:not([hidden]){animation:hdin .25s ease}@keyframes hdin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}}
-.pts{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.pts li{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 8px;font-weight:600;font-size:12.5px;line-height:1.6;color:var(--fg);text-align:center}
-.pts li:nth-child(-n+3)::before{content:"⭐";display:block;font-size:18px;margin-bottom:2px}
-.pts li:nth-child(n+4){grid-column:1/-1;background:none;border:0;padding:0 2px;font-weight:400;font-size:12.5px;color:var(--muted);text-align:start}
-.pts li:nth-child(4){margin-top:4px}
+.pts{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.pts li{grid-column:span 2;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 8px;font-weight:600;font-size:12.5px;line-height:1.6;color:var(--fg);text-align:center}
+.pts li::before{display:block;font-size:18px;margin-bottom:2px}
+.pts li:nth-child(-n+3)::before{content:"⭐"}
+.pts li:nth-child(n+4){grid-column:span 3}
+.pts li:nth-child(4)::before{content:"⏳"}
+.pts li:nth-child(5)::before{content:"🚫"}
 .flinks{gap:0 4px}.flinks a,.flinks button{display:inline-flex;align-items:center;min-height:44px;padding:0 8px;font-size:13px;touch-action:manipulation}
 .fsoc{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:6px}
 .fsoc a{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--accent);font-weight:600;font-size:13px;touch-action:manipulation}
