@@ -170,7 +170,7 @@ function home(){
    <h2 id="newHd">وصل حديثاً</h2>${carousel(NEW,6)}
    <ul class="perks out"><li><b>13</b><span>لون تختار منها</span></li><li><b>3D</b><span>شوف القطعة قبل الطلب</span></li><li><b>⭐</b><span>نقطة ولاء على كل ريال</span></li></ul>
    <h2>الأكثر طلباً</h2>${carousel(FEATURED,6)}
-   <h2>كيف أطلب؟</h2><ol class="how"><li><b>اختر القطعة</b><span>واللون والمقاس والعدد، وأضفها لطلبك.</span></li><li><b>أكمل طلبك</b><span>ادفع أونلاين (مدى، Apple Pay)، أو اطلب بالدفع عند الاستلام، أو أرسل الطلب بالخاص في انستقرام أو تيك توك.</span></li><li><b>نأكد طلبك</b><span>نتواصل معك بتأكيد الطلب. التجهيز من 3 إلى 7 أيام، وطلبات الجملة مدتها حسب الطلب والعدد ونتواصل معك بالخاص لتحديدها.</span></li><li><b>نطبع ونسلّم</b><span>تتابع طلبك برقم الطلب اللي في فاتورتك.</span></li></ol>
+   <h2>كيف أطلب؟</h2><div class="hgrid"><button type="button" class="hs" data-hs="1" aria-expanded="false" aria-controls="hd1"><i>1</i><b>اختر القطعة</b></button><button type="button" class="hs" data-hs="2" aria-expanded="false" aria-controls="hd2"><i>2</i><b>أكمل طلبك</b></button><button type="button" class="hs" data-hs="3" aria-expanded="false" aria-controls="hd3"><i>3</i><b>نأكد طلبك</b></button><button type="button" class="hs" data-hs="4" aria-expanded="false" aria-controls="hd4"><i>4</i><b>نطبع ونسلّم</b></button></div><div class="hdet" aria-live="polite"><p class="hd" id="hd1" hidden><b>اختر القطعة</b> <span>واللون والمقاس والعدد، وأضفها لطلبك.</span></p><p class="hd" id="hd2" hidden><b>أكمل طلبك</b> <span>ادفع أونلاين (مدى، Apple Pay)، أو اطلب بالدفع عند الاستلام، أو أرسل الطلب بالخاص في انستقرام أو تيك توك.</span></p><p class="hd" id="hd3" hidden><b>نأكد طلبك</b> <span>نتواصل معك بتأكيد الطلب. التجهيز من 3 إلى 7 أيام، وطلبات الجملة مدتها حسب الطلب والعدد ونتواصل معك بالخاص لتحديدها.</span></p><p class="hd" id="hd4" hidden><b>نطبع ونسلّم</b> <span>تتابع طلبك برقم الطلب اللي في فاتورتك.</span></p></div>
    <section class="about"><h2>نقاط الولاء</h2><ul class="pts"><li>كل 1000 نقطة = خصم 10 ريال</li><li>2500 نقطة = توصيل مجاني</li><li>5000 نقطة = قطعة مجانية بقيمة حتى 250 ريال</li><li>تنتهي كل نقطة بعد 12 شهراً من تاريخ كسبها</li><li>النقاط لا تُستبدل بمبالغ مالية</li></ul></section>
    ${INST.standalone?"":`<button type="button" class="instbtn" data-inst><img src="icon-192.png" alt="">حمّل تطبيق RAX3D على جهازك</button>`}`;
   startCars();
@@ -746,6 +746,12 @@ function applyLang(){const en=LANG==="en";document.documentElement.lang=en?"en":
  if(en){trNode(document.body);MO.observe(document.body,{childList:true,subtree:true,characterData:true})}}
 $("#langBtn").onclick=()=>{LANG=LANG==="en"?"ar":"en";try{localStorage.setItem("rax3d_lang",LANG)}catch(_){}
  if(LANG==="ar"){location.reload();return}applyLang();render(false)};
+/* "how to order": tap a tile to show its step, tap another to switch, tap again to close */
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-hs]");if(!b)return;
+ const k=b.dataset.hs,open=b.getAttribute("aria-expanded")==="true";
+ document.querySelectorAll("[data-hs]").forEach(x=>{const on=!open&&x===b;x.setAttribute("aria-expanded",on?"true":"false")});
+ document.querySelectorAll("[data-hd]").forEach(x=>x.hidden=true);
+ document.querySelectorAll(".hd").forEach(x=>{x.hidden=open||x.id!=="hd"+k})});
 /* lock page scroll while a dialog is open (stops the page sliding behind the 3D viewer on phones) */
 (()=>{const ids=["mbg","ibg","abg","pbg","rbg","cbg","sbg","paybg","codbg"];let y=0,locked=false;
  const sync=()=>{const open=ids.some(i=>{const e=document.getElementById(i);return e&&!e.hidden});if(open===locked)return;locked=open;
