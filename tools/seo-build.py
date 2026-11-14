@@ -26,6 +26,7 @@ last = dict(re.findall(r'<loc>https://rax3d\.com/\?p=([\w-]+)</loc><lastmod>([\d
 home_last = (re.search(r'<loc>https://rax3d\.com/</loc><lastmod>([\d-]+)</lastmod>', old) or [None, today])[1]
 rows = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
         f'  <url><loc>https://rax3d.com/</loc><lastmod>{today if touch else home_last}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>']
+rows.append(f'  <url><loc>https://rax3d.com/about.html</loc><lastmod>{today if touch else (re.search(r"<loc>https://rax3d\\.com/about\\.html</loc><lastmod>([\\d-]+)</lastmod>", old) or [None, today])[1]}</lastmod><changefreq>yearly</changefreq><priority>0.5</priority></url>')
 for i in items:
     lm = today if touch else last.get(i['id'], today)
     rows.append(f'  <url><loc>https://rax3d.com/?p={i["id"]}</loc><lastmod>{lm}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>')
