@@ -2,7 +2,7 @@
 """Distribution (bulk giveaway) price calculator, owner's standing order 11-13. Not the normal wholesale tier.
     python3 tools/dist-price.py <grams> [hours] [--pack 0.5] [--fail 5] [--qty N] [--printers P]
 Unit cost = (grams x 0.115 x 1.2 + hours x 1.15) x (1 + failure allowance 5%) + bulk packaging (0.5). If hours is missing it is ESTIMATED as 0.25 + 0.042 x grams (from the owner's own files): say so.
-Unit price = ((cost + 1.2 / qty) / (0.968 - target net margin)) rounded UP to 0.05 SAR. Target net margin after gateway fees: 50 pcs 30%, 100 pcs 25%, 500 pcs 18%, 1000 pcs 12%.
+Unit price = ((cost + 1.2 / qty) / (0.968 - target net margin)) rounded UP to 0.05 SAR. Target net margin after gateway fees: 50 pcs 25%, 100 pcs 20%, 500 pcs 15%, 1000 pcs 10%.
 Minimum order 50 pieces. The 5% failure allowance is ON by default (--fail 0 turns it off). Same formula as distUnit() in the invoicing app."""
 import math, sys
 a = sys.argv[1:]
@@ -14,7 +14,7 @@ pack = opt('--pack', 0.5); fail = opt('--fail', 5.0); qty = int(opt('--qty', 0))
 if not a: sys.exit(__doc__)
 g = float(a[0]); est = len(a) < 2; h = float(a[1]) if not est else 0.25 + 0.042 * g
 SPOOL, WASTE, RUN, FEE, FIX = 0.115, 0.2, 1.15, 0.032, 1.2
-TIERS = [(50, 0.30), (100, 0.25), (500, 0.18), (1000, 0.12)]
+TIERS = [(50, 0.25), (100, 0.20), (500, 0.15), (1000, 0.10)]
 cost = (g * SPOOL * (1 + WASTE) + h * RUN) * (1 + fail / 100) + pack
 price = lambda q, m: math.ceil(((cost + FIX / q) / (1 - FEE - m)) / 0.05 - 1e-9) * 0.05
 net = lambda p, q: p - (p * FEE + FIX / q) - cost
