@@ -179,9 +179,15 @@ html[lang=en] .promo .track{animation-name:slideL}
 .pts li:nth-child(n+4){grid-column:span 3}
 .pts li:nth-child(4)::before{content:"⏳"}
 .pts li:nth-child(5)::before{content:"🚫"}
-.flinks{gap:0 4px}.flinks a,.flinks button{display:inline-flex;align-items:center;min-height:44px;padding:0 8px;font-size:13px;touch-action:manipulation}
-.fsoc{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:6px}
-.fsoc a{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--accent);font-weight:600;font-size:13px;touch-action:manipulation}
+.flinks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;margin:0 0 12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.flinks a,.flinks button{display:flex;align-items:center;justify-content:center;min-height:46px;padding:0 8px;font-size:13.5px;font-weight:600;text-decoration:none;border-bottom:1px solid var(--line);touch-action:manipulation}
+.flinks>:nth-child(odd){border-inline-end:1px solid var(--line)}
+.flinks>:last-child,.flinks>:nth-last-child(2):nth-child(odd){border-bottom:0}
+.flinks>:last-child:nth-child(odd){grid-column:1/-1;border-inline-end:0}
+.fsoc{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 14px}
+.fsoc a{display:flex;align-items:center;justify-content:center;min-height:46px;padding:0 8px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--accent);font-weight:600;font-size:13px;touch-action:manipulation}
+.fsoc a:last-child{grid-column:1/-1}
+.finfo{display:grid;gap:2px;font-size:12px;color:var(--muted)}
 .pol{display:grid;gap:8px;font-size:14px;line-height:1.75}.pol ul{margin:0;padding-inline-start:20px;display:grid;gap:6px}.pol p{margin:0}
 .pol .muted{color:var(--muted);font-size:12.5px}
 .sendnote{background:var(--surface);border:1px dashed var(--accent);border-radius:12px;padding:10px 12px;line-height:1.7;text-align:start}
@@ -501,9 +507,11 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
 </div>
 <footer class="foot" dir="rtl">
  <div class="flinks"><a href="about.html">من نحن</a><button type="button" data-pol="faq">الأسئلة الشائعة</button><button type="button" data-pol="ret">الاستبدال والاسترجاع</button><button type="button" data-pol="priv">سياسة الخصوصية</button><button type="button" data-pol="track">متابعة الطلب</button><button type="button" data-pol="contact">تواصل معنا</button><button type="button" data-inst>حمّل التطبيق</button></div>
- <p>RAX3D · طباعة ثلاثية الأبعاد · السعودية</p>
- <p>وثيقة العمل الحر: <span dir="ltr">FL-255870895</span></p>
  <div class="fsoc" dir="ltr"><a href="https://www.instagram.com/rax3d.sa/" target="_blank" rel="noopener">Instagram @rax3d.sa</a><a href="https://www.tiktok.com/@rax3d.sa" target="_blank" rel="noopener">TikTok @rax3d.sa</a><a href="mailto:rax3d.sa@hotmail.com">rax3d.sa@hotmail.com</a></div>
+<div class="finfo">
+  <p>RAX3D · طباعة ثلاثية الأبعاد · السعودية</p>
+  <p>وثيقة العمل الحر: <span dir="ltr">FL-255870895</span></p>
+</div>
 </footer>
 
 <!-- three.js + loaders load on demand the first time the 3D viewer opens (load3D below) -->
