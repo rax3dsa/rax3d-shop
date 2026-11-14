@@ -162,6 +162,19 @@ html[lang=en] .promo .track{animation-name:slideL}
 .flinks{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;margin-bottom:6px}
 .flinks a,.flinks button{background:none;border:0;color:var(--fg);font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:6px 0;text-decoration:underline;text-underline-offset:3px}
 .flinks a{color:var(--fg)}
+.how{gap:0}
+.how li{position:relative;background:none;border:0;border-radius:0;padding:4px 0 14px;column-gap:12px}
+.how li::before{width:30px;height:30px;position:relative;z-index:1}
+.how li:not(:last-child)::after{content:"";position:absolute;inset-inline-start:14px;top:34px;bottom:2px;width:2px;background:color-mix(in srgb,var(--accent) 35%,transparent)}
+.how b{font-size:15px}.how span{font-size:13px;line-height:1.7}
+.pts{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.pts li{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 8px;font-weight:600;font-size:12.5px;line-height:1.6;color:var(--fg);text-align:center}
+.pts li:nth-child(-n+3)::before{content:"⭐";display:block;font-size:18px;margin-bottom:2px}
+.pts li:nth-child(n+4){grid-column:1/-1;background:none;border:0;padding:0 2px;font-weight:400;font-size:12.5px;color:var(--muted);text-align:start}
+.pts li:nth-child(4){margin-top:4px}
+.flinks{gap:0 4px}.flinks a,.flinks button{display:inline-flex;align-items:center;min-height:44px;padding:0 8px;font-size:13px;touch-action:manipulation}
+.fsoc{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:6px}
+.fsoc a{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--accent);font-weight:600;font-size:13px;touch-action:manipulation}
 .pol{display:grid;gap:8px;font-size:14px;line-height:1.75}.pol ul{margin:0;padding-inline-start:20px;display:grid;gap:6px}.pol p{margin:0}
 .pol .muted{color:var(--muted);font-size:12.5px}
 .sendnote{background:var(--surface);border:1px dashed var(--accent);border-radius:12px;padding:10px 12px;line-height:1.7;text-align:start}
@@ -483,8 +496,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
  <div class="flinks"><a href="about.html">من نحن</a><button type="button" data-pol="faq">الأسئلة الشائعة</button><button type="button" data-pol="ret">الاستبدال والاسترجاع</button><button type="button" data-pol="priv">سياسة الخصوصية</button><button type="button" data-pol="track">متابعة الطلب</button><button type="button" data-pol="contact">تواصل معنا</button></div>
  <p>RAX3D · طباعة ثلاثية الأبعاد · السعودية</p>
  <p>وثيقة العمل الحر: <span dir="ltr">FL-255870895</span></p>
- <p dir="ltr"><a href="https://www.instagram.com/rax3d.sa/" target="_blank" rel="noopener">Instagram @rax3d.sa</a> · <a href="https://www.tiktok.com/@rax3d.sa" target="_blank" rel="noopener">TikTok @rax3d.sa</a></p>
- <p><a href="mailto:rax3d.sa@hotmail.com" dir="ltr">rax3d.sa@hotmail.com</a></p>
+ <div class="fsoc" dir="ltr"><a href="https://www.instagram.com/rax3d.sa/" target="_blank" rel="noopener">Instagram @rax3d.sa</a><a href="https://www.tiktok.com/@rax3d.sa" target="_blank" rel="noopener">TikTok @rax3d.sa</a><a href="mailto:rax3d.sa@hotmail.com">rax3d.sa@hotmail.com</a></div>
 </footer>
 
 <!-- three.js + loaders load on demand the first time the 3D viewer opens (load3D below) -->
