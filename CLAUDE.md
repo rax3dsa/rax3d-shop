@@ -25,6 +25,12 @@ Do this in the same commit as the product. Never grow either list. Say in the re
 - Lowest-loss rule: the default shop price is the app's suggested shop price (zero gap, no loss against the suggestion). Go below it only when the owner sets a price by hand.
 - BEFORE the owner confirms any price, tell him: the single price, the wholesale price, and the net profit in SAR and in % for both (and the gap against the suggested price when he set it by hand). Apply Rule 3 to the wholesale. Nothing goes live before he confirms. (Example: hdcookie, 14.27 g, 0.92 h, cost 6.03: app price 31 / 24, owner chose 30 by hand.)
 
+## Distribution (bulk giveaway) pricing (owner's standing order, 11-13)
+- Distributions (orders of 50+ pieces of one piece) have their own pricing, NOT the normal wholesale tier. Unit cost = grams x 0.115 x 1.2 + hours x 1.15 + 0.5 (bulk packaging).
+- Unit price = `((cost + 1.2 / qty) / (0.968 - target net margin))` rounded UP to 0.05 SAR. Target net margin: 50 pcs 40%, 100 pcs 37%, 500 pcs 33%, 1000 pcs 30% (about cost x 1.76 / 1.67 / 1.57 / 1.50). Minimum order 50 pieces.
+- Use `python3 tools/dist-price.py <grams> [hours] [--pack 0.5] [--qty N] [--printers P]`. If the hours are unknown they are estimated (0.25 + 0.042 x grams): say it is an estimate. Add a 5% failure allowance for hard prints.
+- BEFORE the owner confirms: tell him the unit price, the total and the net profit for each tier, and the print time needed (pieces x time per piece / printers). Nothing goes live before he confirms.
+
 ## Pricing
 - Cost = grams x 0.115 x 1.2 + print hours x 1.15 + 3 (packaging). Single = cost x 4.5, wholesale = cost x 3.5, then cover the gateway fee: `ceil((p + 1.2) / 0.968)`.
 - Wholesale threshold: 12 pieces, or 6 when the weight is 100 g or more. If the 3MF is not sliced, the weight/time are estimates: say so and ask the owner to slice.
