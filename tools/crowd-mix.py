@@ -31,10 +31,13 @@ def vignette(canvas):
     res=np.array(canvas.convert('RGB')).astype(np.float32);res=res*(1-v[...,None]*.85)+np.array(BG.convert('RGB')).astype(np.float32)*v[...,None]*.85
     return Image.fromarray(res.clip(0,255).astype(np.uint8))
 def badge(img,n):
-    """design-number tag in the top corner of each per-design image: a dark pill 'تصميم N' (Pillow built with raqm)"""
-    txt=f'تصميم {n}'   # Pillow with raqm shapes Arabic itself
-    f=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',40);d=ImageDraw.Draw(img);b=d.textbbox((0,0),txt,font=f);w,h=b[2]-b[0],b[3]-b[1]
-    x0,y0=44,44;d.rounded_rectangle((x0,y0,x0+w+44,y0+h+32),22,fill=(58,42,24,235));d.text((x0+22-b[0],y0+16-b[1]),txt,font=f,fill=(246,236,214,255))
+    """design-number badge in the top corner of each per-design image: a cream pill with a gold circle holding a big numeral and the word «تصميم» (Pillow built with raqm shapes the Arabic)"""
+    S=2;W,Hh=250*S,100*S;bd=Image.new('RGBA',(W,Hh),(0,0,0,0));d=ImageDraw.Draw(bd)
+    d.rounded_rectangle((0,0,W-1,Hh-1),Hh//2,fill=(250,243,228,245),outline=(138,106,44,255),width=3*S)
+    r=Hh//2-8*S;cx,cy=W-Hh//2,Hh//2;d.ellipse((cx-r,cy-r,cx+r,cy+r),fill=(138,106,44,255))
+    fn=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',62*S);b=d.textbbox((0,0),str(n),font=fn);d.text((cx-(b[0]+b[2])/2,cy-(b[1]+b[3])/2),str(n),font=fn,fill=(255,255,255,255))
+    ft=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',40*S);b=d.textbbox((0,0),'تصميم',font=ft);d.text((22*S+(W-Hh-22*S-(b[2]-b[0]))/2-b[0],cy-(b[1]+b[3])/2),'تصميم',font=ft,fill=(58,42,24,255))
+    bd=bd.resize((W//S,Hh//S),Image.LANCZOS);img.alpha_composite(bd,(40,40))
 # one image per design
 for i,p in enumerate(P,1):
     s=min(600/p.width,430/p.height);img=p.resize((max(2,int(p.width*s)),max(2,int(p.height*s))),Image.LANCZOS)
