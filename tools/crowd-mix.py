@@ -8,7 +8,7 @@ hq/<id>-x1..xN.webp (one image per design: piece centred on the site's cream bac
 Needs: pillow, numpy. The images are computer-composed from renders of the 3MF: say so when presenting them."""
 import random,argparse
 import numpy as np
-from PIL import Image,ImageFilter
+from PIL import Image,ImageFilter,ImageDraw,ImageFont
 ap=argparse.ArgumentParser();ap.add_argument('id');ap.add_argument('--pieces',nargs='+',required=True);ap.add_argument('--hero',type=int,default=1);ap.add_argument('--seed',type=int,default=7);a=ap.parse_args()
 random.seed(a.seed)
 def bg():
@@ -30,12 +30,17 @@ def vignette(canvas):
     yy,xx=np.mgrid[0:800,0:800];dx=np.abs(xx-400)/400.;dy=(yy-420)/420.;v=np.clip((np.sqrt(dx**2+dy**2*.9)-.56)/.38,0,1)**1.4
     res=np.array(canvas.convert('RGB')).astype(np.float32);res=res*(1-v[...,None]*.85)+np.array(BG.convert('RGB')).astype(np.float32)*v[...,None]*.85
     return Image.fromarray(res.clip(0,255).astype(np.uint8))
+def badge(img,n):
+    """design-number tag in the top corner of each per-design image: a dark pill 'تصميم N' (Pillow built with raqm)"""
+    txt=f'تصميم {n}'   # Pillow with raqm shapes Arabic itself
+    f=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',40);d=ImageDraw.Draw(img);b=d.textbbox((0,0),txt,font=f);w,h=b[2]-b[0],b[3]-b[1]
+    x0,y0=44,44;d.rounded_rectangle((x0,y0,x0+w+44,y0+h+32),22,fill=(58,42,24,235));d.text((x0+22-b[0],y0+16-b[1]),txt,font=f,fill=(246,236,214,255))
 # one image per design
 for i,p in enumerate(P,1):
     s=min(600/p.width,430/p.height);img=p.resize((max(2,int(p.width*s)),max(2,int(p.height*s))),Image.LANCZOS)
     out=BG.copy();px=(800-img.width)//2;py=(800-img.height)//2-30
     shadow(img,out,px,py,16,9,.34);out.alpha_composite(img,(px,py));reflect(img,out,px,py)
-    Image.fromarray(np.array(out.convert('RGB'))).save(f'hq/{a.id}-x{i}.webp','WEBP',quality=88,method=6)
+    out=out.convert('RGBA');badge(out,i);Image.fromarray(np.array(out.convert('RGB'))).save(f'hq/{a.id}-x{i}.webp','WEBP',quality=88,method=6)
 # crowd scene
 W0=440;H=P[a.hero-1].height*W0/P[a.hero-1].width;RATIO=.80;G=108;base0=625
 counts=[1,3,4,5,6,7,8,9,10,11,12];blurs=[0,.6,1.2,1.9,2.6,3.3,3.8,4.2,4.5,4.8,5];fades=[0,.05,.11,.18,.26,.35,.45,.55,.65,.73,.80]
