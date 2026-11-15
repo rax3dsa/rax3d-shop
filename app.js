@@ -754,6 +754,7 @@ const MO=new MutationObserver(ms=>{if(LANG!=="en")return;MO.disconnect();
  MO.observe(document.body,{childList:true,subtree:true,characterData:true})});
 function applyLang(){const en=LANG==="en";document.documentElement.lang=en?"en":"ar";document.documentElement.dir=en?"ltr":"rtl";
  if(typeof render==="function"&&typeof hist!=="undefined"&&hist[hi]){seoFor(hist[hi].v==="item"||hist[hi].v==="edit"?hist[hi].id:null)}else document.title=en?"RAX3D | Order your piece":"RAX3D | متجر طباعة ثلاثية الأبعاد في السعودية";
+ const ab=$("#aboutLink");if(ab)ab.href=en?"about-en.html":"about.html";
  const b=$("#langBtn");b.textContent=en?"ع":"EN";b.setAttribute("aria-label",en?"العربية":"English");
  if(en){trNode(document.body);MO.observe(document.body,{childList:true,subtree:true,characterData:true})}}
 $("#langBtn").onclick=()=>{LANG=LANG==="en"?"ar":"en";try{localStorage.setItem("rax3d_lang",LANG)}catch(_){}
