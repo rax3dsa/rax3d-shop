@@ -35,6 +35,11 @@ Do this in the same commit as the product. Never grow either list. Say in the re
 - A NEW giveaway product only needs its entry in `DISTP` (plus `sp:1` and the crowd photo). If its 3MF is not sliced, `g`/`h` are estimates: say so to the owner and ask him to slice, then replace them. `cool` (mini duck): g 2.55 and h 0.357 are ESTIMATES (the 3MF has 36 ducks per plate, unsliced).
 - APPROVED by the owner (11-14, he sent screenshots of the live tabs): `cool` prices 50 pcs 3.75 (total 188, ~3 days), 100 pcs 3.40 (340, ~4 days), 500 pcs 3.00 (1500, ~10 days), 1000 pcs 2.65 (2650, ~17 days); header "from 2.65". Do not recompute or ask him to slice `cool` again. Wording «ابتداءً من 50 حبة» (not «من 50 حبة») in all customer text.
 
+## Special offers / «التخفيضات» (owner's order, 11-15)
+- Any discounted product shows automatically in the category «التخفيضات» (first in the menu) and carries a red «عرض خاص» tag on its card (home strip, category lists). A product counts as discounted if it has a struck price in `OLD` (app.js) or a tier offer in `DISTOFF` (`{id:{qty:unit price}}`).
+- APPROVED by the owner (11-15): `cool` 100 pcs = 299 SAR (2.99 per piece, regular 3.40 / 340), shown as «عرض خاص» on the 100 tab with the regular price struck through. The other tiers are unchanged (50: 3.75, 500: 3.00, 1000: 2.65).
+- To add another offer: put it in `DISTOFF` or `OLD`; nothing else is needed (category, tag and home card follow). Remove the entry to end the offer.
+
 ## Distribution (bulk giveaway) pricing (owner's standing order, 11-13)
 - Distributions (orders of 50+ pieces of one piece) have their own pricing, NOT the normal wholesale tier. Unit cost = (grams x 0.115 x 1.2 + hours x 1.15) x 1.05 (5% failure allowance, always included) + 0.5 (bulk packaging).
 - Unit price = `((cost + 1.2 / qty) / (0.968 - target net margin))` rounded UP to 0.05 SAR. Target net margin: 50 pcs 25%, 100 pcs 20%, 500 pcs 15%, 1000 pcs 10% (about cost x 1.39 / 1.30 / 1.22 / 1.15; owner 11-14: lowered three times to compete with a rival whose small pieces sell at 4.00 / 3.50 / 3.00 for 100 / 500 / 1000). Minimum order 50 pieces.
