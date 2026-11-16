@@ -196,6 +196,28 @@ async function points(req, env, out) {
 }
 
 
+
+// ---- order tracking for the signed-in customer: POST /orders {phone, ts} -> his orders with their stage ----
+// tracking_private.json (written by the invoicing app) = { v:1, o:{ "05xxxxxxxx":[{ n, d, st:0..4, it:[names] }] } }. Only these four fields are returned (no address, no prices).
+const TRL = new Map();
+let TCACHE = { t: 0, d: null };
+async function ordersPost(req, env, out) {
+  { const og = req.headers.get('Origin'); if (og && og !== SITE && og !== 'https://www.rax3d.com') return out({ ok: false, reason: 'origin' }, 403) }
+  const ip = req.headers.get('CF-Connecting-IP') || '', now = Date.now();
+  if (ip) { const a = (TRL.get(ip) || []).filter(t => now - t < 60000); if (a.length >= 12) return out({ ok: false, reason: 'limit' }, 429); a.push(now); TRL.set(ip, a); if (TRL.size > 5000) TRL.clear() }
+  let b; try { b = await req.json() } catch { return out({ ok: false, reason: 'bad' }, 400) }
+  const ph = normPhone(b && b.phone);
+  if (!/^05\d{8}$/.test(ph)) return out({ ok: false, reason: 'bad' }, 400);
+  if (!(await turnstileOk(env, b && b.ts, ip))) return out({ ok: false, reason: 'captcha' }, 403);
+  if (!env.GH_TOKEN || !env.GH_REPO) return out({ ok: true, o: [] });
+  if (now - TCACHE.t > 60000) {
+    try { const f = await ghRead(env, 'tracking_private.json'); TCACHE = { t: now, d: f ? f.data : null } }
+    catch (e) { if (!TCACHE.t) return out({ ok: false, reason: 'error' }, 502) }
+  }
+  const list = TCACHE.d && TCACHE.d.v === 1 && TCACHE.d.o && Array.isArray(TCACHE.d.o[ph]) ? TCACHE.d.o[ph] : [];
+  return out({ ok: true, o: list.slice(0, 15).map(r => ({ n: r.n, d: String(r.d || '').slice(0, 10), st: Math.max(0, Math.min(4, +r.st || 0)), it: (Array.isArray(r.it) ? r.it : []).slice(0, 6).map(x => String(x).slice(0, 60)) })) });
+}
+
 // ---- customer reviews (owner approves each one by email before it shows) ----
 // reviews.json in the private data repo: { v:1, list:[{ k, id, s:1..5, n, t, ph:<phone hash>, vb:<known customer>, at, st:'p'|'a' }] }
 // POST /review {id,s,n,t,phone,ts} -> stored as pending + email with a signed approve/reject link. GET /reviews -> approved only (no phone data).
@@ -491,6 +513,7 @@ async function handle(req, env, ctx) {
     if (req.method === 'POST' && path === '/custom/cod') return customCod(req, env, out);
     if (req.method === 'GET' && path.startsWith('/custom/')) return customGet(path.slice(8), env, out);
     if (req.method === 'POST' && path === '/points') return points(req, env, out);
+    if (req.method === 'POST' && path === '/orders') return ordersPost(req, env, out);
     if (req.method === 'POST' && path === '/review') return reviewPost(req, env, out);
     if (req.method === 'GET' && path === '/reviews') return reviewsGet(env, out);
     if (path === '/review/act' && (req.method === 'GET' || req.method === 'POST')) return reviewAct(req, env, new URL(req.url));

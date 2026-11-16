@@ -323,6 +323,15 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
 .lock{display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--muted)}
 .lock input{width:18px;height:18px;accent-color:var(--accent)}
 .linkbtn{font:inherit;font-size:13px;border:0;background:none;color:var(--accent);cursor:pointer;padding:4px 0;text-decoration:underline}
+.trk{display:grid;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.trkl{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:0}
+.trkl li{display:flex;gap:12px;align-items:flex-start;position:relative;padding-bottom:16px;color:var(--muted)}
+.trkl li:not(:last-child)::before{content:"";position:absolute;inset-inline-start:13px;top:28px;bottom:0;width:2px;background:var(--line)}
+.trkl li.done:not(:last-child)::before{background:var(--accent)}
+.trkl .dot{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;background:var(--surface);border:2px solid var(--line)}
+.trkl li.done{color:var(--fg)}.trkl li.done .dot{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.trkl li.cur{color:var(--fg)}.trkl li.cur .dot{border-color:var(--accent);color:var(--accent)}
+@media (prefers-reduced-motion:no-preference){.trkl li.cur .dot{animation:trkp 1.6s ease-in-out infinite}@keyframes trkp{0%,100%{box-shadow:0 0 0 0 rgba(138,97,31,.45)}50%{box-shadow:0 0 0 7px rgba(138,97,31,0)}}}
 .pld-svg{--h:54px;--d:.2s}
 .pld{display:grid;justify-items:center;gap:6px;padding:28px 12px;color:var(--muted);font-size:14px;text-align:center}
 .pld.sm{padding:10px 8px;gap:2px;font-size:12.5px}.pld.sm .pld-svg{width:64px;height:64px}
