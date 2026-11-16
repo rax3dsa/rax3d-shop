@@ -1,12 +1,35 @@
 name: Deploy payment worker
+# Deploys worker/ to Cloudflare whenever it changes on main (or by hand: Actions > Deploy payment worker > Run workflow).
+# Needs two repository secrets (Settings > Secrets and variables > Actions): CLOUDFLARE_API_TOKEN (template "Edit Cloudflare Workers")
+# and CLOUDFLARE_ACCOUNT_ID. Without the token the job only prints a warning and stays green (it used to fail red).
+# Worker secrets (MOYASAR_SECRET, RESEND_KEY, GH_TOKEN ...) live in Cloudflare and are never touched by a deploy.
 on:
+  push:
+    branches: [main]
+    paths: ['worker/**', '.github/workflows/deploy-worker.yml']
   workflow_dispatch:
+concurrency:
+  group: deploy-worker
+  cancel-in-progress: false
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-      - uses: cloudflare/wrangler-action@v3
+      - name: Check the Cloudflare token
+        id: chk
+        run: |
+          if [ -z "$CF_TOKEN" ]; then
+            echo "::warning::CLOUDFLARE_API_TOKEN is not set, so the worker was NOT deployed. Add the secret, then re-run this workflow."
+            echo "go=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "go=yes" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Deploy
+        if: steps.chk.outputs.go == 'yes'
+        uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
