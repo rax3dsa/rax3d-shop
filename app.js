@@ -178,16 +178,17 @@ function home(){
    ${CUST?"":`<button type="button" class="reglink" data-acc>سجّل واكسب نقاط ولاء على كل طلب ⭐</button>`}</section>
    <h2 id="distHd">توزيعات لمناسبتك</h2>${carousel(DIST,6)}
    <h2 id="newHd">وصل حديثاً</h2>${carousel(NEW,6)}
+   <div id="voteBox"></div>
    <ul class="perks out"><li><b>13</b><span>لون تختار منها</span></li><li><b>3D</b><span>شوف القطعة قبل الطلب</span></li><li><b>⭐</b><span>نقطة ولاء على كل ريال</span></li></ul>
    <h2>الأكثر طلباً</h2>${carousel(FEATURED,6)}
    <h2>كيف أطلب؟</h2><div class="hgrid"><button type="button" class="hs" data-hs="1" aria-expanded="false" aria-controls="hd1"><i>1</i><b>اختر القطعة</b></button><button type="button" class="hs" data-hs="2" aria-expanded="false" aria-controls="hd2"><i>2</i><b>أكمل طلبك</b></button><button type="button" class="hs" data-hs="3" aria-expanded="false" aria-controls="hd3"><i>3</i><b>نأكد طلبك</b></button><button type="button" class="hs" data-hs="4" aria-expanded="false" aria-controls="hd4"><i>4</i><b>نطبع ونسلّم</b></button></div><div class="hdet" aria-live="polite"><p class="hstp" id="hd1" hidden><b>اختر القطعة</b> <span>واللون والمقاس والعدد، وأضفها لطلبك.</span></p><p class="hstp" id="hd2" hidden><b>أكمل طلبك</b> <span>ادفع أونلاين (مدى، Apple Pay)، أو اطلب بالدفع عند الاستلام، أو أرسل الطلب بالخاص في انستقرام أو تيك توك.</span></p><p class="hstp" id="hd3" hidden><b>نأكد طلبك</b> <span>نتواصل معك بتأكيد الطلب. التجهيز من 3 إلى 7 أيام، وطلبات الجملة مدتها حسب الطلب والعدد ونتواصل معك بالخاص لتحديدها.</span></p><p class="hstp" id="hd4" hidden><b>نطبع ونسلّم</b> <span>تتابع طلبك برقم الطلب اللي في فاتورتك.</span></p></div>
    <section class="about"><h2>نقاط الولاء</h2><ul class="pts"><li>كل 1000 نقطة = خصم 10 ريال</li><li>2500 نقطة = توصيل مجاني</li><li>5000 نقطة = قطعة مجانية بقيمة حتى 250 ريال</li><li>تنتهي كل نقطة بعد 12 شهراً من تاريخ كسبها</li><li>النقاط لا تُستبدل بمبالغ مالية</li></ul></section>
    ${INST.standalone?"":`<button type="button" class="instbtn" data-inst><img src="icon-192.png" alt="">حمّل تطبيق RAX3D على جهازك</button>`}`;
-  startCars();
+  startCars();loadPoll();
 }
 function catView(c){
   const list=ITEMS.filter(i=>(c===SALE_CAT?isSale(i.id):i.cat===c)&&!i.hid);$("#ttl").textContent=c;
-  $("#main").innerHTML=`<div class="sechd"><h2>${c}</h2><small>${list.length} قطع</small></div><div class="grid">${list.map(card).join("")}</div>`;
+  $("#main").innerHTML=`<div class="sechd"><h2>${c}</h2><small>${list.length} قطع</small></div><div id="voteChip" data-cat="${esc(c)}"></div><div class="grid">${list.map(card).join("")}</div>`;loadPoll();
 }
 /* Giveaway (التوزيعات) price tabs on the piece page: quantity tabs, each showing the unit price, the total and the approximate days.
    DISTP = per giveaway piece: g = grams, h = print hours per piece. Same formula, margins and floors as tools/dist-price.py and distUnit in the invoicing app:
@@ -511,6 +512,24 @@ document.addEventListener("input",e=>{
 });
 document.addEventListener("input",e=>{if(cur&&e.target.id==="note"){cur.note=e.target.value.slice(0,200);$("#cnt").textContent=cur.note.length}});
 
+/* ---------- weekly vote on the next piece (owner's idea 8, 11-16): the options are the shop's EXISTING categories only (no new category). Signed-in customers only, one vote each (worker POST /vote). ---------- */
+let POLL=null,POLLC={},POLLT=0,VOTEPEND=null;
+async function loadPoll(force){if(!PAY.api)return;if(!force&&POLLT&&Date.now()-POLLT<60000){paintVote();return}POLLT=Date.now();
+ try{const r=await fetch(PAY.api+"/poll",{cache:"no-store"}),j=await r.json();if(j&&j.ok&&j.poll&&Array.isArray(j.poll.opts)){POLL=j.poll;POLLC=j.c||{}}else POLL=null}catch(_){POLL=null}paintVote()}
+const votedOpt=()=>{try{return POLL?localStorage.getItem("rax3d_vote_"+POLL.id):null}catch(_){return null}};
+function voteHtml(){if(!POLL)return"";const L=LANG==="en",v=votedOpt(),tot=Object.values(POLLC).reduce((a,x)=>a+x,0);
+ return `<h2>🗳️ ${esc(POLL.title)}</h2><div class="vote">${POLL.opts.map(o=>{const c=POLLC[o]||0,pct=tot?Math.round(c/tot*100):0;return v?`<div class="vrow${o===v?" me":""}"><span>${esc(tr(o))}${o===v?" ✓":""}</span><i style="--p:${pct}%"></i><b>${pct}%</b></div>`:`<button type="button" class="btn alt" data-vote="${esc(o)}">${esc(tr(o))}</button>`}).join("")}<p class="note">${v?(L?"Thank you for voting. ":"شكرًا لتصويتك. "):(L?"Pick a category and vote. ":"اختر قسمًا وصوّت. ")}${L?"Closes ":"يغلق "}${esc(POLL.end)}</p></div>`}
+function paintVote(){const b=$("#voteBox");if(b)b.innerHTML=voteHtml();
+ const c=$("#voteChip");if(c){const cat=c.dataset.cat;c.innerHTML=POLL&&POLL.opts.includes(cat)&&!votedOpt()?`<button type="button" class="btn alt" data-vote="${esc(cat)}">${LANG==="en"?"🗳️ Vote for this category":"🗳️ صوّت لهذا القسم"}</button>`:""}}
+async function castVote(o){const L=LANG==="en";if(!POLL)return;
+ if(!CUST){VOTEPEND=o;toastMsg(L?"Sign in first to vote":"سجّل دخولك أولًا عشان تصوّت");openAcc();return}
+ let ts=null;if(PAY.ts){try{ts=await tsToken()}catch(_){toastMsg(L?"Security check failed, try again":"تعذّر التحقق الأمني، جرّب مرة ثانية");return}}
+ try{const r=await fetch(PAY.api+"/vote",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:POLL.id,opt:o,phone:normPhone(CUST.p),ts})}),j=await r.json().catch(()=>({}));
+  if(j.ok){POLLC=j.c||POLLC;try{localStorage.setItem("rax3d_vote_"+POLL.id,o)}catch(_){}toastMsg(L?"Thanks, your vote is counted 🗳️":"شكرًا، تم احتساب صوتك 🗳️")}
+  else if(j.reason==="dup"){try{localStorage.setItem("rax3d_vote_"+POLL.id,"?")}catch(_){}toastMsg(L?"You already voted":"سبق أن صوّتّ في هذا التصويت");loadPoll(true)}
+  else toastMsg(L?"Could not vote now, try again":"تعذّر التصويت الآن، جرّب مرة ثانية")}catch(_){toastMsg(L?"Could not vote now, try again":"تعذّر التصويت الآن، جرّب مرة ثانية")}
+ paintVote()}
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-vote]");if(b)castVote(b.dataset.vote)});
 /* ---------- «احسب سعر ملفك» (owner's idea 1, 11-16): the STL/3MF is read ON THE PHONE (it is never uploaded); volume -> estimated grams and hours -> the owner's own formula (same as tools/price-calc.py). The result is an estimate: final price after slicing. ---------- */
 const QT={dens:1.24,fill:.30,bed:250};   /* PLA 1.24 g/cm3; walls + sparse infill are about 30% of the solid volume: an approximation, said on screen */
 const qtCalc=(g)=>{const h=.25+.042*g,base=g*.115*1.2+h*1.15+3,single=Math.ceil(base*4.5);return{g,h,shop:Math.ceil((single+1.2)/.968)}};   /* hours: the owner's estimate 0.25 + 0.042 x grams */
@@ -620,22 +639,25 @@ function saveAcc(){const n=$("#cn").value.trim().replace(/\s+/g," "),p=normPhone
  if(!n){m.className="dmsg err";m.textContent="اكتب اسمك.";return}
  if(!/^05\d{8}$/.test(p)){m.className="dmsg err";m.textContent="اكتب رقم جوال سعودي صحيح يبدأ بـ 05 (10 أرقام).";return}
  CUST={n:n.slice(0,40),p};try{localStorage.setItem("rax3d_cust",JSON.stringify(CUST))}catch(_){}
- $("#abg").hidden=true;render(false);loadPts();toastMsg("أهلاً "+CUST.n+"، تم التسجيل ✓");if(TRKPEND){TRKPEND=0;setTimeout(()=>openPol("track"),300)}}
+ $("#abg").hidden=true;render(false);loadPts();toastMsg("أهلاً "+CUST.n+"، تم التسجيل ✓");if(TRKPEND){TRKPEND=0;setTimeout(()=>openPol("track"),300)}if(VOTEPEND){const o=VOTEPEND;VOTEPEND=null;setTimeout(()=>castVote(o),400)}}
 /* ---------- loyalty balance: read-only, published by the invoicing app as hashed mobiles in points.json ---------- */
 let PTS=null;
-const ptsTxt=()=>PTS==null?"":(LANG==="en"?"⭐ Your balance: "+PTS+" points":"⭐ رصيدك: "+PTS+" نقطة");
+/* loyalty tiers (owner's idea 6): by the customer's total purchases; SAME limits as TIERS in the invoicing app (change both). The worker returns tier and spend from the private data repo. */
+const TIERS=[["برونزي","Bronze","🥉",0],["ذهبي","Gold","🥇",1000],["أسطوري","Legendary","👑",3000]];let TIER=null,SPEND=0;
+const tierTxt=()=>{if(TIER==null)return"";const L=LANG==="en",t=TIERS[TIER],nx=TIERS[TIER+1];return t[2]+" "+(L?t[1]:t[0])+(nx?" · "+(L?nx[1]+" in "+Math.max(0,nx[3]-SPEND)+" SAR more":"باقي "+Math.max(0,nx[3]-SPEND)+" ريال للمستوى "+nx[0]):" · "+(L?"top tier":"أعلى مستوى"))};
+const ptsTxt=()=>PTS==null?"":(LANG==="en"?"⭐ Your balance: "+PTS+" points":"⭐ رصيدك: "+PTS+" نقطة")+(TIER!=null?" · "+tierTxt():"");
 function paintPts(){const t=ptsTxt();document.querySelectorAll("[data-pts]").forEach(e=>{e.textContent=t;e.hidden=!t});document.querySelectorAll("[data-ptsn]").forEach(e=>{e.textContent=PTS==null?"":" · ⭐ "+PTS})}
 /* key = PBKDF2-SHA256(normalised mobile, fixed app-wide salt, 300k iterations, 32-byte hex). MUST match ptsKey() in the invoicing app (/index.html). */
 const PTS_SALT="RAX3D|loyalty-points|v2|7f3c9a1e",PTS_ITER=300000;
 async function ptsKey(ph){const k=await crypto.subtle.importKey("raw",new TextEncoder().encode(normPhone(ph)),"PBKDF2",false,["deriveBits"]);
  const b=await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:new TextEncoder().encode(PTS_SALT),iterations:PTS_ITER},k,256);
  return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("")}
-async function loadPts(){PTS=null;if(!CUST){paintPts();return}
+async function loadPts(){PTS=null;TIER=null;SPEND=0;if(!CUST){paintPts();return}
  /* 1) the balance comes from the payment worker, which reads it from the private data repo (nothing public lists balances) */
  try{await CFGP}catch(_){}
  let ts=null;if(PAY.ts){try{ts=await tsToken()}catch(_){return}}   /* no proof, no look-up */
  try{const r=await fetch(PAY.api+"/points",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phone:normPhone(CUST.p),ts})});
-  const j=await r.json();if(j&&j.ok&&j.src==="private"){PTS=Math.max(0,+j.pts||0);paintPts();return}}catch(_){}
+  const j=await r.json();if(j&&j.ok&&j.src==="private"){PTS=Math.max(0,+j.pts||0);if(Number.isInteger(j.tier)){TIER=Math.min(TIERS.length-1,Math.max(0,j.tier));SPEND=Math.max(0,+j.sp||0)}paintPts();return}}catch(_){}
  /* worker unreachable or no private balance yet: show nothing (the public hashed file was removed) */
  paintPts()}
 function logoutAcc(){CUST=null;PTS=null;try{localStorage.removeItem("rax3d_cust")}catch(_){}$("#abg").hidden=true;render(false)}

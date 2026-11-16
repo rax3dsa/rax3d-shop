@@ -192,7 +192,8 @@ async function points(req, env, out) {
     catch (e) { if (!PCACHE.t) return out({ ok: false, reason: 'error' }, 502) }   // keep serving the last copy if GitHub hiccups
   }
   if (!PCACHE.d || PCACHE.d.v !== 1) return out({ ok: true, src: 'none' });
-  return out({ ok: true, src: 'private', pts: Math.max(0, Math.floor(+((PCACHE.d.p || {})[ph]) || 0)) });
+  const tr = (PCACHE.d.t || {})[ph];   // loyalty tier + total purchases, published by the invoicing app
+  return out({ ok: true, src: 'private', pts: Math.max(0, Math.floor(+((PCACHE.d.p || {})[ph]) || 0)), tier: Array.isArray(tr) ? Math.max(0, Math.min(2, tr[0] | 0)) : null, sp: Array.isArray(tr) ? Math.max(0, tr[1] | 0) : 0 });
 }
 
 
@@ -216,6 +217,52 @@ async function ordersPost(req, env, out) {
   }
   const list = TCACHE.d && TCACHE.d.v === 1 && TCACHE.d.o && Array.isArray(TCACHE.d.o[ph]) ? TCACHE.d.o[ph] : [];
   return out({ ok: true, o: list.slice(0, 15).map(r => ({ n: r.n, d: String(r.d || '').slice(0, 10), st: Math.max(0, Math.min(4, +r.st || 0)), it: (Array.isArray(r.it) ? r.it : []).slice(0, 6).map(x => String(x).slice(0, 60)) })) });
+}
+
+
+// ---- weekly vote on the next piece (owner's idea 8): the options are the shop's EXISTING categories only ----
+// poll.json (written by the invoicing app): { id, title, opts:[category names], end:'YYYY-MM-DD' }.  votes.json: { id, c:{cat:n}, cc:{cat:n} (voters whose mobile is a known customer), v:{phoneHash:cat} }
+// GET /poll -> poll + counts. POST /vote {id, opt, phone, ts}: one vote per mobile per poll, 10/hour per IP, Turnstile if on, only while the poll is open.
+const VTRL = new Map();
+let PLC = { t: 0, p: null, v: null };
+async function pollState(env) {
+  const now = Date.now();
+  if (PLC.t && now - PLC.t < 60000) return PLC;
+  try { const a = await ghRead(env, 'poll.json'), b = await ghRead(env, 'votes.json'); PLC = { t: now, p: a ? a.data : null, v: b ? b.data : null } }
+  catch (e) { if (!PLC.t) throw e }
+  return PLC;
+}
+const pollOpen = p => p && p.id && Array.isArray(p.opts) && p.opts.length >= 2 && typeof p.end === 'string' && riyadhDay() <= p.end;
+async function pollGet(env, out) {
+  if (!env.GH_TOKEN || !env.GH_REPO) return out({ ok: true, poll: null });
+  let st; try { st = await pollState(env) } catch (e) { return out({ ok: false, reason: 'error' }, 502) }
+  const p = st.p; if (!pollOpen(p)) return out({ ok: true, poll: null });
+  const v = st.v && st.v.id === p.id ? st.v : { c: {}, cc: {} };
+  return out({ ok: true, poll: { id: p.id, title: String(p.title || '').slice(0, 120), opts: p.opts.slice(0, 8).map(x => String(x).slice(0, 40)), end: p.end }, c: Object.fromEntries(p.opts.map(o => [o, v.c && v.c[o] | 0])) });
+}
+async function votePost(req, env, out) {
+  { const og = req.headers.get('Origin'); if (og && og !== SITE && og !== 'https://www.rax3d.com') return out({ ok: false, reason: 'origin' }, 403) }
+  if (!env.GH_TOKEN || !env.GH_REPO) return out({ ok: false, reason: 'error' }, 503);
+  const ip = req.headers.get('CF-Connecting-IP') || '', now = Date.now();
+  if (ip) { const a = (VTRL.get(ip) || []).filter(t => now - t < 3600000); if (a.length >= 10) return out({ ok: false, reason: 'limit' }, 429); a.push(now); VTRL.set(ip, a); if (VTRL.size > 5000) VTRL.clear() }
+  let b; try { b = await req.json() } catch { return out({ ok: false, reason: 'bad' }, 400) }
+  const ph = normPhone(b && b.phone), opt = String((b && b.opt) || '');
+  if (!/^05\d{8}$/.test(ph)) return out({ ok: false, reason: 'bad' }, 400);
+  if (!(await turnstileOk(env, b && b.ts, ip))) return out({ ok: false, reason: 'captcha' }, 403);
+  let st; try { PLC.t = 0; st = await pollState(env) } catch (e) { return out({ ok: false, reason: 'error' }, 502) }
+  const p = st.p; if (!pollOpen(p) || String(b && b.id) !== String(p.id) || !p.opts.includes(opt)) return out({ ok: false, reason: 'closed' }, 400);
+  const hh = (await sha('vote|' + ph)).slice(0, 16);
+  let known = false; try { const f = await ghRead(env, 'points_private.json'); known = !!(f && f.data && ((f.data.p && Object.prototype.hasOwnProperty.call(f.data.p, ph)) || (f.data.t && Object.prototype.hasOwnProperty.call(f.data.t, ph)))) } catch (_) {}
+  let dup = false;
+  await ghUpdate(env, 'votes.json', { id: '', c: {}, cc: {}, v: {} }, d => {
+    if (!d || d.id !== p.id) d = { id: p.id, c: {}, cc: {}, v: {} };
+    if (d.v[hh]) { dup = true; return undefined }
+    d.v[hh] = opt; d.c[opt] = (d.c[opt] | 0) + 1; if (known) d.cc[opt] = (d.cc[opt] | 0) + 1; return d;
+  }, 'صوت جديد في تصويت الأسبوع');
+  PLC.t = 0;
+  if (dup) return out({ ok: false, reason: 'dup' }, 409);
+  const st2 = await pollState(env).catch(() => null), v = st2 && st2.v && st2.v.id === p.id ? st2.v : { c: {} };
+  return out({ ok: true, c: Object.fromEntries(p.opts.map(o => [o, v.c && v.c[o] | 0])) });
 }
 
 // ---- customer reviews (owner approves each one by email before it shows) ----
@@ -339,11 +386,12 @@ async function fortnightReport(env) {
   const m = new Map();
   cur.forEach(r => { const its = Array.isArray(r.items) ? r.items : [], tot = its.reduce((a, i) => a + (Number(i.line) || 0), 0) || 1; its.forEach(i => { const k = String(i.desc || '').trim(); if (!k) return; const o = m.get(k) || { q: 0, p: 0 }; o.q += Number(i.q) || 0; o.p += (Number(r.profit) || 0) * ((Number(i.line) || 0) / tot); m.set(k, o) }) });
   const top = [...m].sort((a, b) => b[1].p - a[1].p).filter(x => x[1].p > 0).slice(0, 3);
+  let vote = ''; try { const st = await pollState(env), pl = st.p; if (pl && pl.id && Array.isArray(pl.opts) && st.v && st.v.id === pl.id) { const rows = pl.opts.map(o => [o, st.v.c && st.v.c[o] | 0]).sort((a, b) => b[1] - a[1]); vote = `<p>🗳️ تصويت القسم القادم (${esc(String(pl.title || ''))}): ${rows.map(x => esc(x[0]) + ' ' + x[1]).join('، ')}</p>` } } catch (_) {}
   const age = Math.floor((Date.now() - Date.parse(d.savedAt)) / 864e5), saved = String(d.savedAt || '').slice(0, 10);
   return `<p style="font-size:16px"><b>📊 تقرير آخر أسبوعين</b></p>
 <p>الفواتير: <b>${cur.length}</b> · المبيعات: <b>${r2(sum(cur, 'total'))}</b> ر.س · صافي الربح: <b>${r2(pc)}</b> ر.س ${ch === null ? '' : `(${ch >= 0 ? '▲' : '▼'} ${Math.abs(ch)}% عن الأسبوعين السابقين: ${r2(pp)})`}</p>
 <p>🏆 الأكثر ربحًا: ${top.length ? top.map(x => esc(x[0]) + ' (' + r2(x[1].p) + ' ر.س × ' + x[1].q + ')').join('، ') : 'لا مبيعات في هذه الفترة'}</p>
-<p>☁️ آخر نسخة احتياطية للسجل: <b>${esc(saved || 'غير معروف')}</b>${age > 10 ? ' ⚠️ قديمة (أكثر من 10 أيام)، تأكد أن علامة ☁️✔ تظهر في برنامج الفواتير.' : ' ✔'}</p>`;
+${vote}<p>☁️ آخر نسخة احتياطية للسجل: <b>${esc(saved || 'غير معروف')}</b>${age > 10 ? ' ⚠️ قديمة (أكثر من 10 أيام)، تأكد أن علامة ☁️✔ تظهر في برنامج الفواتير.' : ' ✔'}</p>`;
 }
 async function stockReminder(env) {
   if (!env.GH_TOKEN || !env.GH_REPO || !env.RESEND_KEY || !env.MAIL_TO) return 'config';
@@ -535,6 +583,8 @@ async function handle(req, env, ctx) {
     if (req.method === 'GET' && path.startsWith('/custom/')) return customGet(path.slice(8), env, out);
     if (req.method === 'POST' && path === '/points') return points(req, env, out);
     if (req.method === 'POST' && path === '/orders') return ordersPost(req, env, out);
+    if (req.method === 'GET' && path === '/poll') return pollGet(env, out);
+    if (req.method === 'POST' && path === '/vote') return votePost(req, env, out);
     if (req.method === 'POST' && path === '/review') return reviewPost(req, env, out);
     if (req.method === 'GET' && path === '/reviews') return reviewsGet(env, out);
     if (path === '/review/act' && (req.method === 'GET' || req.method === 'POST')) return reviewAct(req, env, new URL(req.url));
