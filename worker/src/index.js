@@ -195,6 +195,67 @@ async function points(req, env, out) {
   return out({ ok: true, src: 'private', pts: Math.max(0, Math.floor(+((PCACHE.d.p || {})[ph]) || 0)) });
 }
 
+
+// ---- customer reviews (owner approves each one by email before it shows) ----
+// reviews.json in the private data repo: { v:1, list:[{ k, id, s:1..5, n, t, ph:<phone hash>, vb:<known customer>, at, st:'p'|'a' }] }
+// POST /review {id,s,n,t,phone,ts} -> stored as pending + email with a signed approve/reject link. GET /reviews -> approved only (no phone data).
+const RVRL = new Map();
+const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+const sha = async s => hex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)));
+async function rvSig(env, k) { const key = await crypto.subtle.importKey('raw', new TextEncoder().encode('rv|' + env.GH_TOKEN), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']); return hex(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(k))).slice(0, 32) }
+const rvClean = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
+const rvLink = /(https?:|www\.|\.com|\.sa\b|@\w|t\.me|wa\.me)/i;
+async function reviewPost(req, env, out) {
+  { const og = req.headers.get('Origin'); if (og && og !== SITE && og !== 'https://www.rax3d.com') return out({ ok: false, reason: 'origin' }, 403) }
+  if (!env.GH_TOKEN || !env.GH_REPO) return out({ ok: false, reason: 'error' }, 503);
+  const ip = req.headers.get('CF-Connecting-IP') || '', now = Date.now();
+  if (ip) { const a = (RVRL.get(ip) || []).filter(t => now - t < 3600000); if (a.length >= 5) return out({ ok: false, reason: 'limit' }, 429); a.push(now); RVRL.set(ip, a); if (RVRL.size > 5000) RVRL.clear() }
+  let b; try { b = await req.json() } catch { return out({ ok: false, reason: 'bad' }, 400) }
+  const id = String((b && b.id) || ''), s = Math.round(+(b && b.s)), n = rvClean(b && b.n, 30), t = rvClean(b && b.t, 300), ph = normPhone(b && b.phone);
+  if (!/^[\w-]{1,30}$/.test(id) || !(s >= 1 && s <= 5) || n.length < 2 || !/^05\d{8}$/.test(ph)) return out({ ok: false, reason: 'bad' }, 400);
+  if (rvLink.test(n) || rvLink.test(t)) return out({ ok: false, reason: 'link' }, 400);
+  const items = await names(), it = items[id]; if (!it) return out({ ok: false, reason: 'bad' }, 400);
+  if (!(await turnstileOk(env, b && b.ts, ip))) return out({ ok: false, reason: 'captcha' }, 403);
+  const phh = (await sha('rvph|' + ph)).slice(0, 16), k = hex(crypto.getRandomValues(new Uint8Array(6)));
+  let vb = false; try { const f = await ghRead(env, 'points_private.json'); vb = !!(f && f.data && f.data.p && Object.prototype.hasOwnProperty.call(f.data.p, ph)) } catch (_) {}
+  let dup = false, full = false;
+  await ghUpdate(env, 'reviews.json', { v: 1, list: [] }, d => {
+    d = d && Array.isArray(d.list) ? d : { v: 1, list: [] };
+    if (d.list.some(r => r.id === id && r.ph === phh)) { dup = true; return undefined }
+    if (d.list.filter(r => r.st === 'p').length >= 100) { full = true; return undefined }
+    d.list.push({ k, id, s, n, t, ph: phh, vb, at: new Date().toISOString(), st: 'p' }); return d;
+  }, 'تقييم جديد بانتظار الموافقة');
+  if (dup) return out({ ok: false, reason: 'dup' }, 409);
+  if (full) return out({ ok: false, reason: 'busy' }, 429);
+  const sig = await rvSig(env, k), base = new URL(req.url).origin + '/review/act?k=' + k + '&sig=' + sig;
+  mail(env, '⭐ تقييم جديد بانتظار موافقتك: ' + (it.n || id), `<div dir="rtl" style="font-family:sans-serif"><p><b>${esc(it.n || id)}</b> — ${'★'.repeat(s)}${'☆'.repeat(5 - s)}</p><p>${esc(n)}${vb ? ' (عميل سابق)' : ' (رقمه غير موجود في العملاء)'}</p><p>${esc(t) || '(بدون تعليق)'}</p><p><a href="${base}">راجع ووافق أو ارفض</a></p></div>`).catch(() => {});
+  return out({ ok: true });
+}
+let RVC = { t: 0, d: null };
+async function reviewsGet(env, out) {
+  if (!env.GH_TOKEN || !env.GH_REPO) return out({ ok: true, d: {} });
+  const now = Date.now();
+  if (!RVC.t || now - RVC.t > 60000) { try { const f = await ghRead(env, 'reviews.json'); RVC = { t: now, d: f ? f.data : null } } catch (e) { if (!RVC.t) return out({ ok: true, d: {} }) } }
+  const d = {}, list = (RVC.d && Array.isArray(RVC.d.list) ? RVC.d.list : []).filter(r => r.st === 'a').sort((a, b) => (b.at > a.at ? 1 : -1));
+  for (const r of list) { const o = d[r.id] || (d[r.id] = { sum: 0, c: 0, l: [] }); o.sum += r.s; o.c++; if (o.l.length < 30) o.l.push({ n: r.n, s: r.s, t: r.t, at: String(r.at).slice(0, 10), vb: !!r.vb }) }
+  for (const id in d) { d[id] = { a: Math.round(d[id].sum / d[id].c * 10) / 10, c: d[id].c, l: d[id].l } }
+  return out({ ok: true, d });
+}
+const rvPage = body => new Response('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><body dir="rtl" style="font-family:sans-serif;max-width:480px;margin:40px auto;padding:0 16px;line-height:1.8">' + body, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
+async function reviewAct(req, env, url) {
+  if (!env.GH_TOKEN || !env.GH_REPO) return rvPage('غير متاح');
+  let k, sig, a = '';
+  if (req.method === 'POST') { const f = await req.formData(); k = String(f.get('k') || ''); sig = String(f.get('sig') || ''); a = String(f.get('a') || '') } else { k = url.searchParams.get('k') || ''; sig = url.searchParams.get('sig') || '' }
+  if (!/^[0-9a-f]{12}$/.test(k) || sig !== await rvSig(env, k)) return rvPage('رابط غير صالح');
+  const f = await ghRead(env, 'reviews.json'), r = f && f.data && Array.isArray(f.data.list) ? f.data.list.find(x => x.k === k) : null;
+  if (!r) return rvPage('هذا التقييم لم يعد موجودًا (تمت معالجته).');
+  if (req.method !== 'POST') return rvPage(`<h2>${'★'.repeat(r.s)}${'☆'.repeat(5 - r.s)}</h2><p><b>${esc(r.n)}</b>${r.vb ? ' (عميل سابق)' : ''}</p><p>${esc(r.t) || '(بدون تعليق)'}</p><p>الحالة: ${r.st === 'a' ? 'معتمد' : 'بانتظار القرار'}</p><form method="post"><input type="hidden" name="k" value="${k}"><input type="hidden" name="sig" value="${sig}"><button name="a" value="ok" style="padding:12px 22px;font-size:16px">✅ موافقة ونشر</button> <button name="a" value="no" style="padding:12px 22px;font-size:16px">🗑️ رفض وحذف</button></form>`);
+  if (a !== 'ok' && a !== 'no') return rvPage('طلب غير صالح');
+  await ghUpdate(env, 'reviews.json', { v: 1, list: [] }, d => { const i = d.list.findIndex(x => x.k === k); if (i < 0) return undefined; if (a === 'ok') d.list[i].st = 'a'; else d.list.splice(i, 1); return d }, a === 'ok' ? 'تقييم معتمد' : 'تقييم مرفوض');
+  RVC.t = 0;
+  return rvPage(a === 'ok' ? '✅ تم نشر التقييم (يظهر في الموقع خلال دقيقة).' : '🗑️ تم حذف التقييم.');
+}
+
 // ---- live colour availability ----
 // The invoicing app's stock tab keeps stock.json in the private data repo: { types:[{name,site}], rows:[{t,c,q,buy}], next, mailedFor }.
 // The shop asks GET /stock which colours are out: a colour is out when EVERY row of that colour in a site-linked type is marked "buy" (طلب شراء).
@@ -427,6 +488,9 @@ async function handle(req, env, ctx) {
     if (req.method === 'POST' && path === '/custom/cod') return customCod(req, env, out);
     if (req.method === 'GET' && path.startsWith('/custom/')) return customGet(path.slice(8), env, out);
     if (req.method === 'POST' && path === '/points') return points(req, env, out);
+    if (req.method === 'POST' && path === '/review') return reviewPost(req, env, out);
+    if (req.method === 'GET' && path === '/reviews') return reviewsGet(env, out);
+    if (path === '/review/act' && (req.method === 'GET' || req.method === 'POST')) return reviewAct(req, env, new URL(req.url));
     if (req.method === 'GET' && path === '/stock') return out({ ok: true, out: await stockOut(env) });
     if (req.method === 'GET' && path === '/config') return out({ ok: true, ship: SHIP_FEE, codShip: COD_SHIP_FEE, modes: true, turnstile: (env.TURNSTILE_SECRET && env.TURNSTILE_SITEKEY) ? String(env.TURNSTILE_SITEKEY) : null });
     if (req.method !== 'POST' || path !== '/confirm') return out({ ok: false }, 404);
