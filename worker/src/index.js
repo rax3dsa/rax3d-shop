@@ -204,6 +204,8 @@ const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, 
 const sha = async s => hex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)));
 async function rvSig(env, k) { const key = await crypto.subtle.importKey('raw', new TextEncoder().encode('rv|' + env.GH_TOKEN), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']); return hex(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(k))).slice(0, 32) }
 const rvClean = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
+// «ر. ع.» : first letter of the first name and of the last name (one name: one letter)
+const rvInit = v => { const w = String(v || '').replace(/[ً-ٟـ]/g, '').trim().split(/\s+/).filter(Boolean).map(x => [...(/^ال.{2,}/.test(x) ? x.slice(2) : x)][0]); return w.length ? (w.length === 1 ? w[0] + '.' : w[0] + '. ' + w[w.length - 1] + '.') : '' };
 const rvLink = /(https?:|www\.|\.com|\.sa\b|@\w|t\.me|wa\.me)/i;
 async function reviewPost(req, env, out) {
   { const og = req.headers.get('Origin'); if (og && og !== SITE && og !== 'https://www.rax3d.com') return out({ ok: false, reason: 'origin' }, 403) }
@@ -211,9 +213,9 @@ async function reviewPost(req, env, out) {
   const ip = req.headers.get('CF-Connecting-IP') || '', now = Date.now();
   if (ip) { const a = (RVRL.get(ip) || []).filter(t => now - t < 3600000); if (a.length >= 5) return out({ ok: false, reason: 'limit' }, 429); a.push(now); RVRL.set(ip, a); if (RVRL.size > 5000) RVRL.clear() }
   let b; try { b = await req.json() } catch { return out({ ok: false, reason: 'bad' }, 400) }
-  const id = String((b && b.id) || ''), s = Math.round(+(b && b.s)), n = rvClean(b && b.n, 30), t = rvClean(b && b.t, 300), ph = normPhone(b && b.phone);
-  if (!/^[\w-]{1,30}$/.test(id) || !(s >= 1 && s <= 5) || n.length < 2 || !/^05\d{8}$/.test(ph)) return out({ ok: false, reason: 'bad' }, 400);
-  if (rvLink.test(n) || rvLink.test(t)) return out({ ok: false, reason: 'link' }, 400);
+  const id = String((b && b.id) || ''), s = Math.round(+(b && b.s)), fn = rvClean(b && b.n, 40), n = (b && b.h) ? rvInit(fn) : fn, t = rvClean(b && b.t, 300), ph = normPhone(b && b.phone);
+  if (!/^[\w-]{1,30}$/.test(id) || !(s >= 1 && s <= 5) || fn.length < 2 || !/^05\d{8}$/.test(ph)) return out({ ok: false, reason: 'bad' }, 400);
+  if (rvLink.test(fn) || rvLink.test(t)) return out({ ok: false, reason: 'link' }, 400);
   const items = await names(), it = items[id]; if (!it) return out({ ok: false, reason: 'bad' }, 400);
   if (!(await turnstileOk(env, b && b.ts, ip))) return out({ ok: false, reason: 'captcha' }, 403);
   const phh = (await sha('rvph|' + ph)).slice(0, 16), k = hex(crypto.getRandomValues(new Uint8Array(6)));
@@ -223,12 +225,13 @@ async function reviewPost(req, env, out) {
     d = d && Array.isArray(d.list) ? d : { v: 1, list: [] };
     if (d.list.some(r => r.id === id && r.ph === phh)) { dup = true; return undefined }
     if (d.list.filter(r => r.st === 'p').length >= 100) { full = true; return undefined }
-    d.list.push({ k, id, s, n, t, ph: phh, vb, at: new Date().toISOString(), st: 'p' }); return d;
+    d.list.push({ k, id, s, n, fn, t, ph: phh, vb, at: new Date().toISOString(), st: 'p' }); return d;
   }, 'تقييم جديد بانتظار الموافقة');
   if (dup) return out({ ok: false, reason: 'dup' }, 409);
   if (full) return out({ ok: false, reason: 'busy' }, 429);
   const sig = await rvSig(env, k), base = new URL(req.url).origin + '/review/act?k=' + k + '&sig=' + sig;
-  mail(env, '⭐ تقييم جديد بانتظار موافقتك: ' + (it.n || id), `<div dir="rtl" style="font-family:sans-serif"><p><b>${esc(it.n || id)}</b> — ${'★'.repeat(s)}${'☆'.repeat(5 - s)}</p><p>${esc(n)}${vb ? ' (عميل سابق)' : ' (رقمه غير موجود في العملاء)'}</p><p>${esc(t) || '(بدون تعليق)'}</p><p><a href="${base}">راجع ووافق أو ارفض</a></p></div>`).catch(() => {});
+  // awaited on purpose: a promise left running after the response is cancelled by Workers and the email never left
+  try { await mail(env, '⭐ تقييم جديد بانتظار موافقتك: ' + (it.n || id), `<div dir="rtl" style="font-family:sans-serif"><p><b>${esc(it.n || id)}</b> — ${'★'.repeat(s)}${'☆'.repeat(5 - s)}</p><p>${esc(fn)}${n !== fn ? ' (يظهر للزوار: ' + esc(n) + ')' : ''}${vb ? ' — عميل سابق' : ' — جواله غير موجود في العملاء'}</p><p>${esc(t) || '(بدون تعليق)'}</p><p><a href="${base}">راجع ووافق أو ارفض</a></p></div>`) } catch (_) {}
   return out({ ok: true });
 }
 let RVC = { t: 0, d: null };
@@ -249,7 +252,7 @@ async function reviewAct(req, env, url) {
   if (!/^[0-9a-f]{12}$/.test(k) || sig !== await rvSig(env, k)) return rvPage('رابط غير صالح');
   const f = await ghRead(env, 'reviews.json'), r = f && f.data && Array.isArray(f.data.list) ? f.data.list.find(x => x.k === k) : null;
   if (!r) return rvPage('هذا التقييم لم يعد موجودًا (تمت معالجته).');
-  if (req.method !== 'POST') return rvPage(`<h2>${'★'.repeat(r.s)}${'☆'.repeat(5 - r.s)}</h2><p><b>${esc(r.n)}</b>${r.vb ? ' (عميل سابق)' : ''}</p><p>${esc(r.t) || '(بدون تعليق)'}</p><p>الحالة: ${r.st === 'a' ? 'معتمد' : 'بانتظار القرار'}</p><form method="post"><input type="hidden" name="k" value="${k}"><input type="hidden" name="sig" value="${sig}"><button name="a" value="ok" style="padding:12px 22px;font-size:16px">✅ موافقة ونشر</button> <button name="a" value="no" style="padding:12px 22px;font-size:16px">🗑️ رفض وحذف</button></form>`);
+  if (req.method !== 'POST') return rvPage(`<h2>${'★'.repeat(r.s)}${'☆'.repeat(5 - r.s)}</h2><p><b>${esc(r.fn || r.n)}</b>${r.fn && r.fn !== r.n ? ' (يظهر: ' + esc(r.n) + ')' : ''}${r.vb ? ' (عميل سابق)' : ''}</p><p>${esc(r.t) || '(بدون تعليق)'}</p><p>الحالة: ${r.st === 'a' ? 'معتمد' : 'بانتظار القرار'}</p><form method="post"><input type="hidden" name="k" value="${k}"><input type="hidden" name="sig" value="${sig}"><button name="a" value="ok" style="padding:12px 22px;font-size:16px">✅ موافقة ونشر</button> <button name="a" value="no" style="padding:12px 22px;font-size:16px">🗑️ رفض وحذف</button></form>`);
   if (a !== 'ok' && a !== 'no') return rvPage('طلب غير صالح');
   await ghUpdate(env, 'reviews.json', { v: 1, list: [] }, d => { const i = d.list.findIndex(x => x.k === k); if (i < 0) return undefined; if (a === 'ok') d.list[i].st = 'a'; else d.list.splice(i, 1); return d }, a === 'ok' ? 'تقييم معتمد' : 'تقييم مرفوض');
   RVC.t = 0;
