@@ -323,16 +323,17 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
 .lock{display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--muted)}
 .lock input{width:18px;height:18px;accent-color:var(--accent)}
 .linkbtn{font:inherit;font-size:13px;border:0;background:none;color:var(--accent);cursor:pointer;padding:4px 0;text-decoration:underline}
+.pld-svg{--h:54px;--d:.2s}
 .pld{display:grid;justify-items:center;gap:6px;padding:28px 12px;color:var(--muted);font-size:14px;text-align:center}
 .pld.sm{padding:10px 8px;gap:2px;font-size:12.5px}.pld.sm .pld-svg{width:64px;height:64px}
 .pld-svg .pl-bed{fill:var(--line)}.pld-svg .pl-l{fill:var(--accent);transform-box:fill-box;transform-origin:center;opacity:0}
 .pld-svg .pl-l:nth-child(even){fill:#a8782a}.pld-svg .pl-rail{fill:var(--line)}.pld-svg .pl-car{fill:var(--ink)}.pld-svg .pl-nz{fill:#e2b560}
 @media (prefers-reduced-motion:no-preference){
-.pld-svg .pl-l{animation:plL 3.6s ease-out infinite both;animation-delay:calc(var(--i)*.2s)}
+.pld-svg .pl-l{animation:plL 3.6s ease-out infinite both;animation-delay:calc(var(--i)*var(--d))}
 .pld-svg .pl-u{animation:plU 3.6s linear infinite}.pld-svg .pl-s{animation:plS .5s ease-in-out infinite alternate}}
-@media (prefers-reduced-motion:reduce){.pld-svg .pl-l{opacity:1}.pld-svg .pl-u{transform:translateY(-54px)}}
+@media (prefers-reduced-motion:reduce){.pld-svg .pl-l{opacity:1}.pld-svg .pl-u{transform:translateY(calc(-1*var(--h)))}}
 @keyframes plL{0%{opacity:0;transform:scaleX(.15)}6%,80%{opacity:1;transform:scaleX(1)}92%,100%{opacity:0;transform:scaleX(1)}}
-@keyframes plU{0%{transform:translateY(0)}50%,100%{transform:translateY(-54px)}}
+@keyframes plU{0%{transform:translateY(0)}50%,100%{transform:translateY(calc(-1*var(--h)))}}
 @keyframes plS{from{transform:translateX(-13px)}to{transform:translateX(13px)}}
 .dmsg{font-size:12.5px;min-height:1em;color:var(--muted)}
 .dmsg.err{color:#c0392b;font-weight:600}
