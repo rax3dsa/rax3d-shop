@@ -22,3 +22,12 @@ Secrets المطلوبة: `MOYASAR_SECRET` (مفتاح sk_live)، `RESEND_KEY`،
 ## Cash on delivery (POST /cod)
 Body: `{ref, customer:{name,phone,city,address}, cart:[{id,qty,color}]}`. Reserves an ORD-n number, stores `online/ORD-n.json` (cod:true), adds the invoice to `partner_log.json` (it enters the invoicing app log with loyalty points at once) and emails the owner. A cancelled COD order is cancelled manually in the app. Needs the same secrets as /confirm (GH_TOKEN, GH_REPO, RESEND_KEY, MAIL_TO).
 Limits (optional vars in wrangler.toml): `COD_MAX` max order value in SAR (default 1500, 0 = no cap; protects loyalty points from fake orders), `COD_LIMIT` orders per phone per day (default 5), `COD_IP_LIMIT` per IP per day (default 10).
+
+
+## نشر تلقائي (بدل اللصق اليدوي)
+عند دمج أي تعديل على مجلد `worker/` في `main` يُنشر الـ Worker لوحده عبر GitHub Actions (ملف `.github/workflows/deploy-worker.yml`، ويمكن تشغيله يدويًا من تبويب Actions). يحتاج سرّين في المستودع، مرة واحدة فقط:
+1. Cloudflare ← My Profile ← API Tokens ← Create Token ← القالب **Edit Cloudflare Workers** ← أنشئه وانسخ القيمة.
+2. GitHub ← مستودع rax3d-shop ← Settings ← Secrets and variables ← Actions ← New repository secret:
+   - `CLOUDFLARE_API_TOKEN` = قيمة التوكن.
+   - `CLOUDFLARE_ACCOUNT_ID` = رقم الحساب (يظهر في Cloudflare ← Workers & Pages، يمين الصفحة).
+أسرار الـ Worker نفسها (ميسر، Resend، GH_TOKEN) تبقى في Cloudflare ولا يلمسها النشر، و`keep_vars = true` يحمي المتغيرات التي ضبطتها يدويًا من الحذف. لا تضع هذه القيم في أي ملف أو محادثة.

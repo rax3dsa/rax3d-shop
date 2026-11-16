@@ -1,6 +1,8 @@
 name = "rax3d-pay"
 main = "src/index.js"
 compatibility_date = "2025-01-01"
+# a deploy must never wipe variables that were set by hand in the Cloudflare dashboard (e.g. TURNSTILE_SITEKEY, COD_MAX)
+keep_vars = true
 
 [vars]
 MAIL_TO = "rax3d.sa@hotmail.com"
