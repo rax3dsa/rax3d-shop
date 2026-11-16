@@ -326,6 +326,25 @@ async function pruneGuards(env) {
 }
 // Fortnightly stock reminder (Cron Trigger, once a day): mails the owner (MAIL_TO, plus optional STOCK_MAIL_EXTRA = comma separated, max 3) when `next` has arrived.
 // The reminder is claimed in stock.json (mailedFor = next) before mailing, so two runs, or the app's own fallback mail, never send it twice.
+// ---- fortnight report (owner's idea 6, 11-16): rides on the SAME mail as the filament stock reminder (every 2 weeks, when `next` in stock.json arrives) ----
+// Reads the invoicing app's cloud copy backups/admin/log.json: sales and profit of the last 14 days vs the 14 before, the 3 most profitable pieces, and how fresh that backup is.
+async function fortnightReport(env) {
+  const f = await ghRead(env, 'backups/admin/log.json');
+  if (!f || !f.data || !Array.isArray(f.data.log)) return '<p>⚠️ لا توجد نسخة احتياطية سحابية للسجل. افتح برنامج الفواتير واحفظ أي فاتورة (علامة ☁️✔) حتى تُنشأ.</p>';
+  const d = f.data, today = riyadhDay(), off = n => { const x = new Date(today + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() - n); return x.toISOString().slice(0, 10) };
+  const live = d.log.filter(r => r && r.status !== 'ملغاة' && typeof r.date === 'string');
+  const cur = live.filter(r => r.date >= off(13) && r.date <= today), prev = live.filter(r => r.date >= off(27) && r.date <= off(14));
+  const sum = (rs, k) => rs.reduce((a, r) => a + (Number(r[k]) || 0), 0), r2 = v => Math.round(v * 100) / 100;
+  const pc = sum(cur, 'profit'), pp = sum(prev, 'profit'), ch = pp > 0 ? Math.round((pc - pp) / pp * 100) : null;
+  const m = new Map();
+  cur.forEach(r => { const its = Array.isArray(r.items) ? r.items : [], tot = its.reduce((a, i) => a + (Number(i.line) || 0), 0) || 1; its.forEach(i => { const k = String(i.desc || '').trim(); if (!k) return; const o = m.get(k) || { q: 0, p: 0 }; o.q += Number(i.q) || 0; o.p += (Number(r.profit) || 0) * ((Number(i.line) || 0) / tot); m.set(k, o) }) });
+  const top = [...m].sort((a, b) => b[1].p - a[1].p).filter(x => x[1].p > 0).slice(0, 3);
+  const age = Math.floor((Date.now() - Date.parse(d.savedAt)) / 864e5), saved = String(d.savedAt || '').slice(0, 10);
+  return `<p style="font-size:16px"><b>📊 تقرير آخر أسبوعين</b></p>
+<p>الفواتير: <b>${cur.length}</b> · المبيعات: <b>${r2(sum(cur, 'total'))}</b> ر.س · صافي الربح: <b>${r2(pc)}</b> ر.س ${ch === null ? '' : `(${ch >= 0 ? '▲' : '▼'} ${Math.abs(ch)}% عن الأسبوعين السابقين: ${r2(pp)})`}</p>
+<p>🏆 الأكثر ربحًا: ${top.length ? top.map(x => esc(x[0]) + ' (' + r2(x[1].p) + ' ر.س × ' + x[1].q + ')').join('، ') : 'لا مبيعات في هذه الفترة'}</p>
+<p>☁️ آخر نسخة احتياطية للسجل: <b>${esc(saved || 'غير معروف')}</b>${age > 10 ? ' ⚠️ قديمة (أكثر من 10 أيام)، تأكد أن علامة ☁️✔ تظهر في برنامج الفواتير.' : ' ✔'}</p>`;
+}
 async function stockReminder(env) {
   if (!env.GH_TOKEN || !env.GH_REPO || !env.RESEND_KEY || !env.MAIL_TO) return 'config';
   const today = riyadhDay(), f = await ghRead(env, 'stock.json'); if (!f || !f.data) return 'nofile';
@@ -336,7 +355,9 @@ async function stockReminder(env) {
   if (!claimed) return 'taken';
   const need = (claimed.rows || []).filter(r => r && r.buy).map(r => esc(String(r.t || '') + ' ' + String(r.c || '')));
   const extra = String(env.STOCK_MAIL_EXTRA || '').split(',').map(e => e.trim()).filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)).slice(0, 3);
-  await mail(env, '🧾 موعد جرد الفلمنت — RAX3D', `<p style="font-size:17px"><b>🧾 موعد الجرد الدوري (كل أسبوعين)</b></p><p>افتح تبويب «الجرد» في برنامج الفواتير، راجع الكميات وحدّث «طلب شراء»، ثم اضغط «تم الجرد».</p><p>بحاجة شراء الآن: <b>${need.length ? need.join('، ') : 'لا شيء'}</b></p>`, extra);
+  let rep = ''; try { rep = await fortnightReport(env) } catch (e) { rep = '<p>تعذّر إعداد تقرير الأسبوعين هذه المرة.</p>' }
+  const out0 = (claimed.rows || []).filter(r => r && !r.buy && r.q === 0).map(r => esc(String(r.t || '') + ' ' + String(r.c || '')));
+  await mail(env, '🧾 موعد جرد الفلمنت وتقرير أسبوعين — RAX3D', rep + `<hr><p style="font-size:17px"><b>🧾 موعد الجرد الدوري (كل أسبوعين)</b></p><p>افتح تبويب «الجرد» في برنامج الفواتير، راجع الكميات وحدّث «طلب شراء»، ثم اضغط «تم الجرد».</p><p>بحاجة شراء الآن: <b>${need.length ? need.join('، ') : 'لا شيء'}</b></p>${out0.length ? `<p>نفدت (كميتها 0 وغير موسومة للشراء): <b>${out0.join('، ')}</b></p>` : ''}`, extra);
   return 'sent';
 }
 
