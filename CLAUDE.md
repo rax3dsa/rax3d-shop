@@ -199,7 +199,7 @@ For every new or re-priced product, check the wholesale price before publishing:
 - Keep the shop's categories few, logical and professionally ordered; every product sits in the category that fits what it IS and how it is used. Review placement whenever a product is added and fix wrong ones (all tools, top quality).
 - Current structure and order (`CAT_ORDER`): التخفيضات (auto) → التوزيعات → الإضاءات → الديكور → إكسسوارات المكتب → إكسسوارات القهوة → سناك وضيافة → ميداليات → إكسسوارات السيارة → ألعاب وقيمرز.
 - 11-16 changes: «ألعاب وصفارات» + «إكسسوارات ألعاب الفيديو» merged into «ألعاب وقيمرز» (11 categories became 10 incl. sale); `gmug` (pen cup) moved الديكور → المكتب; `hdbuddy` (Harley figure, "office or car") moved from toys → السيارة. When a category is renamed or merged change together: `ITEMS`, `CAT_ORDER`, `KWC`, `TI`, `EN` (app.js), then run `tools/seo-build.py` and bump `sw.js`. A category's home thumbnail is its FIRST item in `ITEMS`.
-- Status: done on the branch and tested; goes live only on «ارفع للموقع».
+- Status: LIVE on main (PR #58). APPROVED by the owner 11-16 («اعتمد التقسيم»; he said to keep the categories as they are): 10 categories incl. sale, this exact order. Do not merge, split, rename or reorder them again unless he asks; only place NEW products in the fitting category. Open question he left unanswered: «الديكور» stays at 8 pieces (wall boards not split) unless he asks.
 
 ## Customer reviews (owner's order, 11-16)
 - The customer rates a piece himself on the item page (1-5 stars, name, mobile, optional comment). Reviews are per lead id (variants share). The owner APPROVES every review by email: nothing shows before he approves; no fake or seeded reviews, ever (the box says «كن أول من يقيّم» until real ones come).
