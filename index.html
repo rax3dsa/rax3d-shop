@@ -323,6 +323,17 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
 .lock{display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--muted)}
 .lock input{width:18px;height:18px;accent-color:var(--accent)}
 .linkbtn{font:inherit;font-size:13px;border:0;background:none;color:var(--accent);cursor:pointer;padding:4px 0;text-decoration:underline}
+.pld{display:grid;justify-items:center;gap:6px;padding:28px 12px;color:var(--muted);font-size:14px;text-align:center}
+.pld.sm{padding:10px 8px;gap:2px;font-size:12.5px}.pld.sm .pld-svg{width:64px;height:64px}
+.pld-svg .pl-bed{fill:var(--line)}.pld-svg .pl-l{fill:var(--accent);transform-box:fill-box;transform-origin:center;opacity:0}
+.pld-svg .pl-l:nth-child(even){fill:#a8782a}.pld-svg .pl-rail{fill:var(--line)}.pld-svg .pl-car{fill:var(--ink)}.pld-svg .pl-nz{fill:#e2b560}
+@media (prefers-reduced-motion:no-preference){
+.pld-svg .pl-l{animation:plL 3.6s ease-out infinite both;animation-delay:calc(var(--i)*.2s)}
+.pld-svg .pl-u{animation:plU 3.6s linear infinite}.pld-svg .pl-s{animation:plS .5s ease-in-out infinite alternate}}
+@media (prefers-reduced-motion:reduce){.pld-svg .pl-l{opacity:1}.pld-svg .pl-u{transform:translateY(-54px)}}
+@keyframes plL{0%{opacity:0;transform:scaleX(.15)}6%,80%{opacity:1;transform:scaleX(1)}92%,100%{opacity:0;transform:scaleX(1)}}
+@keyframes plU{0%{transform:translateY(0)}50%,100%{transform:translateY(-54px)}}
+@keyframes plS{from{transform:translateX(-13px)}to{transform:translateX(13px)}}
 .dmsg{font-size:12.5px;min-height:1em;color:var(--muted)}
 .dmsg.err{color:#c0392b;font-weight:600}
 .modal-bg{position:fixed;inset:0;background:rgba(20,14,8,.55);z-index:40;display:grid;place-items:center;padding:16px}
@@ -545,7 +556,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
 </section></noscript><!--SEO-END-->
 <div class="shell" dir="rtl">
   <div class="drawer-bg" id="drawerBg"></div><nav class="rail" id="rail" aria-label="الأقسام"></nav>
-  <main class="main" id="main"></main>
+  <main class="main" id="main"><div class="pld" role="status"><svg class="pld-svg" viewBox="0 0 100 100" width="104" height="104" aria-hidden="true" focusable="false"><rect x="8" y="87" width="84" height="5" rx="2.5" class="pl-bed"/><rect class="pl-l" style="--i:0" x="35.0" y="82" width="30" height="5" rx="1.6"/><rect class="pl-l" style="--i:1" x="32.0" y="76" width="36" height="5" rx="1.6"/><rect class="pl-l" style="--i:2" x="29.0" y="70" width="42" height="5" rx="1.6"/><rect class="pl-l" style="--i:3" x="27.0" y="64" width="46" height="5" rx="1.6"/><rect class="pl-l" style="--i:4" x="29.0" y="58" width="42" height="5" rx="1.6"/><rect class="pl-l" style="--i:5" x="33.0" y="52" width="34" height="5" rx="1.6"/><rect class="pl-l" style="--i:6" x="36.0" y="46" width="28" height="5" rx="1.6"/><rect class="pl-l" style="--i:7" x="37.0" y="40" width="26" height="5" rx="1.6"/><rect class="pl-l" style="--i:8" x="34.0" y="34" width="32" height="5" rx="1.6"/><rect class="pl-l" style="--i:9" x="30.0" y="28" width="40" height="5" rx="1.6"/><g transform="translate(50 82)"><g class="pl-u"><rect x="-46" y="-6" width="92" height="3" rx="1.5" class="pl-rail"/><g class="pl-s"><rect x="-8" y="-17" width="16" height="9" rx="2.5" class="pl-car"/><path d="M-3.4-8h6.8L0 0z" class="pl-nz"/></g></g></g></svg><span>نجهّز لك المتجر…</span></div></main>
 </div>
 <footer class="foot" dir="rtl">
  <div class="flinks"><a id="aboutLink" href="about.html">من نحن</a><button type="button" data-pol="faq">الأسئلة الشائعة</button><button type="button" data-pol="ret">الاستبدال والاسترجاع</button><button type="button" data-pol="priv">سياسة الخصوصية</button><button type="button" data-pol="track">متابعة الطلب</button><button type="button" data-pol="contact">تواصل معنا</button><button type="button" data-inst>حمّل التطبيق</button></div>
