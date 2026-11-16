@@ -174,6 +174,7 @@ function home(){
    <h1 class="tag">قطع مميزة بطباعة ثلاثية الأبعاد</h1>
    <p class="lead">اختر القطعة واللون والمقاس، ونطبعها لك عند الطلب.</p>
    <button type="button" class="btn gold shop" data-shop>تسوّق الآن</button>
+   <button type="button" class="btn alt qbtn" data-pol="quote">📐 عندك ملف؟ اعرف سعر طباعته فورًا</button>
    ${CUST?"":`<button type="button" class="reglink" data-acc>سجّل واكسب نقاط ولاء على كل طلب ⭐</button>`}</section>
    <h2 id="distHd">توزيعات لمناسبتك</h2>${carousel(DIST,6)}
    <h2 id="newHd">وصل حديثاً</h2>${carousel(NEW,6)}
@@ -243,11 +244,11 @@ function editView(id){   /* customise page: preview (3D when available) + colour
     <div class="dmsg" id="dmsg" aria-live="polite">أقصى مقاس لكل محور ${MAXD} مم.</div>
    </div></div>
   <div class="opt"><span class="lbl">العدد</span><div class="qty"><button type="button" data-q="1" aria-label="زيادة">+</button><output id="qv">1</output><button type="button" data-q="-1" aria-label="إنقاص">−</button><span class="badge" id="qb"></span></div></div>
-  <div class="opt"><button type="button" class="other" id="otherBtn" aria-expanded="false">تفاصيل إضافية قبل الطباعة <span>+</span></button>
+  ${it.id==="ltr"?nmCard():""}<div class="opt"><button type="button" class="other" id="otherBtn" aria-expanded="false">تفاصيل إضافية قبل الطباعة <span>+</span></button>
    <div id="otherBox" hidden><textarea id="note" maxlength="200" rows="3" placeholder="اكتب طلبك، مثلاً: أبيها تعليقة، أو حجم أكبر، أو اسم عليها"></textarea><div class="count"><span id="cnt">0</span>/200</div></div></div>
   <div class="confirm"><b>ملخص اختيارك</b><span id="sumLine"></span><strong id="sumPrice"></strong>
    <button type="button" class="btn gold" data-add>اعتمد وأضف للطلب</button></div></div></div>`;
-  qtyUI();prep(id);sumUI();if(MODELS[it.id])setTimeout(()=>{if(cur&&cur.it.id===id&&!V.on)open3D()},60);
+  qtyUI();prep(id);sumUI();if(it.id==="ltr")nmDraw();if(MODELS[it.id])setTimeout(()=>{if(cur&&cur.it.id===id&&!V.on)open3D()},60);
 }
 function sumUI(){const s=$("#sumLine");if(!s||!cur)return;const sz=cur.sizeOn&&dimsValid()?cur.dim.map(fmt).join(" × ")+" مم":(cur.it.d?cur.it.d.join(" × ")+" مم (الأصلي)":"المقاس الأصلي");
  s.textContent=`اللون: ${cur.mcOpen&&cur.mc.length?"ألوان متعددة ("+cur.mc.map(i=>COLORS[i][0]).join("، ")+")":ctxt()} · المقاس: ${sz} · العدد: ${cur.qty}${cur.qty>=WQ(cur.it.id)?" (جملة)":""}`;const sp=$("#sumPrice");if(sp){const u=UP(cur.it.id,cur.qty);sp.textContent=cur.mcOpen?"السعر: يتحدد بالخاص (ألوان متعددة)":u?`الإجمالي: ${u*cur.qty} ريال`+(cur.sizeOn?" (للمقاس الأصلي)":""):""}}
@@ -510,6 +511,50 @@ document.addEventListener("input",e=>{
 });
 document.addEventListener("input",e=>{if(cur&&e.target.id==="note"){cur.note=e.target.value.slice(0,200);$("#cnt").textContent=cur.note.length}});
 
+/* ---------- «احسب سعر ملفك» (owner's idea 1, 11-16): the STL/3MF is read ON THE PHONE (it is never uploaded); volume -> estimated grams and hours -> the owner's own formula (same as tools/price-calc.py). The result is an estimate: final price after slicing. ---------- */
+const QT={dens:1.24,fill:.30,bed:250};   /* PLA 1.24 g/cm3; walls + sparse infill are about 30% of the solid volume: an approximation, said on screen */
+const qtCalc=(g)=>{const h=.25+.042*g,base=g*.115*1.2+h*1.15+3,single=Math.ceil(base*4.5);return{g,h,shop:Math.ceil((single+1.2)/.968)}};   /* hours: the owner's estimate 0.25 + 0.042 x grams */
+function qtMeasure(obj){const A=new THREE.Vector3(),B=new THREE.Vector3(),C=new THREE.Vector3(),box=new THREE.Box3();let v=0,tris=0;obj.updateMatrixWorld(true);
+ obj.traverse(o=>{if(!o.isMesh||!o.geometry.attributes.position)return;const p=o.geometry.attributes.position,ix=o.geometry.index,n=ix?ix.count:p.count;
+  for(let i=0;i+2<n;i+=3){A.fromBufferAttribute(p,ix?ix.getX(i):i).applyMatrix4(o.matrixWorld);B.fromBufferAttribute(p,ix?ix.getX(i+1):i+1).applyMatrix4(o.matrixWorld);C.fromBufferAttribute(p,ix?ix.getX(i+2):i+2).applyMatrix4(o.matrixWorld);
+   v+=(A.x*(B.y*C.z-B.z*C.y)-A.y*(B.x*C.z-B.z*C.x)+A.z*(B.x*C.y-B.y*C.x))/6;box.expandByPoint(A);box.expandByPoint(B);box.expandByPoint(C);tris++}});
+ const s=box.getSize(new THREE.Vector3());return{vol:Math.abs(v)/1000,s:[s.x,s.y,s.z],tris}}   /* cm3, mm */
+function quoteHtml(){const L=LANG==="en";return `<p>${L?"Upload your STL or 3MF and get an instant estimate. Your file is read on your phone only and is never uploaded.":"ارفع ملف STL أو 3MF واعرف السعر التقديري فورًا. الملف يُقرأ داخل جوالك فقط ولا يُرفع لأي مكان."}</p><label class="btn gold qfile" for="qtF">${L?"Choose a file":"اختر الملف"}</label><input type="file" id="qtF" accept=".stl,.3mf" hidden><div id="qt" aria-live="polite"></div>`}
+function quoteUI(){const L=LANG==="en",f=$("#qtF"),out=$("#qt");if(!f||!out)return;
+ f.onchange=async()=>{const file=f.files[0];if(!file)return;
+  if(file.size>60*1048576){out.innerHTML=`<p class="note err">${L?"The file is larger than 60 MB. Send it to us in the chat instead.":"الملف أكبر من 60 ميجا. أرسله لنا في المحادثة بدل ذلك."}</p>`;return}
+  out.innerHTML=pldH(L?"Reading your file…":"جاري قراءة ملفك…",1);
+  try{await load3D();const buf=await file.arrayBuffer(),is3mf=/\.3mf$/i.test(file.name);let obj;
+   if(is3mf)obj=new THREE.ThreeMFLoader().parse(buf);else{const g=new THREE.STLLoader().parse(buf);obj=new THREE.Mesh(g,new THREE.MeshBasicMaterial())}
+   const m=qtMeasure(obj);if(!(m.tris>0)||!(m.vol>0))throw 0;
+   const q=qtCalc(m.vol*QT.dens*QT.fill),bb=m.s[0]*m.s[1]*m.s[2]/1000,warn=[];
+   if(Math.max(...m.s)>QT.bed)warn.push(L?"One side is longer than our printer bed (about 250 mm). We can scale or split it: message us.":"أحد الأضلاع أكبر من سرير الطابعة (حوالي 250 مم). نقدر نصغّره أو نقسّمه: راسلنا.");
+   if(Math.max(...m.s)<8)warn.push(L?"The model is tiny. Is the file in millimetres?":"المجسم صغير جدًا. تأكد أن وحدة الملف مليمتر.");
+   if(m.vol*1000/bb<.02)warn.push(L?"The shape looks hollow or open, so the estimate may be off.":"الشكل يبدو مفتوحًا أو مفرغًا، فقد يختلف التقدير.");
+   const h=Math.max(.5,Math.round(q.h*2)/2),g=Math.max(1,Math.round(q.g)),dm=m.s.map(x=>Math.round(x)).join(" × ");
+   out.innerHTML=`<div class="qres"><b class="qprice">${q.shop} ${L?"SAR":"ريال"}</b><span>${L?"estimated price for one piece":"السعر التقديري للقطعة"}</span>
+    <ul><li>${L?"Size":"المقاس"}: <span dir="ltr">${dm}</span> ${L?"mm":"مم"}</li><li>${L?"Estimated weight":"الوزن التقديري"}: ${g} ${L?"g":"غرام"}</li><li>${L?"Estimated print time":"وقت الطباعة التقديري"}: ${h} ${L?"h":"ساعة"}</li></ul>
+    ${warn.map(w=>`<p class="note err">${w}</p>`).join("")}<p class="note">${L?"Early estimate (about plus or minus 25%): the final price is confirmed after we check and slice your file.":"تقدير أولي (تقريبًا ±25%): السعر النهائي يتأكد بعد ما نفحص ملفك ونقطّعه."}</p>
+    <button type="button" class="btn gold" id="qtSend">${L?"Send my request by message":"أرسل طلبي بالخاص"}</button></div>`;
+   $("#qtSend").onclick=()=>{const t=L?`Hello RAX3D 👋\n\nI'd like a price for printing my own file:\n\n* File: ${file.name}\n* Size: ${dm} mm\n* Estimated weight: ${g} g\n* Estimated print time: ${h} h\n* Estimated price: ${q.shop} SAR${CUST?`\n* Name: ${CUST.n}\n* Mobile: ${CUST.p}`:""}\n\nI will send the file in the chat.`:`مرحبًا RAX3D 👋\n\nأبي تسعير وطباعة ملفي الخاص:\n\n* الملف: ${file.name}\n* المقاس: ${dm} مم\n* الوزن التقديري: ${g} غرام\n* وقت الطباعة التقديري: ${h} ساعة\n* السعر التقديري: ${q.shop} ريال${CUST?`\n* الاسم: ${CUST.n}\n* الجوال: ${CUST.p}`:""}\n\nبرسل الملف لكم في المحادثة.`;
+    try{navigator.clipboard&&navigator.clipboard.writeText(t).catch(()=>{})}catch(_){}$("#pbg").hidden=true;pickChannel(false);$("#cnote").textContent=L?"Your request is copied: paste it in the chat and attach your file.":"نسخنا طلبك، الصقه في المحادثة وأرفق ملفك."}}
+  catch(e){out.innerHTML=`<p class="note err">${L?"We could not read this file. Make sure it is a valid STL or 3MF.":"ما قدرنا نقرأ الملف. تأكد أنه STL أو 3MF سليم."}</p>`}}}
+/* ---------- «حرف باسمك»: live preview of the typed name (letter + script name) and an automatic order note. 2D approximation: the real piece is printed in 3D with the customer's letter and name. ---------- */
+const nmShade=(h,k)=>{const n=parseInt(h.slice(1),16),f=c=>Math.max(0,Math.min(255,Math.round(c*(1+k))));return "rgb("+f(n>>16&255)+","+f(n>>8&255)+","+f(n&255)+")"};
+function nmCard(){const L=LANG==="en";return `<div class="opt nm" id="nmBox"><span class="lbl">${L?"Type your name and see it":"اكتب اسمك وشوفه"}</span><input class="fin" id="nmIn" maxlength="18" autocomplete="off" placeholder="${L?"Your name":"اسمك"}"><canvas id="nmCv" width="640" height="480" aria-label="${L?"Preview":"معاينة"}"></canvas><p class="note">${L?"Approximate preview. The real piece is printed in 3D with your letter and name in a beautiful script.":"تصوّر تقريبي. القطعة الفعلية تنطبع 3D بحرفك واسمك بخط جميل."}</p></div>`}
+function nmDraw(){const cv=$("#nmCv");if(!cv)return;const g=cv.getContext("2d"),W=cv.width,H=cv.height,nm=($("#nmIn").value||"").trim().slice(0,18);
+ const bg=g.createLinearGradient(0,0,0,H);bg.addColorStop(0,"#ead9bf");bg.addColorStop(1,"#d7c4ab");g.fillStyle=bg;g.fillRect(0,0,W,H);
+ const col=(cur&&COLORS[cur.color]&&COLORS[cur.color][1])||"#e8719f",ch=nm?[...nm][0].toUpperCase():"A";
+ g.textAlign="center";g.textBaseline="alphabetic";g.font="800 290px 'Readex Pro','IBM Plex Sans Arabic',sans-serif";
+ for(let k=22;k>0;k--){g.fillStyle=nmShade(col,-0.38);g.fillText(ch,W/2-70+k*1.1,255+k*1.1)}   /* depth */
+ g.fillStyle=col;g.fillText(ch,W/2-70,255);
+ g.fillStyle="#fff";g.shadowColor="rgba(0,0,0,.25)";g.shadowBlur=8;g.shadowOffsetY=3;g.font="700 64px 'IBM Plex Sans Arabic',sans-serif";g.fillText("♥",W-150,130);g.font="700 44px 'IBM Plex Sans Arabic',sans-serif";g.fillText("♥",W-90,185);g.font="700 60px sans-serif";g.fillText("✿",W-205,215);
+ let fs=96;const fam="italic 600 "+fs+"px 'Segoe Script','Snell Roundhand','Brush Script MT','Lucida Handwriting',cursive";g.font=fam;
+ const txt=nm||(LANG==="en"?"Your name":"اسمك");let w=g.measureText(txt).width;if(w>W*.86){fs=Math.floor(fs*W*.86/w);g.font="italic 600 "+fs+"px 'Segoe Script','Snell Roundhand','Brush Script MT','Lucida Handwriting',cursive"}
+ g.fillStyle="#fff";g.shadowColor="rgba(0,0,0,.32)";g.shadowBlur=10;g.shadowOffsetY=4;g.fillText(txt,W/2,448);g.shadowColor="transparent";
+ if(cur){const t=nm?(LANG==="en"?"Letter: ":"الحرف: ")+ch+(LANG==="en"?" · Name: ":" — الاسم: ")+nm:"";
+  if(!cur.note||cur.note===cur.nmAuto){cur.nmAuto=t;cur.note=t;const n=$("#note");if(n){n.value=t;$("#cnt")&&($("#cnt").textContent=t.length)}if(t&&!cur.other){cur.other=true;const ob=$("#otherBox");if(ob)ob.hidden=false;const bt=$("#otherBtn");if(bt){bt.setAttribute("aria-expanded","true");const s=bt.querySelector("span");if(s)s.textContent="−"}}}}}
+document.addEventListener("input",e=>{if(e.target&&e.target.id==="nmIn")nmDraw()});
 /* ---------- AR «شوفها في غرفتك»: iPhone = Quick Look (USDZ built on the phone, lib/USDZExporter.js loaded only on tap), Android Chrome = WebXR hit-test.
    The piece is shown in the colour on screen at its REAL size (DIM, mm). The button stays hidden where AR is not supported. ---------- */
 const ARIOS=(()=>{try{return(/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1))&&document.createElement("a").relList.supports("ar")}catch(_){return false}})();
@@ -575,7 +620,7 @@ function saveAcc(){const n=$("#cn").value.trim().replace(/\s+/g," "),p=normPhone
  if(!n){m.className="dmsg err";m.textContent="اكتب اسمك.";return}
  if(!/^05\d{8}$/.test(p)){m.className="dmsg err";m.textContent="اكتب رقم جوال سعودي صحيح يبدأ بـ 05 (10 أرقام).";return}
  CUST={n:n.slice(0,40),p};try{localStorage.setItem("rax3d_cust",JSON.stringify(CUST))}catch(_){}
- $("#abg").hidden=true;render(false);loadPts();toastMsg("أهلاً "+CUST.n+"، تم التسجيل ✓")}
+ $("#abg").hidden=true;render(false);loadPts();toastMsg("أهلاً "+CUST.n+"، تم التسجيل ✓");if(TRKPEND){TRKPEND=0;setTimeout(()=>openPol("track"),300)}}
 /* ---------- loyalty balance: read-only, published by the invoicing app as hashed mobiles in points.json ---------- */
 let PTS=null;
 const ptsTxt=()=>PTS==null?"":(LANG==="en"?"⭐ Your balance: "+PTS+" points":"⭐ رصيدك: "+PTS+" نقطة");
@@ -630,6 +675,7 @@ const POL={
   <li>نستخدمها فقط لتجهيز طلبك وفاتورتك ونقاط الولاء، وما نشاركها أو نبيعها لأي جهة.</li>
   <li>الموقع ما يستخدم إعلانات ولا ملفات تتبع.</li>
   <li>تقدر تمسح بياناتك من «حسابي ← تسجيل الخروج»، أو تطلب منا بالخاص حذف سجلك.</li></ul>`],
+ quote:["احسب سعر ملفك",""],
  track:["متابعة الطلب",`<p>لما نعتمد طلبك ونصدر الفاتورة، يكون لطلبك <b>رقم طلب</b> مثل <span dir="ltr">ORD-125</span> مكتوب في الفاتورة.</p><ul>
   <li>أرسل رقم الطلب لنا بالخاص في أي وقت، ونرد عليك بحالة طلبك.</li>
   <li>مراحل الطلب: تم اعتماد الطلب ← قيد الطباعة ← التجميع والفحص ← جاهز للتسليم ← تم التسليم.</li><li>إذا سجّلت دخولك فوق، تظهر لك طلباتك ومرحلة كل طلب هنا مباشرة.</li>
@@ -660,6 +706,7 @@ const POL={
 const POL_EN={
  ret:["Returns & exchanges",`<p>Every piece is printed to order, in the colour and size you choose.</p><ul><li>If your piece arrives broken, with a print defect, or different from your order (colour or size), message us within <b>3 days</b> of delivery with a photo and we'll reprint or replace it free.</li><li>Because pieces are made for you, we can't accept returns for a change of mind once printing has started.</li><li>You can cancel free of charge before printing starts.</li><li>Custom pieces (names, text or a changed size) are replaced only if defective.</li><li>Slight colour variation or visible layer lines are normal in 3D printing and aren't defects.</li></ul>`],
  priv:["Privacy policy",`<ul><li>The site only asks for your name and mobile, and signing in is optional.</li><li>Your details stay on your own device and only reach us inside your order message.</li><li>We use them only to prepare your order, invoice and loyalty points, and never share or sell them.</li><li>No ads and no tracking cookies.</li><li>Clear your details from “My account → Sign out”, or ask us by DM to delete your record.</li></ul>`],
+ quote:["Price your file",""],
  track:["Track your order",`<p>Once we confirm your order and issue the invoice, your order gets an <b>order number</b> like ORD-125, printed on the invoice.</p><ul><li>Send us your order number by DM any time and we'll reply with your order status.</li><li>Stages: order confirmed → printing → assembly &amp; check → ready for delivery → delivered.</li><li>If you are signed in, your orders and the stage of each one show above.</li><li>On delivery you get an invoice showing your loyalty points balance.</li></ul>`],
  contact:["Contact us",`<ul><li>Instagram (fastest): <a href="https://www.instagram.com/rax3d.sa/" target="_blank" rel="noopener">@rax3d.sa</a></li><li>TikTok: <a href="https://www.tiktok.com/@rax3d.sa" target="_blank" rel="noopener">@rax3d.sa</a></li><li>Email: <a href="mailto:rax3d.sa@hotmail.com">rax3d.sa@hotmail.com</a></li><li>Location: Saudi Arabia</li><li>Freelance licence: FL-255870895</li></ul><p class="muted">Price, payment and delivery are agreed with you by DM before printing.</p>`],
  faq:["FAQ",`<details open><summary><b>How do I order?</b></summary><p>Pick the piece, colour, size and quantity and add it to your order, then send the order by DM on Instagram or TikTok (the message is copied for you). We reply to confirm your order and the preparation date, and payment is after we agree.</p></details>
@@ -676,19 +723,20 @@ const POL_EN={
 <details><summary><b>What details do you need from me?</b></summary><p>Only your name and mobile number, and signing in is optional.</p></details>
 <p class="muted">Price, payment and delivery are agreed with you by DM before printing. Another question? Message us from “Contact us”.</p>`],
 };
-function openPol(k){const p=(LANG==="en"?POL_EN:POL)[k];if(!p)return;$("#pt").textContent=p[0];$("#pbody").innerHTML=p[1];$("#pbg").hidden=false;if(k==="track")trackUI()}
+function openPol(k){const p=(LANG==="en"?POL_EN:POL)[k];if(!p)return;$("#pt").textContent=p[0];$("#pbody").innerHTML=k==="quote"?quoteHtml():p[1];$("#pbg").hidden=false;if(k==="track")trackUI();if(k==="quote")quoteUI()}
 /* ---------- order tracking for the signed-in customer: no re-typing of details, he just picks the order (worker POST /orders) ---------- */
 const TSTEPS=[["تم اعتماد الطلب","Order confirmed"],["قيد الطباعة","Printing"],["التجميع والفحص","Assembly & check"],["جاهز للتسليم","Ready for delivery"],["تم التسليم","Delivered"]];
 function trkDetail(o){const L=LANG==="en",it=ITEMS.find(x=>o.it[0]&&o.it[0].startsWith(x.name));
- return `<ol class="trkl" aria-label="${L?"Order stages":"مراحل الطلب"}">${TSTEPS.map((s,i)=>`<li class="${i<o.st||(i===4&&o.st===4)?"done":i===o.st?"cur":""}"><span class="dot">${i<o.st||o.st===4?"✓":i+1}</span><div><b>${s[L?1:0]}</b>${i===o.st&&o.st===1?pldH(L?"Your piece is being printed…":"قطعتك تنطبع الحين…",1,it&&it.id):""}</div></li>`).join("")}</ol>${o.it.length?`<p class="note">${o.it.map(esc).join(" · ")}</p>`:""}`}
+ return `<ol class="trkl" aria-label="${L?"Order stages":"مراحل الطلب"}">${TSTEPS.map((s,i)=>`<li class="${i<o.st||(i===4&&o.st===4)?"done":i===o.st?"cur":""}"><span class="dot">${i<o.st||o.st===4?"✓":i+1}</span><div><b>${s[L?1:0]}</b>${i===o.st&&o.st===1?pldH(L?"Your piece is being printed…":"قطعتك تنطبع الحين…",1,it&&it.id):""}</div></li>`).join("")}</ol>${o.it.length?`<p class="note">${o.it.map(s=>{const m=ITEMS.filter(x=>s.startsWith(x.name)).sort((p,q)=>q.name.length-p.name.length)[0];return m?`<a href="?p=${m.id}">${esc(s)}</a>`:esc(s)}).join(" · ")}</p>${o.it.some(s=>ITEMS.some(x=>s.startsWith(x.name)))?`<p class="note">${LANG==="en"?"Tap a piece to order it again.":"اضغط على القطعة عشان تطلبها مرة ثانية."}</p>`:""}`:""}`}
+let TRKO="",TRKPEND=0;
 async function trackUI(){const L=LANG==="en",box=document.createElement("div");box.id="trk";box.className="trk";$("#pbody").prepend(box);
- if(!CUST){box.innerHTML=`<p>${L?"Sign in to see your orders and the stage of each one, without typing your details again.":"سجّل دخولك عشان تشوف طلباتك ومرحلة كل طلب، بدون ما تعيد كتابة معلوماتك."}</p><button type="button" class="btn gold" id="trkLogin">${L?"Sign in":"تسجيل الدخول"}</button>`;$("#trkLogin").onclick=()=>{$("#pbg").hidden=true;openAcc()};return}
+ if(!CUST){box.innerHTML=`<p>${L?"Sign in to see your orders and the stage of each one, without typing your details again.":"سجّل دخولك عشان تشوف طلباتك ومرحلة كل طلب، بدون ما تعيد كتابة معلوماتك."}</p><button type="button" class="btn gold" id="trkLogin">${L?"Sign in":"تسجيل الدخول"}</button>`;$("#trkLogin").onclick=()=>{TRKPEND=1;$("#pbg").hidden=true;openAcc()};return}
  box.innerHTML=pldH(L?"Fetching your orders…":"جاري جلب طلباتك…",1);
  let ts=null;if(PAY.ts){try{ts=await tsToken()}catch(_){box.textContent=L?"Security check failed, try again.":"تعذّر التحقق الأمني، جرّب مرة ثانية.";return}}
  try{const r=await fetch(PAY.api+"/orders",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phone:normPhone(CUST.p),ts})}),j=await r.json();if(!j.ok)throw 0;const l=j.o;
   if(!l.length){box.innerHTML=`<p class="note">${L?"No orders found on your mobile yet.":"ما لقينا طلبات على جوالك بعد."}</p>`;return}
   box.innerHTML=`<label class="flab" for="trkSel">${L?"Choose your order":"اختر طلبك"}</label><select class="fin" id="trkSel">${l.map((o,i)=>`<option value="${i}">ORD-${esc(String(o.n))} · ${esc(o.d)}</option>`).join("")}</select><div id="trkOut"></div>`;
-  const show=()=>{$("#trkOut").innerHTML=trkDetail(l[+$("#trkSel").value])};$("#trkSel").onchange=show;show()}
+  const k=l.findIndex(o=>String(o.n)===TRKO);if(k>=0)$("#trkSel").value=k;TRKO="";const show=()=>{$("#trkOut").innerHTML=trkDetail(l[+$("#trkSel").value])};$("#trkSel").onchange=show;show()}
  catch(_){box.textContent=L?"Could not fetch your orders now, try again.":"تعذّر جلب طلباتك الآن، جرّب مرة ثانية."}}
 document.addEventListener("click",e=>{const t=e.target.closest("button");if(!t)return;
  if(t.dataset.distask){const it=ITEMS.find(x=>x.id===t.dataset.distask),L=LANG==="en";copyText(L?`Hello RAX3D 👋\n\nI'd like to order giveaways:\n\n* Piece: ${tr(it.name)}\n${$("#dpanel")&&+$("#dpanel").dataset.n?`* Design no.: ${$("#dpanel").dataset.n}\n`:""}* Quantity (50 or more): ${$("#dpanel")?$("#dpanel").dataset.q:""}\n* Occasion / date: `:`مرحبًا RAX3D 👋\n\nأرغب بطلب توزيعات:\n\n* القطعة: ${it.name}\n${$("#dpanel")&&+$("#dpanel").dataset.n?`* رقم التصميم: ${$("#dpanel").dataset.n}\n`:""}* العدد (50 حبة فأكثر): ${$("#dpanel")?$("#dpanel").dataset.q:""}\n* المناسبة وموعدها: `);pickChannel(false);$("#cnote").textContent=L?"Your request message is copied — paste it in the chat. On TikTok open our profile and tap Message.":"نسخنا رسالة طلبك، الصقها في المحادثة. في تيك توك ادخل حسابنا واضغط رسالة.";return}
@@ -987,3 +1035,5 @@ document.addEventListener("click",async e=>{
 (()=>{try{const q=new URLSearchParams(location.search);if(q.get("pay")==="done"&&q.get("id")){const id=q.get("id"),st=q.get("status");history.replaceState(null,"",location.pathname);
  if(st==="paid")payConfirm(id);else{$("#payform").innerHTML=`<p class="inote">ما تمت عملية الدفع (${esc(q.get("message")||st||"")}). تقدر تحاول مرة ثانية من «طلبي».</p>`;$("#paybg").hidden=false}}}catch(_){}})();
 loadPts();render(false);applyLang();
+/* QR on the invoice / packaging label opens the tracker: ?track=1&o=<order number> */
+(()=>{try{const q=new URLSearchParams(location.search);if(q.get("track")){TRKO=(q.get("o")||"").replace(/\D/g,"").slice(0,8);setTimeout(()=>openPol("track"),500)}}catch(_){}})();
