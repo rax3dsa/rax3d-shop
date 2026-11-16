@@ -3,9 +3,9 @@
 The shop is static (GitHub Pages, rax3d.com). Products live in `app.js`; prices and weights live in `index.html`; the payment worker is in `worker/`.
 
 ## Publish command (owner's standing order, 11-13)
-- The phrases «ارفع للموقع» / «ارفعهم للموقع» = the owner's explicit go-ahead to publish (open the PR and merge it to main) the work shown to him in this conversation, including the price already told to him. Before that phrase do not publish: work on the branch, test, show, wait.
+- The phrases «ارفع للموقع» / «ارفعهم للموقع» / «دمج» = the owner's explicit go-ahead to publish (open the PR and merge it to main) the work shown to him in this conversation, including the price already told to him. Before that phrase do not publish: work on the branch, test, show, wait.
 - The phrase does not cover deleting products or data, prices he was not shown, money actions or messages. If anything changed after the show, tell him before publishing.
-- Standing order (11-16): on «ارفع للموقع» publish with the requested RAX3D identity (cream background, logo and colours untouched, piece centred with at least 10% margin) at the highest professional quality possible, using ALL available tools and skills (photos, 3D, pricing, SEO, browser testing). Prices are discussed with the owner BEFORE the phrase (single, wholesale, net profit) and nothing goes live until he agrees to them.
+- Standing order (11-16): on «ارفع للموقع» or «دمج» publish with the requested RAX3D identity (cream background, logo and colours untouched, piece centred with at least 10% margin) at the highest professional quality possible, using ALL available tools and skills (photos, 3D, pricing, SEO, browser testing). Prices are discussed with the owner BEFORE the phrase (single, wholesale, net profit) and nothing goes live until he agrees to them.
 
 ## Rule 1: "وصل حديثاً" (NEW) and "الأكثر طلباً" (FEATURED) rotate on every new product (approved by the owner, permanent)
 When a new product is added to the shop:
