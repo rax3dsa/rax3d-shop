@@ -17,6 +17,8 @@ async function prices() {
 }
 const unit = ({ P, W }, id, q) => P[id] ? (q >= (W[id] >= 100 ? 6 : 12) ? P[id][1] : P[id][0]) : 0;
 
+// extra recipients for the NEW ORDER emails (the owner's partner Ahmed): set ORDERS_MAIL_EXTRA in the Cloudflare dashboard as a comma list (kept out of this public repo; keep_vars protects it)
+const orderExtra = env => String(env.ORDERS_MAIL_EXTRA || '').split(',').map(e => e.trim()).filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)).slice(0, 3);
 async function mail(env, subject, html, extra) {
   const r = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -195,7 +197,8 @@ async function points(req, env, out) {
     catch (e) { if (!PCACHE.t) return out({ ok: false, reason: 'error' }, 502) }   // keep serving the last copy if GitHub hiccups
   }
   if (!PCACHE.d || PCACHE.d.v !== 1) return out({ ok: true, src: 'none' });
-  return out({ ok: true, src: 'private', pts: Math.max(0, Math.floor(+((PCACHE.d.p || {})[ph]) || 0)) });
+  const tr = (PCACHE.d.t || {})[ph];   // loyalty tier + total purchases, published by the invoicing app
+  return out({ ok: true, src: 'private', pts: Math.max(0, Math.floor(+((PCACHE.d.p || {})[ph]) || 0)), tier: Array.isArray(tr) ? Math.max(0, Math.min(2, tr[0] | 0)) : null, sp: Array.isArray(tr) ? Math.max(0, tr[1] | 0) : 0 });
 }
 
 
@@ -204,6 +207,7 @@ async function points(req, env, out) {
 // tracking_private.json (written by the invoicing app) = { v:1, o:{ "05xxxxxxxx":[{ n, d, st:0..4, it:[names] }] } }. Only these four fields are returned (no address, no prices).
 const TRL = new Map();
 let TCACHE = { t: 0, d: null };
+let OCACHE = { t: 0, p: [], g: {} };
 async function ordersPost(req, env, out) {
   { const og = req.headers.get('Origin'); if (og && og !== SITE && og !== 'https://www.rax3d.com') return out({ ok: false, reason: 'origin' }, 403) }
   const ip = req.headers.get('CF-Connecting-IP') || '', now = Date.now();
@@ -217,8 +221,60 @@ async function ordersPost(req, env, out) {
     try { const f = await ghRead(env, 'tracking_private.json'); TCACHE = { t: now, d: f ? f.data : null } }
     catch (e) { if (!TCACHE.t) return out({ ok: false, reason: 'error' }, 502) }
   }
-  const list = TCACHE.d && TCACHE.d.v === 1 && TCACHE.d.o && Array.isArray(TCACHE.d.o[ph]) ? TCACHE.d.o[ph] : [];
+  const mine = TCACHE.d && TCACHE.d.v === 1 && TCACHE.d.o && Array.isArray(TCACHE.d.o[ph]) ? TCACHE.d.o[ph].map(x => ({ ...x })) : [];
+  // fresher sources: the shared inbox of site orders (an order appears at once, before the owner imports it) and the live stages written from the Orders tab
+  if (now - OCACHE.t > 60000) { try { const a = await ghRead(env, 'partner_log.json'), g = await ghRead(env, 'order_stages.json'); OCACHE = { t: now, p: a && Array.isArray(a.data) ? a.data : [], g: g && g.data && g.data.o ? g.data.o : {} } } catch (e) { if (!OCACHE.t) OCACHE = { t: now, p: [], g: {} } } }
+  const have = new Set(mine.map(x => String(x.n)));
+  for (const r of OCACHE.p) if (r && r.online && normPhone(r.phone) === ph && !have.has(String(r.num)) && !OCACHE.p.some(v => v && v.void != null && Number(v.void) === Number(r.num))) { mine.push({ n: r.num, d: r.date, st: 0, it: String(r.desc || '').split(' ، ').slice(0, 6) }); have.add(String(r.num)) }
+  for (const x of mine) { const o = OCACHE.g[String(x.n)]; if (o && o.st != null) x.st = +o.st }
+  const list = mine.sort((a, b) => b.n - a.n);
   return out({ ok: true, o: list.slice(0, 15).map(r => ({ n: r.n, d: String(r.d || '').slice(0, 10), st: Math.max(0, Math.min(4, +r.st || 0)), it: (Array.isArray(r.it) ? r.it : []).slice(0, 6).map(x => String(x).slice(0, 60)) })) });
+}
+
+
+// ---- weekly vote on the next piece (owner's idea 8): the options are the shop's EXISTING categories only ----
+// poll.json (written by the invoicing app): { id, title, opts:[category names], end:'YYYY-MM-DD' }.  votes.json: { id, c:{cat:n}, cc:{cat:n} (voters whose mobile is a known customer), v:{phoneHash:cat} }
+// GET /poll -> poll + counts. POST /vote {id, opt, phone, ts}: one vote per mobile per poll, 10/hour per IP, Turnstile if on, only while the poll is open.
+const VTRL = new Map();
+let PLC = { t: 0, p: null, v: null };
+async function pollState(env) {
+  const now = Date.now();
+  if (PLC.t && now - PLC.t < 60000) return PLC;
+  try { const a = await ghRead(env, 'poll.json'), b = await ghRead(env, 'votes.json'); PLC = { t: now, p: a ? a.data : null, v: b ? b.data : null } }
+  catch (e) { if (!PLC.t) throw e }
+  return PLC;
+}
+const pollOpen = p => p && p.id && Array.isArray(p.opts) && p.opts.length >= 2 && typeof p.end === 'string' && riyadhDay() <= p.end;
+async function pollGet(env, out) {
+  if (!env.GH_TOKEN || !env.GH_REPO) return out({ ok: true, poll: null });
+  let st; try { st = await pollState(env) } catch (e) { return out({ ok: false, reason: 'error' }, 502) }
+  const p = st.p; if (!pollOpen(p)) return out({ ok: true, poll: null });
+  const v = st.v && st.v.id === p.id ? st.v : { c: {}, cc: {} };
+  return out({ ok: true, poll: { id: p.id, title: String(p.title || '').slice(0, 120), opts: p.opts.slice(0, 8).map(x => String(x).slice(0, 40)), end: p.end }, c: Object.fromEntries(p.opts.map(o => [o, v.c && v.c[o] | 0])) });
+}
+async function votePost(req, env, out) {
+  { const og = req.headers.get('Origin'); if (og && og !== SITE && og !== 'https://www.rax3d.com') return out({ ok: false, reason: 'origin' }, 403) }
+  if (!env.GH_TOKEN || !env.GH_REPO) return out({ ok: false, reason: 'error' }, 503);
+  const ip = req.headers.get('CF-Connecting-IP') || '', now = Date.now();
+  if (ip) { const a = (VTRL.get(ip) || []).filter(t => now - t < 3600000); if (a.length >= 10) return out({ ok: false, reason: 'limit' }, 429); a.push(now); VTRL.set(ip, a); if (VTRL.size > 5000) VTRL.clear() }
+  let b; try { b = await req.json() } catch { return out({ ok: false, reason: 'bad' }, 400) }
+  const ph = normPhone(b && b.phone), opt = String((b && b.opt) || '');
+  if (!/^05\d{8}$/.test(ph)) return out({ ok: false, reason: 'bad' }, 400);
+  if (!(await turnstileOk(env, b && b.ts, ip))) return out({ ok: false, reason: 'captcha' }, 403);
+  let st; try { PLC.t = 0; st = await pollState(env) } catch (e) { return out({ ok: false, reason: 'error' }, 502) }
+  const p = st.p; if (!pollOpen(p) || String(b && b.id) !== String(p.id) || !p.opts.includes(opt)) return out({ ok: false, reason: 'closed' }, 400);
+  const hh = (await sha('vote|' + ph)).slice(0, 16);
+  let known = false; try { const f = await ghRead(env, 'points_private.json'); known = !!(f && f.data && ((f.data.p && Object.prototype.hasOwnProperty.call(f.data.p, ph)) || (f.data.t && Object.prototype.hasOwnProperty.call(f.data.t, ph)))) } catch (_) {}
+  let dup = false;
+  await ghUpdate(env, 'votes.json', { id: '', c: {}, cc: {}, v: {} }, d => {
+    if (!d || d.id !== p.id) d = { id: p.id, c: {}, cc: {}, v: {} };
+    if (d.v[hh]) { dup = true; return undefined }
+    d.v[hh] = opt; d.c[opt] = (d.c[opt] | 0) + 1; if (known) d.cc[opt] = (d.cc[opt] | 0) + 1; return d;
+  }, 'صوت جديد في تصويت الأسبوع');
+  PLC.t = 0;
+  if (dup) return out({ ok: false, reason: 'dup' }, 409);
+  const st2 = await pollState(env).catch(() => null), v = st2 && st2.v && st2.v.id === p.id ? st2.v : { c: {} };
+  return out({ ok: true, c: Object.fromEntries(p.opts.map(o => [o, v.c && v.c[o] | 0])) });
 }
 
 // ---- customer reviews (owner approves each one by email before it shows) ----
@@ -344,11 +400,12 @@ async function fortnightReport(env) {
   const m = new Map();
   cur.forEach(r => { const its = Array.isArray(r.items) ? r.items : [], tot = its.reduce((a, i) => a + (Number(i.line) || 0), 0) || 1; its.forEach(i => { const k = String(i.desc || '').trim(); if (!k) return; const o = m.get(k) || { q: 0, p: 0 }; o.q += Number(i.q) || 0; o.p += (Number(r.profit) || 0) * ((Number(i.line) || 0) / tot); m.set(k, o) }) });
   const top = [...m].sort((a, b) => b[1].p - a[1].p).filter(x => x[1].p > 0).slice(0, 3);
+  let vote = ''; try { const st = await pollState(env), pl = st.p; if (pl && pl.id && Array.isArray(pl.opts) && st.v && st.v.id === pl.id) { const rows = pl.opts.map(o => [o, st.v.c && st.v.c[o] | 0]).sort((a, b) => b[1] - a[1]); vote = `<p>🗳️ تصويت القسم القادم (${esc(String(pl.title || ''))}): ${rows.map(x => esc(x[0]) + ' ' + x[1]).join('، ')}</p>` } } catch (_) {}
   const age = Math.floor((Date.now() - Date.parse(d.savedAt)) / 864e5), saved = String(d.savedAt || '').slice(0, 10);
   return `<p style="font-size:16px"><b>📊 تقرير آخر أسبوعين</b></p>
 <p>الفواتير: <b>${cur.length}</b> · المبيعات: <b>${r2(sum(cur, 'total'))}</b> ر.س · صافي الربح: <b>${r2(pc)}</b> ر.س ${ch === null ? '' : `(${ch >= 0 ? '▲' : '▼'} ${Math.abs(ch)}% عن الأسبوعين السابقين: ${r2(pp)})`}</p>
 <p>🏆 الأكثر ربحًا: ${top.length ? top.map(x => esc(x[0]) + ' (' + r2(x[1].p) + ' ر.س × ' + x[1].q + ')').join('، ') : 'لا مبيعات في هذه الفترة'}</p>
-<p>☁️ آخر نسخة احتياطية للسجل: <b>${esc(saved || 'غير معروف')}</b>${age > 10 ? ' ⚠️ قديمة (أكثر من 10 أيام)، تأكد أن علامة ☁️✔ تظهر في برنامج الفواتير.' : ' ✔'}</p>`;
+${vote}<p>☁️ آخر نسخة احتياطية للسجل: <b>${esc(saved || 'غير معروف')}</b>${age > 10 ? ' ⚠️ قديمة (أكثر من 10 أيام)، تأكد أن علامة ☁️✔ تظهر في برنامج الفواتير.' : ' ✔'}</p>`;
 }
 async function stockReminder(env) {
   if (!env.GH_TOKEN || !env.GH_REPO || !env.RESEND_KEY || !env.MAIL_TO) return 'config';
@@ -410,7 +467,7 @@ async function cod(req, env, out) {
       if (!(await ghCreate(env, 'online/cod_' + b.ref + '.json', { num }, 'ربط الطلب ' + b.ref))) { const w = await ghRead(env, 'online/cod_' + b.ref + '.json'); return out({ ok: true, num: w ? w.data.num : num, dup: true }) }
       await ghSave(env, 'online/ORD-' + num + '.json', { num, cod: true, ref: b.ref, total, customer: { name, phone, city, address }, cart: rows, at: new Date().toISOString() }, 'طلب دفع عند الاستلام ORD-' + num).catch(() => {});
       // the invoice already has its number, so it goes straight into the invoicing app's log (points included)
-      const rec = { num, date: riyadhDay(), online: true, cod: true, payId: 'cod_' + b.ref, client: name, phone, code: b.ref,
+      const rec = { num, date: riyadhDay(), online: true, cod: true, mode: 'pickup', ship: 0, payId: 'cod_' + b.ref, client: name, phone, code: b.ref,
         desc: rows.map(r => (nm0[r.id]?.n || r.id) + ' (' + r.q + ')').join(' ، '), qty: rows.reduce((a, r) => a + r.q, 0), disc: 0, total: sub, profit: 0, sugg: 0, sub,
         items: rows.map(r => ({ desc: nm0[r.id]?.n || r.id, color: /^(اللون الأساسي|كما بالصورة)?$/.test(r.color) ? '' : r.color, q: r.q, unit: r.u, line: r.u * r.q, cost: 0, w: +pr.W[r.id] || 0, h: 0, m: 0, sec: 0, type: 'واحدة', auto: false, dp: 0 })) };
       try { await ghUpdate(env, 'partner_log.json', [], arr => { arr = Array.isArray(arr) ? arr : []; if (!arr.some(x => x && Number(x.num) === num)) arr.push(rec); return arr }, 'فاتورة دفع عند الاستلام ORD-' + num) } catch (e) { logFail = true }
@@ -425,7 +482,7 @@ async function cod(req, env, out) {
     + invoiceHtml({ label, date: riyadhDay(), name, phone, rows, sub, ship, total, cod: true, bank: await bankInfo(env) })
     + `<p>الجوال: <span dir="ltr">${esc(phone)}</span></p><p>الاستلام مباشر: المكان والموعد يُتفق عليهما بالتواصل مع العميل.</p>`
     + `<p>للتسجيل في التطبيق بنفس الرقم، الصق هذه الرسالة في «استيراد الطلب»:</p><pre style="background:#f4f1ea;padding:10px;border-radius:8px;white-space:pre-wrap">${esc(msg)}</pre>`;
-  const sent = await mail(env, '🚚 طلب دفع عند الاستلام ' + label, html);
+  const sent = await mail(env, '🚚 طلب دفع عند الاستلام ' + label, html, orderExtra(env));
   return out({ ok: true, num, emailed: sent });
 }
 
@@ -495,7 +552,7 @@ async function customCod(req, env, out) {
   } catch (e) { return out({ ok: false, reason: 'number' }, 502) }
   const label = 'ORD-' + num;
   const html = `<p style="font-size:16px"><b>🚚 طلب خاص بالدفع عند الاستلام ${esc(label)}</b><br>الطلب غير مدفوع، تحصّل ${price + fee} ريال عند التسليم.<br>طريقة الاستلام: <b>${mode === 'pickup' ? '🏪 استلام مباشر' : '🚚 توصيل' + (fee ? ' (' + fee + ' ريال)' : '')}</b></p><p>الاسم: ${esc(name)}<br>الجوال: <span dir="ltr">${esc(phone)}</span></p><p>الوصف:<br>${esc(String(c.desc || '')).replace(/\n/g, '<br>')}</p>`;
-  const sent = await mail(env, '🚚 طلب خاص (دفع عند الاستلام) ' + label, html);
+  const sent = await mail(env, '🚚 طلب خاص (دفع عند الاستلام) ' + label, html, orderExtra(env));
   return out({ ok: true, num, price, mode, fee, emailed: sent });
 }
 // called from confirmCore when the payment's metadata carries custom=<id>; the payment is already known to be paid
@@ -521,7 +578,7 @@ async function customPaid(b, p, md, env, out, refuse) {
   const label = 'ORD-' + num;
   const invoice = invoiceHtml({ label, date: riyadhDay(), name, phone, rows: [{ name: 'طلب خاص: ' + String(c.desc || '').slice(0, 120), q: 1, u: price, color: '' }], sub: price, ship: fee, total: price + fee, bank: await bankInfo(env), method: p.source?.type === 'applepay' ? 'Apple Pay' : (p.source?.company ? String(p.source.company).toUpperCase() : 'Card') });
   const html = invoice + `<hr style="margin:26px 0;border:0;border-top:1px dashed #ccc"><p>✅ طلب خاص مدفوع <b>${esc(label)}</b> · ${mode === 'pickup' ? '🏪 استلام مباشر' : '🚚 توصيل'}${logFail ? ' (⚠️ تعذّر إضافة الفاتورة لبرنامج الفواتير، أضفها يدوياً)' : ''}</p><p>الوصف:<br>${esc(String(c.desc || '')).replace(/\n/g, '<br>')}</p><p>الجوال: <span dir="ltr">${esc(phone)}</span></p>`;
-  const sent = await mail(env, '✅ طلب خاص مدفوع ' + label, html);
+  const sent = await mail(env, '✅ طلب خاص مدفوع ' + label, html, orderExtra(env));
   return out({ ok: true, num, price, mode, fee, emailed: sent });
 }
 
@@ -540,6 +597,8 @@ async function handle(req, env, ctx) {
     if (req.method === 'GET' && path.startsWith('/custom/')) return customGet(path.slice(8), env, out);
     if (req.method === 'POST' && path === '/points') return points(req, env, out);
     if (req.method === 'POST' && path === '/orders') return ordersPost(req, env, out);
+    if (req.method === 'GET' && path === '/poll') return pollGet(env, out);
+    if (req.method === 'POST' && path === '/vote') return votePost(req, env, out);
     if (req.method === 'POST' && path === '/review') return reviewPost(req, env, out);
     if (req.method === 'GET' && path === '/reviews') return reviewsGet(env, out);
     if (path === '/review/act' && (req.method === 'GET' || req.method === 'POST')) return reviewAct(req, env, new URL(req.url));
@@ -625,7 +684,7 @@ async function confirmCore(b, env, out, flag) {
           await ghSave(env, 'online/ORD-' + num + '.json', order, 'طلب مدفوع ORD-' + num).catch(() => {});
           // the invoice itself goes to the same shared inbox the data-entry phone uses; the app imports it into its log
           const nm0 = await names(), itemsT = total - ship;
-          const rec = { num, date: riyadhDay(), online: true, payId: b.paymentId, client: (c.name || '').slice(0, 60), phone: (c.phone || '').slice(0, 20), code: b.ref,
+          const rec = { num, date: riyadhDay(), online: true, mode: ship > 0 ? 'delivery' : 'pickup', ship, payId: b.paymentId, client: (c.name || '').slice(0, 60), phone: (c.phone || '').slice(0, 20), code: b.ref,
             desc: rows.map(r => (nm0[r.id]?.n || r.id) + ' (' + r.q + ')').join(' ، '), qty: rows.reduce((a, r) => a + r.q, 0), disc: 0, total: itemsT, profit: 0, sugg: 0, sub: itemsT,
             items: rows.map(r => ({ desc: nm0[r.id]?.n || r.id, color: /^(اللون الأساسي|كما بالصورة)?$/.test(r.color) ? '' : r.color, q: r.q, unit: r.u, line: r.u * r.q, cost: 0, w: +pr.W[r.id] || 0, h: 0, m: 0, sec: 0, type: 'واحدة', auto: false, dp: 0 })) };
           try { await ghUpdate(env, 'partner_log.json', [], arr => { arr = Array.isArray(arr) ? arr : []; if (!arr.some(x => x && Number(x.num) === num)) arr.push(rec); return arr }, 'فاتورة طلب مدفوع ORD-' + num) } catch (e) { logFail = true }
@@ -643,7 +702,7 @@ async function confirmCore(b, env, out, flag) {
     const invoice = invoiceHtml({ label, date: today, name: c.name || '', phone: c.phone || '', rows: rows.map(r => ({ ...r, name: nm[r.id]?.n || r.id })), sub: total - ship, ship, total, bank: await bankInfo(env), method: p.source?.type === 'applepay' ? 'Apple Pay' : (p.source?.company ? String(p.source.company).toUpperCase() : (p.source?.type || '')) });
     const html = invoice + `<hr style="margin:26px 0;border:0;border-top:1px dashed #ccc"><p>طلب مدفوع <b>${esc(label)}</b>${num ? '' : ' (بدون رقم فاتورة، تعذّر حجز الرقم)'}</p>` + info.replace(esc(b.ref), esc(label)) +
       ((logFail || !num) ? `<p style="color:#b00">⚠️ تعذّر إضافة الفاتورة تلقائيًا لبرنامج الفواتير. الصق الرسالة التالية في التطبيق (استيراد الطلب) عشان تنحفظ بنفس الرقم:</p><pre style="background:#f4f1ea;padding:10px;border-radius:8px;white-space:pre-wrap">${esc(msg)}</pre>` : `<p>✓ الفاتورة دخلت برنامج الفواتير تلقائيًا (تظهر لك أول ما تفتحه).</p>`);
-    const sent = await mail(env, '✅ طلب مدفوع ' + label, html);
+    const sent = await mail(env, '✅ طلب مدفوع ' + label, html, orderExtra(env));
     return out({ ok: true, num, emailed: sent });
   }
 }
