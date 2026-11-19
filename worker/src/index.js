@@ -137,6 +137,7 @@ function invoiceHtml(d) {
 // must be typed into the dashboard. The code is mailed to the owner. It is handled before the secret check because that event may not carry the
 // secret; only 6 digits are ever mailed, and at most 5 mails an hour per isolate, so it cannot be used to flood the inbox.
 let VRL = [];
+let WHL = [];
 async function hook(req, env, out, ctx) {
   let e; try { e = await req.json() } catch { return out({ ok: false }, 400) }
   if (e && e.type === 'webhook_verification') {
@@ -149,6 +150,8 @@ async function hook(req, env, out, ctx) {
     return out({ ok: true });
   }
   if (env.WEBHOOK_SECRET && e.secret_token !== env.WEBHOOK_SECRET) return out({ ok: false }, 401);
+  // no WEBHOOK_SECRET set: anyone could post fake events, so cap the unauthenticated ones (confirm still re-checks Moyasar). Set WEBHOOK_SECRET to remove this cap.
+  if (!env.WEBHOOK_SECRET) { const now2 = Date.now(); WHL = WHL.filter(t => now2 - t < 3600e3); if (WHL.length >= 30) return out({ ok: false, reason: 'limit' }, 429); WHL.push(now2) }
   const id = e.data && e.data.id;
   // payment_paid: wait a little so the customer's own browser confirms first (it shows them the order number); the marker file makes this a no-op then
   if (/^payment_paid$/i.test(String(e.type || '')) && /^[0-9a-f-]{36}$/i.test(id || '')) {
@@ -281,6 +284,8 @@ const RVRL = new Map();
 const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
 const sha = async s => hex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)));
 async function rvSig(env, k) { const key = await crypto.subtle.importKey('raw', new TextEncoder().encode('rv|' + env.GH_TOKEN), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']); return hex(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(k))).slice(0, 32) }
+// constant-time string compare (a signature check must not leak how many leading characters matched)
+const safeEq = (a, b) => { a = String(a); b = String(b); if (a.length !== b.length) return false; let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i); return d === 0 };
 const rvClean = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
 // «ر. ع.» : first letter of the first name and of the last name (one name: one letter)
 const rvInit = v => { const w = String(v || '').replace(/[ً-ٟـ]/g, '').trim().split(/\s+/).filter(Boolean).map(x => [...(/^ال.{2,}/.test(x) ? x.slice(2) : x)][0]); return w.length ? (w.length === 1 ? w[0] + '.' : w[0] + '. ' + w[w.length - 1] + '.') : '' };
@@ -327,7 +332,7 @@ async function reviewAct(req, env, url) {
   if (!env.GH_TOKEN || !env.GH_REPO) return rvPage('غير متاح');
   let k, sig, a = '';
   if (req.method === 'POST') { const f = await req.formData(); k = String(f.get('k') || ''); sig = String(f.get('sig') || ''); a = String(f.get('a') || '') } else { k = url.searchParams.get('k') || ''; sig = url.searchParams.get('sig') || '' }
-  if (!/^[0-9a-f]{12}$/.test(k) || sig !== await rvSig(env, k)) return rvPage('رابط غير صالح');
+  if (!/^[0-9a-f]{12}$/.test(k) || !safeEq(sig, await rvSig(env, k))) return rvPage('رابط غير صالح');
   const f = await ghRead(env, 'reviews.json'), r = f && f.data && Array.isArray(f.data.list) ? f.data.list.find(x => x.k === k) : null;
   if (!r) return rvPage('هذا التقييم لم يعد موجودًا (تمت معالجته).');
   if (req.method !== 'POST') return rvPage(`<h2>${'★'.repeat(r.s)}${'☆'.repeat(5 - r.s)}</h2><p><b>${esc(r.fn || r.n)}</b>${r.fn && r.fn !== r.n ? ' (يظهر: ' + esc(r.n) + ')' : ''}${r.vb ? ' (عميل سابق)' : ''}</p><p>${esc(r.t) || '(بدون تعليق)'}</p><p>الحالة: ${r.st === 'a' ? 'معتمد' : 'بانتظار القرار'}</p><form method="post"><input type="hidden" name="k" value="${k}"><input type="hidden" name="sig" value="${sig}"><button name="a" value="ok" style="padding:12px 22px;font-size:16px">✅ موافقة ونشر</button> <button name="a" value="no" style="padding:12px 22px;font-size:16px">🗑️ رفض وحذف</button></form>`);
