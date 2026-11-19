@@ -288,3 +288,6 @@ For every new or re-priced product, check the wholesale price before publishing:
 
 ## Orders mail (owner, 11-19)
 - Ahmed uses the SAME email as the owner, so `ORDERS_MAIL_EXTRA` is NOT needed: do not ask for it again.
+
+## AR on iPhone, third fix (11-19)
+- Still not opening after the link fix. Built the USDZ of hdclock and lamp in a headless browser and opened them with Pixar's USD library (`usd-core`): zip is valid (stored, 64-byte aligned) but the stage had NO `defaultPrim` and the meshes lacked `MaterialBindingAPI`, which Apple's ARKit checks require. Fixed in `lib/USDZExporter.js`: everything under `def Xform "Root"`, `defaultPrim = "Root"`, material/texture paths `/Root/...`, `prepend apiSchemas = ["MaterialBindingAPI"]` on each mesh. After the fix: default prim /Root, all meshes bound to valid materials, real size right (hdclock 24.9 x 24.5 cm, lamp 24.5 cm tall), no USD warnings. Still NOT tested on a real iPhone (owner must confirm). sw v289.
