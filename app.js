@@ -625,7 +625,7 @@ async function arIOS(g){await loadLib("lib/USDZExporter.js");const L=LANG==="en"
  const sc=new THREE.Scene();sc.add(g);sc.updateMatrixWorld(true);const buf=await new THREE.USDZExporter().parse(sc);
  /* iPhone only opens Quick Look from a REAL tap on the link (a click fired after seconds of work is ignored), so show the ready link as a button */
  const old=$("#arGo");if(old){URL.revokeObjectURL(old.href);old.remove()}
- const a=document.createElement("a");a.id="arGo";a.rel="ar";a.className="arbtn go";a.href=URL.createObjectURL(new Blob([buf],{type:"model/vnd.usdz+zip"}));a.appendChild(document.createElement("img"));a.appendChild(document.createTextNode(L?"✅ Ready: tap to open AR":"✅ جاهز: اضغط لفتح الواقع المعزز"));
+ const a=document.createElement("a");a.id="arGo";a.rel="ar";a.className="arbtn go";a.href=URL.createObjectURL(new Blob([buf],{type:"model/vnd.usdz+zip"}));a.download="asset.usdz";const im=document.createElement("img");im.alt="";im.src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";a.appendChild(im);a.appendChild(document.createTextNode(L?"✅ Ready: tap to open AR":"✅ جاهز: اضغط لفتح الواقع المعزز"));
  $("#arBtn").insertAdjacentElement("afterend",a);$("#arBtn").hidden=true}
 async function arXR(g){const L=LANG==="en",r=new THREE.WebGLRenderer({antialias:true,alpha:true});r.xr.enabled=true;r.outputEncoding=THREE.sRGBEncoding;
  const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera();sc.add(new THREE.HemisphereLight(0xffffff,0x9a8f80,1.15));const dl=new THREE.DirectionalLight(0xffffff,.8);dl.position.set(.5,2,1);sc.add(dl);
