@@ -280,3 +280,6 @@ For every new or re-priced product, check the wholesale price before publishing:
 ## AR on iPhone, second fix (11-19)
 - Owner's iPhone showed «✅ جاهز: اضغط لفتح الواقع المعزز» but tapping did nothing. Likely cause: Safari opens Quick Look only when the tap lands on the anchor's `<img>` child, and ours was a 1x1 px empty image. Now the `<img>` has a transparent pixel `src`, covers the whole button (`.arbtn.go img`, absolute, inset 0, opacity 0) and the link has `download="asset.usdz"` (needed for blob links). NOT testable without an iPhone: needs the owner's confirmation.
 - Turnstile: the «Verify you are human» box appears only when Cloudflare judges the visitor suspicious (`appearance:"interaction-only"`). The owner asked to remove it; it cannot be hidden from code without breaking forms while `TURNSTILE_SECRET` is set. Dashboard options given to him: widget mode «Invisible» (recommended, protection stays) or delete `TURNSTILE_SECRET` in the worker (protection off).
+
+## Orders mail (owner, 11-19)
+- Ahmed uses the SAME email as the owner, so `ORDERS_MAIL_EXTRA` is NOT needed: do not ask for it again.
