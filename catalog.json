@@ -1,5 +1,15 @@
 {
   "items": {
+    "glring": {
+      "n": "خاتم الفانوس الأخضر",
+      "en": "Green Lantern Ring",
+      "g": 9.1
+    },
+    "batspin": {
+      "n": "سبينر الباتارنج",
+      "en": "Batarang Fidget Spinner",
+      "g": 7.8
+    },
     "redline": {
       "n": "السعودية خط أحمر",
       "en": "Saudi Red Line"
