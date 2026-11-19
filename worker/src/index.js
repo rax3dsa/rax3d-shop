@@ -84,6 +84,15 @@ async function ghUpdate(env, path, def, fn, msg) {
   }
   throw new Error('busy');
 }
+// Persistent hourly cap shared by all isolates (the in-memory lists below only count per isolate). Key must be hex so pruneGuards cleans it up.
+async function hourCap(env, key, cap) {
+  try {
+    const now = Date.now(), g = await ghRead(env, 'online/' + key + '.json');
+    if (((g && g.data.t) || []).filter(t => now - t < 3600e3).length >= cap) return false;
+    await ghUpdate(env, 'online/' + key + '.json', { t: [] }, d => ({ t: [...(d.t || []).filter(t => now - t < 3600e3), now] }), 'حد الساعة');
+  } catch { /* data repo unreachable: the per-isolate list still applies */ }
+  return true;
+}
 const riyadhDay = () => new Date(Date.now() + 3 * 3600 * 1000).toISOString().slice(0, 10);
 async function names() { try { const j = await (await fetch(SITE + '/catalog.json', { cf: { cacheTtl: 60 } })).json(); return j.items || {} } catch { return {} } }
 
@@ -146,6 +155,7 @@ async function hook(req, env, out, ctx) {
     const now = Date.now(); VRL = VRL.filter(t => now - t < 3600e3);
     if (VRL.length >= 5) return out({ ok: false, reason: 'limit' }, 429);
     VRL.push(now);
+    if (!(await hourCap(env, 'rl_00000001', 5))) return out({ ok: false, reason: 'limit' }, 429);
     await mail(env, '🔑 رمز تحقق Webhook ميسر: ' + code, `<p style="font-size:22px">رمز التحقق: <b dir="ltr">${code}</b></p><p>اكتبه في نافذة «Verify Webhook» في لوحة ميسر. صالح 30 دقيقة.</p>`);
     return out({ ok: true });
   }
@@ -499,6 +509,7 @@ async function recovery(req, env, out) {
   const now = Date.now(); RRL = RRL.filter(t => now - t < 3600e3);
   if (RRL.length >= 5) return out({ ok: false, reason: 'limit' }, 429);
   RRL.push(now);
+  if (!(await hourCap(env, 'rl_00000002', 5))) return out({ ok: false, reason: 'limit' }, 429);
   const sent = await mail(env, '🔑 رمز استرجاع دخول الدعم الفني: ' + code, `<p style="font-size:22px">رمز التحقق: <b dir="ltr">${code}</b></p><p>اكتبه في شاشة «نسيت رمز الدخول» في برنامج الفواتير. صالح 15 دقيقة. إذا ما طلبته فتجاهل هذي الرسالة.</p>`);
   return out({ ok: sent }, sent ? 200 : 502);
 }
