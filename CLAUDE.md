@@ -249,7 +249,7 @@ For every new or re-priced product, check the wholesale price before publishing:
 - Compliance docs (private repo `rax3d-data/compliance/`): breach plan with 72 h templates, third-party services list (cross-border flags), SBC checklist.
 - Left on purpose: no intellectual-property clause (owner's standing order); invoicing-app e-invoice/ZATCA not applicable without VAT registration; retention purge code not written (no order is older than 5 years); lawyer review of the final texts and of cross-border transfer still needed.
 - Owner decision 11-19: the freelance document is ENOUGH for the shop (he said so); no commercial registration is needed or to be asked for again. Published with «ارفع للموقع» on 11-19.
-## Cloudflare hardening pass (11-19, on the session branch, NOT yet merged or deployed)
+## Cloudflare hardening pass (11-19, MERGED to main in PR #69; the worker still needs a manual paste unless CLOUDFLARE_API_TOKEN is set)
 - Worker: the recovery-code and Moyasar-verification mails now also have a PERSISTENT 5/hour cap shared by all isolates (`hourCap`, files `online/rl_00000001.json` and `rl_00000002.json`, pruned daily by `pruneGuards`); the old per-isolate lists stay as a fallback.
 - Owner to check in the Cloudflare dashboard (not checkable from a session): `TURNSTILE_SECRET`, `TURNSTILE_SITEKEY` and `WEBHOOK_SECRET` set; SSL Full (strict) + HSTS; 2-step verification; `GH_TOKEN` limited to Contents on rax3d-data. Syntax-checked only; not run against a real worker.
 
