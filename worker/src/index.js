@@ -447,10 +447,10 @@ async function stockReminder(env) {
   let claimed = null;
   await ghUpdate(env, 'stock.json', null, x => { if (!ok(x)) return undefined; claimed = x; x.mailedFor = x.next; return x }, 'تذكير جرد الفلمنت');
   if (!claimed) return 'taken';
-  const need = (claimed.rows || []).filter(r => r && r.buy).map(r => esc(String(r.t || '') + ' ' + String(r.c || '')));
+  const need = (claimed.rows || []).filter(r => r && (r.need == null ? r.buy : r.need)).map(r => esc(String(r.t || '') + ' ' + String(r.c || '')));
   const extra = String(env.STOCK_MAIL_EXTRA || '').split(',').map(e => e.trim()).filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)).slice(0, 3);
   let rep = ''; try { rep = await fortnightReport(env) } catch (e) { rep = '<p>تعذّر إعداد تقرير الأسبوعين هذه المرة.</p>' }
-  const out0 = (claimed.rows || []).filter(r => r && !r.buy && r.q === 0).map(r => esc(String(r.t || '') + ' ' + String(r.c || '')));
+  const out0 = (claimed.rows || []).filter(r => r && !(r.need == null ? r.buy : r.need) && r.q === 0).map(r => esc(String(r.t || '') + ' ' + String(r.c || '')));
   await mail(env, '🧾 موعد جرد الفلمنت وتقرير أسبوعين — RAX3D', rep + `<hr><p style="font-size:17px"><b>🧾 موعد الجرد الدوري (كل أسبوعين)</b></p><p>افتح تبويب «الجرد» في برنامج الفواتير، راجع الكميات وحدّث «طلب شراء»، ثم اضغط «تم الجرد».</p><p>بحاجة شراء الآن: <b>${need.length ? need.join('، ') : 'لا شيء'}</b></p>${out0.length ? `<p>نفدت (كميتها 0 وغير موسومة للشراء): <b>${out0.join('، ')}</b></p>` : ''}`, extra);
   return 'sent';
 }
