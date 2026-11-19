@@ -621,6 +621,9 @@ function arWeld(g){const p=g.attributes.position,n=p.count,map=new Map(),pos=[],
  for(let i=0;i<n;i++){const x=p.getX(i),y=p.getY(i),z=p.getZ(i),k=Math.round(x*1000)+"|"+Math.round(y*1000)+"|"+Math.round(z*1000);let j=map.get(k);if(j===undefined){j=pos.length/3;map.set(k,j);pos.push(x,y,z)}idx[i]=j}
  const o=new THREE.BufferGeometry();o.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));o.setIndex(new THREE.BufferAttribute(idx,1));o.computeVertexNormals();return o}
 async function arIOS(g){await loadLib("lib/USDZExporter.js");const L=LANG==="en";
+ /* Quick Look only works in Safari itself: in-app browsers (Instagram, TikTok, Snapchat...) and a page opened from a home-screen icon silently ignore the AR link */
+ {const ua=navigator.userAgent,inApp=/Instagram|FBAN|FBAV|TikTok|musical_ly|Snapchat|Line\/|MicroMessenger|Twitter/i.test(ua),sa=!!navigator.standalone;
+  if(inApp||sa)toastMsg(L?"AR opens only in Safari: open this page from the Safari app (not from Instagram or a home-screen icon)":"الواقع المعزز يفتح من Safari فقط: افتح الصفحة من تطبيق Safari (ليس من داخل انستقرام أو من أيقونة على الشاشة الرئيسية)")}
  if(arTris(g)>110000)g.traverse(o=>{if(o.isMesh&&o.geometry.attributes.position&&!o.geometry.index)o.geometry=arWeld(o.geometry)});
  const sc=new THREE.Scene();sc.add(g);sc.updateMatrixWorld(true);const buf=await new THREE.USDZExporter().parse(sc);
  /* iPhone only opens Quick Look from a REAL tap on the link (a click fired after seconds of work is ignored), so show the ready link as a button */
