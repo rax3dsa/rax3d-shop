@@ -613,7 +613,14 @@ document.addEventListener("input",e=>{if(e.target&&e.target.id==="nmIn")nmDraw()
 const ARIOS=(()=>{try{return(/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1))&&document.createElement("a").relList.supports("ar")}catch(_){return false}})();
 let ARX=false;try{if(navigator.xr&&navigator.xr.isSessionSupported)navigator.xr.isSessionSupported("immersive-ar").then(v=>{ARX=!!v;paintAR()}).catch(()=>{})}catch(_){}
 const arTris=o=>{let n=0;o.traverse(x=>{if(x.isMesh&&x.geometry.attributes.position)n+=x.geometry.attributes.position.count/3});return n};   /* USDZ is plain text per triangle (about 260 bytes each): keep iPhone files under about 30 MB */
-function paintAR(){const b=$("#arBtn");if(b){b.hidden=!(cur&&MODELS[cur.it.id]&&DIM[cur.it.id]&&V.obj&&V.id===cur.it.id&&(ARX||(ARIOS&&arTris(V.obj)<=450000)));if(!b.hidden&&!window.__arAuto&&/[?&]ar=1(&|$)/.test(location.search)&&!navigator.standalone){window.__arAuto=1;setTimeout(()=>{try{startAR()}catch(_){}},400)}}}
+function arLink(){const st=$("#v3dStage"),id=cur&&cur.it.id;let a=$("#arLink");   /* iPhone: a REAL link to the prebuilt ar/<id>.usdz (tools/build-usdz.py): Quick Look opens it from a real tap */
+ if(!st||!id||!MODELS[id]||!DIM[id]){if(a)a.remove();return}
+ if(!a){a=document.createElement("a");a.id="arLink";a.rel="ar";a.className="arbtn go";const im=document.createElement("img");im.alt="";im.src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";a.appendChild(im);a.appendChild(document.createTextNode(LANG==="en"?"📱 See it in your room":"📱 شوفها في غرفتك"));st.appendChild(a);
+  a.addEventListener("click",e=>{if(navigator.standalone){e.preventDefault();const u=location.origin+"/?p="+cur.it.id+"&ar=1";try{navigator.clipboard&&navigator.clipboard.writeText(u)}catch(_){}toastMsg(LANG==="en"?"AR does not run inside the installed app. Link copied: paste it in the Safari app":"الواقع المعزز لا يعمل داخل البرنامج المحمّل. نسخنا رابط القطعة: الصقه في تطبيق Safari ثم اضغط الزر")}})}
+ a.href="ar/"+id+".usdz"}
+function paintAR(){const b=$("#arBtn");if(!b)return;
+ if(ARIOS&&!ARX){b.hidden=true;arLink();return}
+ b.hidden=!(cur&&MODELS[cur.it.id]&&DIM[cur.it.id]&&V.obj&&V.id===cur.it.id&&ARX)}
 function arScene(){const d=DIM[cur.it.id],real=Math.max(d[0],d[1],d[2])/1000,m=V.obj.clone(true),g=new THREE.Group();g.add(m);g.updateMatrixWorld(true);
  const b=new THREE.Box3().setFromObject(g),z=b.getSize(new THREE.Vector3()),c=b.getCenter(new THREE.Vector3());m.position.x-=c.x;m.position.z-=c.z;m.position.y-=b.min.y;g.scale.setScalar(real/Math.max(z.x,z.y,z.z));g.updateMatrixWorld(true);return g}
 const loadLib=src=>new Promise((ok,no)=>{if(document.querySelector('script[src="'+src+'"]'))return ok();const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=()=>no(new Error(src));document.head.appendChild(s)});
