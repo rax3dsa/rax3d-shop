@@ -300,3 +300,4 @@ For every new or re-priced product, check the wholesale price before publishing:
 
 ## AR on iPhone, fourth step (11-19)
 - Owner: «لدي البرنامج محمل ولا يعمل شوفها بغرفتك» (screenshot shows the page full screen, no Safari bar: may be an in-app browser or a home-screen icon, where Quick Look is not supported). Added a message when the page runs in an in-app browser (Instagram/TikTok/Snapchat...) or standalone: «افتح الصفحة من Safari». Asked the owner HOW he opens the page; still NOT confirmed working. sw v290.
+- AR, owner uses the INSTALLED app (home-screen page), where iOS cannot open Quick Look (11-19): in standalone mode the button now copies `rax3d.com/?p=<id>&ar=1` and tells him to paste it in Safari; a page opened with `ar=1` in Safari opens the 3D by itself and builds the AR (the tap on «✅ جاهز» is still needed). Tested in headless with an iPhone user agent (lamp: ready link appears by itself); NOT tested on a real iPhone. sw v291.

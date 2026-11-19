@@ -613,7 +613,7 @@ document.addEventListener("input",e=>{if(e.target&&e.target.id==="nmIn")nmDraw()
 const ARIOS=(()=>{try{return(/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1))&&document.createElement("a").relList.supports("ar")}catch(_){return false}})();
 let ARX=false;try{if(navigator.xr&&navigator.xr.isSessionSupported)navigator.xr.isSessionSupported("immersive-ar").then(v=>{ARX=!!v;paintAR()}).catch(()=>{})}catch(_){}
 const arTris=o=>{let n=0;o.traverse(x=>{if(x.isMesh&&x.geometry.attributes.position)n+=x.geometry.attributes.position.count/3});return n};   /* USDZ is plain text per triangle (about 260 bytes each): keep iPhone files under about 30 MB */
-function paintAR(){const b=$("#arBtn");if(b)b.hidden=!(cur&&MODELS[cur.it.id]&&DIM[cur.it.id]&&V.obj&&V.id===cur.it.id&&(ARX||(ARIOS&&arTris(V.obj)<=450000)))}
+function paintAR(){const b=$("#arBtn");if(b){b.hidden=!(cur&&MODELS[cur.it.id]&&DIM[cur.it.id]&&V.obj&&V.id===cur.it.id&&(ARX||(ARIOS&&arTris(V.obj)<=450000)));if(!b.hidden&&!window.__arAuto&&/[?&]ar=1(&|$)/.test(location.search)&&!navigator.standalone){window.__arAuto=1;setTimeout(()=>{try{startAR()}catch(_){}},400)}}}
 function arScene(){const d=DIM[cur.it.id],real=Math.max(d[0],d[1],d[2])/1000,m=V.obj.clone(true),g=new THREE.Group();g.add(m);g.updateMatrixWorld(true);
  const b=new THREE.Box3().setFromObject(g),z=b.getSize(new THREE.Vector3()),c=b.getCenter(new THREE.Vector3());m.position.x-=c.x;m.position.z-=c.z;m.position.y-=b.min.y;g.scale.setScalar(real/Math.max(z.x,z.y,z.z));g.updateMatrixWorld(true);return g}
 const loadLib=src=>new Promise((ok,no)=>{if(document.querySelector('script[src="'+src+'"]'))return ok();const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=()=>no(new Error(src));document.head.appendChild(s)});
@@ -642,7 +642,10 @@ async function arXR(g){const L=LANG==="en",r=new THREE.WebGLRenderer({antialias:
  ss.addEventListener("select",()=>{if(!rt.visible)return;g.position.setFromMatrixPosition(rt.matrix);g.visible=true;const h=ov.querySelector("#arH");if(h)h.textContent=L?"Walk around it. Tap another spot to move it":"لفّ حولها. اضغط في مكان ثاني عشان تنقلها"});
  const x=ov.querySelector("#arX");x.addEventListener("beforexrselect",e=>e.preventDefault());x.onclick=()=>ss.end();
  ss.addEventListener("end",()=>{r.setAnimationLoop(null);try{hs.cancel()}catch(_){}r.dispose();ov.remove()})}
-async function startAR(){const b=$("#arBtn");if(!b||!V.obj||!window.THREE)return;const og=$("#arGo");if(og){URL.revokeObjectURL(og.href);og.remove()}b.setAttribute("aria-busy","true");
+async function startAR(){const b=$("#arBtn");if(!b||!V.obj||!window.THREE)return;
+ /* iPhone: a page installed on the home screen cannot open Quick Look: copy the piece link (with ar=1) so it can be pasted in Safari, where the AR starts by itself */
+ if(ARIOS&&navigator.standalone){const u=location.origin+"/?p="+cur.it.id+"&ar=1";try{navigator.clipboard&&navigator.clipboard.writeText(u)}catch(_){}
+  toastMsg(LANG==="en"?"AR does not run inside the installed app. Link copied: paste it in the Safari app and AR starts there":"الواقع المعزز لا يعمل داخل البرنامج المحمّل. نسخنا رابط القطعة: الصقه في تطبيق Safari ويبدأ الواقع المعزز هناك");return}const og=$("#arGo");if(og){URL.revokeObjectURL(og.href);og.remove()}b.setAttribute("aria-busy","true");
  try{const g=arScene();if(ARX)await arXR(g);else await arIOS(g)}catch(e){toastMsg(LANG==="en"?"Could not open AR on this phone":"ما قدرنا نفتح الواقع المعزز على جوالك")}finally{b.removeAttribute("aria-busy")}}
 /* ---------- customer reviews: the customer rates, the owner approves each one by email (worker: POST /review, GET /reviews) ---------- */
 let RVD=null,RVP=null;
@@ -1157,3 +1160,6 @@ document.addEventListener("click",async e=>{
 loadPts();render(false);applyLang();
 /* QR on the invoice / packaging label opens the tracker: ?track=1&o=<order number> */
 (()=>{try{const q=new URLSearchParams(location.search);if(q.get("track")){TRKO=(q.get("o")||"").replace(/\D/g,"").slice(0,8);setTimeout(()=>openPol("track"),500)}}catch(_){}})();
+
+/* ?ar=1 (link copied from the installed app): open the customise page + 3D, then paintAR starts the AR build by itself */
+if(/[?&]ar=1(&|$)/.test(location.search)){let n=0;const t=setInterval(()=>{const e=document.querySelector("[data-edit]");if(e){clearInterval(t);e.click()}else if(++n>40)clearInterval(t)},300)}
