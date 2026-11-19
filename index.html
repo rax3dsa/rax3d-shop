@@ -132,7 +132,7 @@ html[lang=en] .promo .track{animation-name:slideL}
 .hero .shop{max-width:320px;width:100%;margin-top:8px}
 .reglink{background:none;border:0;color:var(--accent);font:inherit;font-size:13.5px;font-weight:600;text-decoration:underline;text-underline-offset:3px;padding:10px 8px;min-height:44px;cursor:pointer}
 .perks.out{margin:14px auto 0;text-align:center}
-#tsBox{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));z-index:80}#tsBox:empty{display:none}
+#tsBox{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));z-index:80}#tsBox:empty{display:none}#tsBox:not(.on){opacity:0;pointer-events:none;transform:translateX(-50%) scale(.01);bottom:0}   /* the check runs invisibly; it shows only when Cloudflare needs a tap, and goes away right after Success */
 .modes{border:0;padding:0;margin:10px 0 4px;display:grid;gap:8px;min-width:0}.modes legend{padding:0;margin-bottom:6px}
 .mode{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer;min-height:44px}.mode:has(input:checked){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
 .mode input{margin-top:3px;width:20px;height:20px;accent-color:var(--accent);flex:none}.mode .mt{font-weight:600}.mode .mf{display:block;color:var(--muted);font-size:12.5px}
@@ -333,6 +333,8 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
 .trkl li.done{color:var(--fg)}.trkl li.done .dot{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
 .trkl li.cur{color:var(--fg)}.trkl li.cur .dot{border-color:var(--accent);color:var(--accent)}
 @media (prefers-reduced-motion:no-preference){.trkl li.cur .dot{animation:trkp 1.6s ease-in-out infinite}@keyframes trkp{0%,100%{box-shadow:0 0 0 0 rgba(138,97,31,.45)}50%{box-shadow:0 0 0 7px rgba(138,97,31,0)}}}
+.dadd{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}.dadd button{flex:1 1 30%;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 6px;font-size:13px;cursor:pointer}.dadd button small{display:block;color:var(--muted);font-size:11px}.dadd button[aria-checked=true]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}.dadd button[aria-checked=true] small{color:inherit}
+.vote{display:grid;gap:8px;margin:0 0 6px}.vrow{position:relative;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden;font-size:14px}.vrow i{position:absolute;inset-block:0;inset-inline-start:0;width:var(--p);background:color-mix(in srgb,var(--accent) 22%,transparent);z-index:0}.vrow span,.vrow b{position:relative;z-index:1}.vrow.me{border-color:var(--accent);font-weight:700}#voteChip{margin:0 0 10px}#voteChip .btn{width:100%}
 .qfile{display:block;cursor:pointer;margin:10px 0}.qbtn{margin-top:8px;width:100%;max-width:420px}.qres{display:grid;gap:8px;margin-top:10px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}.qprice{font-size:28px;color:var(--accent)}.qres ul{margin:0;padding-inline-start:18px;line-height:1.9;font-size:14px}
 .nm{display:grid;gap:8px}.nm canvas{width:100%;height:auto;border-radius:14px;border:1px solid var(--line)}
 .pld-svg{--h:54px;--d:.2s}
@@ -378,7 +380,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
 .v3d-stage{position:relative;width:100%;aspect-ratio:1;max-height:62vh;background:radial-gradient(circle at 50% 40%,#fbf6ee,#e9dccb)}
 .v3d-stage canvas{width:100%!important;height:100%!important;display:block;touch-action:none}
 .v3d-msg{position:absolute;inset:0;display:grid;place-items:center;color:var(--fg);opacity:.85;font-size:14px;text-align:center;padding:20px}
-.arbtn{position:absolute;inset-inline-end:10px;bottom:30px;z-index:3;border:0;border-radius:12px;padding:9px 13px;background:var(--accent);color:var(--accent-fg);font-weight:600;font-size:13px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.18)}.arbtn[aria-busy=true]{opacity:.6}
+.arbtn{position:absolute;inset-inline-end:10px;bottom:30px;z-index:3;border:0;border-radius:12px;padding:9px 13px;background:var(--accent);color:var(--accent-fg);font-weight:600;font-size:13px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.18)}.arbtn[aria-busy=true]{opacity:.6}.arbtn.go{text-decoration:none;display:inline-flex;align-items:center;gap:6px}.arbtn.go img{width:1px;height:1px;opacity:0}
 .v3d-hint{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:12px;color:var(--fg);opacity:.82;pointer-events:none}
 .v3d-ft{padding:12px 14px 14px;display:flex;flex-direction:column;gap:8px}
 .price{display:flex;flex-direction:column;gap:4px;margin:10px 0 4px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}.old{color:var(--muted);font-weight:500;text-decoration:line-through;text-decoration-thickness:2px;text-decoration-color:#d9534f;opacity:.8;margin-inline-end:6px}.price .old{font-size:1.05rem;order:-1}.price b{font-size:1.25rem;color:var(--accent)}.price span{font-size:.9rem;color:var(--muted)}.item .pr{display:block;font-style:normal;font-weight:700;color:var(--accent);margin-top:2px}.line .pr{font-style:normal;font-weight:700;color:var(--accent);white-space:nowrap;margin-inline:6px}#sumPrice{display:block;margin:6px 0;color:var(--accent);font-size:1.1rem}.total{font-weight:800;font-size:1.2rem;text-align:center;color:var(--accent);margin:8px 0}
@@ -436,7 +438,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
  <button type="button" class="xbtn" id="aclose" aria-label="إغلاق">×</button>
  <h3 id="at">حسابي</h3>
  <p class="inote">سجّل باسمك وجوالك بدون رقم سري، ويوصلنا طلبك جاهز باسمك. وكل ريال تشتري فيه يعطيك نقطة ولاء ⭐</p>
- <ul class="inote" style="margin:8px 0 0;padding-inline-start:18px;line-height:1.7"><li>كل 1000 نقطة = خصم 10 ريال</li><li>2500 نقطة = توصيل مجاني</li><li>5000 نقطة = قطعة مجانية بقيمة حتى 250 ريال</li><li>تنتهي كل نقطة بعد 12 شهراً من تاريخ كسبها</li><li>النقاط لا تُستبدل بمبالغ مالية</li></ul>
+ <ul class="inote" style="margin:8px 0 0;padding-inline-start:18px;line-height:1.7"><li>كل 1000 نقطة = خصم 10 ريال</li><li>3000 نقطة = توصيل مجاني</li><li>5000 نقطة = قطعة مجانية بقيمة حتى 250 ريال</li><li>تنتهي كل نقطة بعد 12 شهراً من تاريخ كسبها</li><li>النقاط لا تُستبدل بمبالغ مالية</li></ul>
  <label class="flab" for="cn">الاسم</label><input class="fin" id="cn" autocomplete="name" maxlength="40">
  <label class="flab" for="cp">رقم الجوال</label><input class="fin" id="cp" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="05xxxxxxxx" dir="ltr">
  <div class="ptsbox" id="ptsbox" data-pts hidden></div>
@@ -561,7 +563,7 @@ textarea{font:inherit;font-size:16px;width:100%;padding:10px 12px;border-radius:
 <h2>ألعاب وقيمرز</h2><ul>
 <li><a href="?p=ttt">لعبة إكس أو</a> - من 41 ريال. لعبة إكس أو بحجم الجيب، تركيبها بدون غراء. خذها معك وتسلّى مع أصحابك في أي مكان.</li>
 <li><a href="?p=w1">صفارة البط</a> - من 27 ريال. صفارة بصوت البط، مرحة وتضحك كل من يسمعها. تختار لونها.</li>
-<li><a href="?p=w2">صفارة العصفور</a> - من 32 ريال. صفارة بصوت العصفور، تغريدة بسيطة بلون تختاره.</li>
+<li><a href="?p=w2">صفارة العصفور</a> - من 32 ريال. صفارة مائية على شكل عصفور: صبّ قليلًا من الماء في الذيل وانفخ، وتسمع تغريدة عصفور حقيقية. بلون تختاره.</li>
 <li><a href="?p=w4">صفارة الجبن</a> - من 20 ريال. صفارة بتصميم الجبن الطريف، هدية صغيرة تضحك. تختار لونها.</li>
 <li><a href="?p=w5">صفارة الجمجمة</a> - من 34 ريال. صفارة جمجمة بصوت قوي، تلفت الانتباه وتناسب محبي الطابع الغامض.</li>
 <li><a href="?p=fncs">كأس بطولة FNCS</a> - من 53 ريال. كأس مجسّم بشعار FNCS على قاعدة، لمحبي الألعاب وهواة جمع الكؤوس.</li>
