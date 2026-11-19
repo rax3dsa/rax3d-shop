@@ -135,6 +135,7 @@ function invoiceHtml(d) {
 // must be typed into the dashboard. The code is mailed to the owner. It is handled before the secret check because that event may not carry the
 // secret; only 6 digits are ever mailed, and at most 5 mails an hour per isolate, so it cannot be used to flood the inbox.
 let VRL = [];
+let WHL = [];
 async function hook(req, env, out, ctx) {
   let e; try { e = await req.json() } catch { return out({ ok: false }, 400) }
   if (e && e.type === 'webhook_verification') {
@@ -147,6 +148,8 @@ async function hook(req, env, out, ctx) {
     return out({ ok: true });
   }
   if (env.WEBHOOK_SECRET && e.secret_token !== env.WEBHOOK_SECRET) return out({ ok: false }, 401);
+  // no WEBHOOK_SECRET set: anyone could post fake events, so cap the unauthenticated ones (confirm still re-checks Moyasar). Set WEBHOOK_SECRET to remove this cap.
+  if (!env.WEBHOOK_SECRET) { const now2 = Date.now(); WHL = WHL.filter(t => now2 - t < 3600e3); if (WHL.length >= 30) return out({ ok: false, reason: 'limit' }, 429); WHL.push(now2) }
   const id = e.data && e.data.id;
   // payment_paid: wait a little so the customer's own browser confirms first (it shows them the order number); the marker file makes this a no-op then
   if (/^payment_paid$/i.test(String(e.type || '')) && /^[0-9a-f-]{36}$/i.test(id || '')) {
