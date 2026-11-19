@@ -225,6 +225,8 @@ const RVRL = new Map();
 const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
 const sha = async s => hex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)));
 async function rvSig(env, k) { const key = await crypto.subtle.importKey('raw', new TextEncoder().encode('rv|' + env.GH_TOKEN), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']); return hex(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(k))).slice(0, 32) }
+// constant-time string compare (a signature check must not leak how many leading characters matched)
+const safeEq = (a, b) => { a = String(a); b = String(b); if (a.length !== b.length) return false; let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i); return d === 0 };
 const rvClean = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
 // «ر. ع.» : first letter of the first name and of the last name (one name: one letter)
 const rvInit = v => { const w = String(v || '').replace(/[ً-ٟـ]/g, '').trim().split(/\s+/).filter(Boolean).map(x => [...(/^ال.{2,}/.test(x) ? x.slice(2) : x)][0]); return w.length ? (w.length === 1 ? w[0] + '.' : w[0] + '. ' + w[w.length - 1] + '.') : '' };
@@ -271,7 +273,7 @@ async function reviewAct(req, env, url) {
   if (!env.GH_TOKEN || !env.GH_REPO) return rvPage('غير متاح');
   let k, sig, a = '';
   if (req.method === 'POST') { const f = await req.formData(); k = String(f.get('k') || ''); sig = String(f.get('sig') || ''); a = String(f.get('a') || '') } else { k = url.searchParams.get('k') || ''; sig = url.searchParams.get('sig') || '' }
-  if (!/^[0-9a-f]{12}$/.test(k) || sig !== await rvSig(env, k)) return rvPage('رابط غير صالح');
+  if (!/^[0-9a-f]{12}$/.test(k) || !safeEq(sig, await rvSig(env, k))) return rvPage('رابط غير صالح');
   const f = await ghRead(env, 'reviews.json'), r = f && f.data && Array.isArray(f.data.list) ? f.data.list.find(x => x.k === k) : null;
   if (!r) return rvPage('هذا التقييم لم يعد موجودًا (تمت معالجته).');
   if (req.method !== 'POST') return rvPage(`<h2>${'★'.repeat(r.s)}${'☆'.repeat(5 - r.s)}</h2><p><b>${esc(r.fn || r.n)}</b>${r.fn && r.fn !== r.n ? ' (يظهر: ' + esc(r.n) + ')' : ''}${r.vb ? ' (عميل سابق)' : ''}</p><p>${esc(r.t) || '(بدون تعليق)'}</p><p>الحالة: ${r.st === 'a' ? 'معتمد' : 'بانتظار القرار'}</p><form method="post"><input type="hidden" name="k" value="${k}"><input type="hidden" name="sig" value="${sig}"><button name="a" value="ok" style="padding:12px 22px;font-size:16px">✅ موافقة ونشر</button> <button name="a" value="no" style="padding:12px 22px;font-size:16px">🗑️ رفض وحذف</button></form>`);

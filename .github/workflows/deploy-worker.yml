@@ -8,6 +8,8 @@ on:
     branches: [main]
     paths: ['worker/**', '.github/workflows/deploy-worker.yml']
   workflow_dispatch:
+permissions:
+  contents: read
 concurrency:
   group: deploy-worker
   cancel-in-progress: false
