@@ -1,3 +1,4 @@
+import { newVapid, sendPush } from './push.js';
 // RAX3D payment check. The Moyasar secret key lives here (env.MOYASAR_SECRET), never in the site.
 // POST /confirm  { paymentId, ref, customer:{name,phone,city,address}, cart:[{id,qty,color}] }
 // Re-prices the cart from the live site, asks Moyasar what was really paid, then emails the order.
@@ -27,6 +28,27 @@ async function mail(env, subject, html, extra) {
   });
   return r.ok;
 }
+
+
+// ---- Web Push: «🛒 طلب جديد» on the phones that installed the invoicing app (owner + Ahmed). Keys are generated ONCE and kept in the private data repo
+// (push_vapid.json); the app stores each phone's subscription in push_subs.json. Never throws: a failed push must not break an order.
+async function pushKeys(env) {
+  const cur = await ghRead(env, 'push_vapid.json'); if (cur && cur.data && cur.data.d) return cur.data;
+  const v = await newVapid(); if (await ghCreate(env, 'push_vapid.json', v, 'مفاتيح إشعارات الطلبات')) return v;
+  const again = await ghRead(env, 'push_vapid.json'); return again && again.data;
+}
+async function pushAll(env, text) {
+  try {
+    const [v, s] = await Promise.all([pushKeys(env), ghRead(env, 'push_subs.json')]);
+    const subs = s && Array.isArray(s.data) ? s.data.filter(x => x && x.endpoint && x.keys && x.keys.p256dh && x.keys.auth).slice(0, 10) : [];
+    if (!v || !subs.length) return 0;
+    const subject = 'mailto:' + (env.MAIL_TO || 'rax3d.sa@hotmail.com'), dead = new Set(); let sent = 0;
+    await Promise.all(subs.map(async sub => { try { const r = await sendPush(sub, text, v, subject); if (r.ok) sent++; else if (r.status === 404 || r.status === 410) dead.add(sub.endpoint) } catch (_) {} }));
+    if (dead.size) await ghUpdate(env, 'push_subs.json', [], a => (Array.isArray(a) ? a : []).filter(x => !dead.has(x.endpoint)), 'تنظيف اشتراكات الإشعارات').catch(() => {});
+    return sent;
+  } catch (_) { return 0 }
+}
+const pushOrder = (env, label) => pushAll(env, JSON.stringify({ t: '🛒 طلب جديد من الموقع', b: label, u: 'orders' }));
 
 
 // ---- Cloudflare Turnstile (bot check) for the two public endpoints that can be abused: /cod (fake orders) and /points (balance look-ups).
@@ -493,6 +515,7 @@ async function cod(req, env, out) {
     + `<p>الجوال: <span dir="ltr">${esc(phone)}</span></p><p>الاستلام مباشر: المكان والموعد يُتفق عليهما بالتواصل مع العميل.</p>`
     + `<p>للتسجيل في التطبيق بنفس الرقم، الصق هذه الرسالة في «استيراد الطلب»:</p><pre style="background:#f4f1ea;padding:10px;border-radius:8px;white-space:pre-wrap">${esc(msg)}</pre>`;
   const sent = await mail(env, '🚚 طلب دفع عند الاستلام ' + label, html, orderExtra(env));
+  await pushOrder(env, label);
   return out({ ok: true, num, emailed: sent });
 }
 
@@ -564,6 +587,7 @@ async function customCod(req, env, out) {
   const label = 'ORD-' + num;
   const html = `<p style="font-size:16px"><b>🚚 طلب خاص بالدفع عند الاستلام ${esc(label)}</b><br>الطلب غير مدفوع، تحصّل ${price + fee} ريال عند التسليم.<br>طريقة الاستلام: <b>${mode === 'pickup' ? '🏪 استلام مباشر' : '🚚 توصيل' + (fee ? ' (' + fee + ' ريال)' : '')}</b></p><p>الاسم: ${esc(name)}<br>الجوال: <span dir="ltr">${esc(phone)}</span></p><p>الوصف:<br>${esc(String(c.desc || '')).replace(/\n/g, '<br>')}</p>`;
   const sent = await mail(env, '🚚 طلب خاص (دفع عند الاستلام) ' + label, html, orderExtra(env));
+  await pushOrder(env, label);
   return out({ ok: true, num, price, mode, fee, emailed: sent });
 }
 // called from confirmCore when the payment's metadata carries custom=<id>; the payment is already known to be paid
@@ -590,6 +614,7 @@ async function customPaid(b, p, md, env, out, refuse) {
   const invoice = invoiceHtml({ label, date: riyadhDay(), name, phone, rows: [{ name: 'طلب خاص: ' + String(c.desc || '').slice(0, 120), q: 1, u: price, color: '' }], sub: price, ship: fee, total: price + fee, bank: await bankInfo(env), method: p.source?.type === 'applepay' ? 'Apple Pay' : (p.source?.company ? String(p.source.company).toUpperCase() : 'Card') });
   const html = invoice + `<hr style="margin:26px 0;border:0;border-top:1px dashed #ccc"><p>✅ طلب خاص مدفوع <b>${esc(label)}</b> · ${mode === 'pickup' ? '🏪 استلام مباشر' : '🚚 توصيل'}${logFail ? ' (⚠️ تعذّر إضافة الفاتورة لبرنامج الفواتير، أضفها يدوياً)' : ''}</p><p>الوصف:<br>${esc(String(c.desc || '')).replace(/\n/g, '<br>')}</p><p>الجوال: <span dir="ltr">${esc(phone)}</span></p>`;
   const sent = await mail(env, '✅ طلب خاص مدفوع ' + label, html, orderExtra(env));
+  await pushOrder(env, label);
   return out({ ok: true, num, price, mode, fee, emailed: sent });
 }
 
@@ -597,10 +622,18 @@ async function handle(req, env, ctx) {
   {
     // answer CORS for both the bare domain and www (the origin checks below already accept both)
     const og0 = req.headers.get('Origin'), path = new URL(req.url).pathname;
-    const allow = og0 === 'https://www.rax3d.com' ? og0 : (og0 === APP_ORIGIN && path === '/recovery') ? og0 : SITE;
+    const allow = og0 === 'https://www.rax3d.com' ? og0 : (og0 === APP_ORIGIN && (path === '/recovery' || path === '/push/key' || path === '/push/test')) ? og0 : SITE;
     const cors = { 'Access-Control-Allow-Origin': allow, 'Access-Control-Allow-Headers': 'Content-Type', 'Vary': 'Origin' };
     const out = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+    if (req.method === 'GET' && path === '/push/key') { try { const v = await pushKeys(env); return v ? out({ ok: true, key: v.pub }) : out({ ok: false }, 500) } catch (_) { return out({ ok: false }, 500) } }
+    if (req.method === 'POST' && path === '/push/test') {   // test button of the app: sends a fixed message to ONE already-registered phone, 10/hour overall
+      let b; try { b = await req.json() } catch { return out({ ok: false }, 400) }
+      if (og0 !== APP_ORIGIN) return out({ ok: false }, 403);
+      try { const s = await ghRead(env, 'push_subs.json'), sub = s && Array.isArray(s.data) ? s.data.find(x => x && x.endpoint === b.endpoint) : null; if (!sub) return out({ ok: false, reason: 'unknown' }, 404);
+        if (!(await hourCap(env, 'rl_00000003', 10))) return out({ ok: false, reason: 'limit' }, 429);
+        const v = await pushKeys(env), r = await sendPush(sub, JSON.stringify({ t: '🔔 تجربة الإشعارات', b: 'الإشعارات تعمل على هذا الجوال ✓', u: 'orders' }), v, 'mailto:' + (env.MAIL_TO || 'rax3d.sa@hotmail.com'));
+        return out({ ok: r.ok, status: r.status }) } catch (_) { return out({ ok: false }, 500) } }
     if (req.method === 'POST' && path === '/recovery') return recovery(req, env, out);
     if (req.method === 'POST' && path === '/webhook') return hook(req, env, out, ctx);
     if (req.method === 'POST' && path === '/cod') return cod(req, env, out);
@@ -714,6 +747,7 @@ async function confirmCore(b, env, out, flag) {
     const html = invoice + `<hr style="margin:26px 0;border:0;border-top:1px dashed #ccc"><p>طلب مدفوع <b>${esc(label)}</b>${num ? '' : ' (بدون رقم فاتورة، تعذّر حجز الرقم)'}</p>` + info.replace(esc(b.ref), esc(label)) +
       ((logFail || !num) ? `<p style="color:#b00">⚠️ تعذّر إضافة الفاتورة تلقائيًا لبرنامج الفواتير. الصق الرسالة التالية في التطبيق (استيراد الطلب) عشان تنحفظ بنفس الرقم:</p><pre style="background:#f4f1ea;padding:10px;border-radius:8px;white-space:pre-wrap">${esc(msg)}</pre>` : `<p>✓ الفاتورة دخلت برنامج الفواتير تلقائيًا (تظهر لك أول ما تفتحه).</p>`);
     const sent = await mail(env, '✅ طلب مدفوع ' + label, html, orderExtra(env));
+  await pushOrder(env, label);
     return out({ ok: true, num, emailed: sent });
   }
 }
