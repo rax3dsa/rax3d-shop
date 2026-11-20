@@ -616,9 +616,10 @@ const arTris=o=>{let n=0;o.traverse(x=>{if(x.isMesh&&x.geometry.attributes.posit
 function arLink(){const st=$("#v3dStage"),id=cur&&cur.it.id;let a=$("#arLink");   /* iPhone: a REAL link to the prebuilt ar/<id>.usdz (tools/build-usdz.py): Quick Look opens it from a real tap */
  if(!st||!id||!MODELS[id]||!DIM[id]){if(a)a.remove();return}
  if(!a){a=document.createElement("a");a.id="arLink";a.rel="ar";a.className="arbtn go";const im=document.createElement("img");im.alt="";im.src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";a.appendChild(im);a.appendChild(document.createTextNode(LANG==="en"?"📱 See it in your room":"📱 شوفها في غرفتك"));st.appendChild(a);
-  a.addEventListener("click",e=>{if(navigator.standalone){e.preventDefault();const u=location.origin+"/?p="+cur.it.id+"&ar=1";try{navigator.clipboard&&navigator.clipboard.writeText(u)}catch(_){}toastMsg(LANG==="en"?"AR does not run inside the installed app. Link copied: paste it in the Safari app":"الواقع المعزز لا يعمل داخل البرنامج المحمّل. نسخنا رابط القطعة: الصقه في تطبيق Safari ثم اضغط الزر")}})}
+  }   /* installed home-screen page: the native rel=ar link is left to try (no blocking message) */
  a.href="ar/"+id+".usdz"}
-function paintAR(){const b=$("#arBtn");if(!b)return;
+const AR_ON=false;   /* owner 11-20: «الغي هذا الخيار»: the «شوفها في غرفتك» button is switched off (set true to bring it back; code and ar/*.usdz files are kept) */
+function paintAR(){const b=$("#arBtn");if(!b)return;if(!AR_ON){b.hidden=true;const l=$("#arLink");if(l)l.remove();return}
  if(ARIOS&&!ARX){b.hidden=true;arLink();return}
  b.hidden=!(cur&&MODELS[cur.it.id]&&DIM[cur.it.id]&&V.obj&&V.id===cur.it.id&&ARX)}
 function arScene(){const d=DIM[cur.it.id],real=Math.max(d[0],d[1],d[2])/1000,m=V.obj.clone(true),g=new THREE.Group();g.add(m);g.updateMatrixWorld(true);
@@ -630,7 +631,7 @@ function arWeld(g){const p=g.attributes.position,n=p.count,map=new Map(),pos=[],
 async function arIOS(g){await loadLib("lib/USDZExporter.js");const L=LANG==="en";
  /* Quick Look only works in Safari itself: in-app browsers (Instagram, TikTok, Snapchat...) and a page opened from a home-screen icon silently ignore the AR link */
  {const ua=navigator.userAgent,inApp=/Instagram|FBAN|FBAV|TikTok|musical_ly|Snapchat|Line\/|MicroMessenger|Twitter/i.test(ua),sa=!!navigator.standalone;
-  if(inApp||sa)toastMsg(L?"AR opens only in Safari: open this page from the Safari app (not from Instagram or a home-screen icon)":"الواقع المعزز يفتح من Safari فقط: افتح الصفحة من تطبيق Safari (ليس من داخل انستقرام أو من أيقونة على الشاشة الرئيسية)")}
+  if(inApp)toastMsg(L?"AR opens only in Safari: open this page from the Safari app (not from Instagram or a home-screen icon)":"الواقع المعزز يفتح من Safari فقط: افتح الصفحة من تطبيق Safari (ليس من داخل انستقرام أو من أيقونة على الشاشة الرئيسية)")}
  if(arTris(g)>110000)g.traverse(o=>{if(o.isMesh&&o.geometry.attributes.position&&!o.geometry.index)o.geometry=arWeld(o.geometry)});
  const sc=new THREE.Scene();sc.add(g);sc.updateMatrixWorld(true);const buf=await new THREE.USDZExporter().parse(sc);
  /* iPhone only opens Quick Look from a REAL tap on the link (a click fired after seconds of work is ignored), so show the ready link as a button */
