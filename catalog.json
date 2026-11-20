@@ -1,5 +1,15 @@
 {
   "items": {
+    "wastedcd": {
+      "n": "غطاء PS5 WASTED (بقارئ الأقراص)",
+      "en": "PS5 WASTED Cover (Disc Edition)",
+      "g": 31
+    },
+    "wasteddg": {
+      "n": "غطاء PS5 WASTED (النسخة الرقمية)",
+      "en": "PS5 WASTED Cover (Digital Edition)",
+      "g": 14
+    },
     "glring": {
       "n": "خاتم الفانوس الأخضر",
       "en": "Green Lantern Ring",
