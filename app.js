@@ -12,7 +12,7 @@ const DUCK="تعليقة سيارة أو ديكور طبلون", KS="ميدال�
 /* PRICES:START — generated from the invoicing-app formula (print file weight + time, shared settings). [single, wholesale(=set)] */
 const OLD={};
 /* عروض خاصة: DISTOFF = سعر الحبة المخفّض لشريحة توزيعات {id:{الكمية:سعر الحبة}}. أي قطعة لها سعر قديم في OLD أو عرض في DISTOFF تظهر تلقائيًا في قسم «التخفيضات» وعليها شارة «عرض خاص». */
-const DISTOFF={eidcard:{100:3.85},"eidcard#1":{100:5.00},"eidcard#2":{100:3.85},cool:{100:2.99},redline:{100:2.65},"redline#1":{100:2.70},"redline#2":{100:2.45},"redline#3":{100:4.00}},SALE_CAT="التخفيضات",isSale=id=>!!(OLD[id]||(DISTOFF[id]&&Object.keys(DISTOFF[id]).length));
+const DISTOFF={eidcard:{100:3.85},"eidcard#1":{100:5.00},"eidcard#2":{100:3.85},redline:{100:2.65},"redline#1":{100:2.70},"redline#2":{100:2.45},"redline#3":{100:4.00}},SALE_CAT="التخفيضات",isSale=id=>!!(OLD[id]||(DISTOFF[id]&&Object.keys(DISTOFF[id]).length));
 /* PRICES:END */
 const ITEMS=[
  {id:"eidcard",cat:"التوزيعات",name:"بطاقة العيدية",use:"بطاقة تحمل العيدية بتصميمين لتوزيعات العيد، ابتداءً من 50 حبة",sp:1},
@@ -204,7 +204,7 @@ function catView(c){
    DISTP = per giveaway piece: g = grams, h = print hours per piece. Same formula, margins and floors as tools/dist-price.py and distUnit in the invoicing app:
    cost = (g*0.138 + h*1.15)*1.05 + 0.5; price = max(ceil((cost + 1.2/q)/(0.968 - margin)) to 0.05, floor); days = ceil(q*h/24) + DIST_BUF (prep + packing). A new giveaway only needs its entry here. */
 const DISTX={"redline#3":{50:4.85,100:4.80,500:4.75,1000:4.70}}; /* price overrides per design {id#n:{qty:price}}; redline uses its real plate weights with no floor (nf); design 3 prices are set by the owner by hand (11-15) */
-const DISTP={eidcard:{def:1,v:{1:{g:17.7,h:0.9934},2:{g:12.7,h:0.7834}}},redline:{def:1,nf:1,v:{1:{g:7.80,h:0.5772},2:{g:6.54,h:0.5106},3:{g:13.69,h:0.8611},4:{g:7.67,h:0.5508},5:{g:7.70,h:0.5556}}},cool:{g:2.55,h:0.357}},DIST_T=[[50,25,3.75],[100,20,3.40],[500,15,3.00],[1000,10,2.65]],DIST_BUF=2;
+const DISTP={eidcard:{def:1,v:{1:{g:17.7,h:0.9934},2:{g:12.7,h:0.7834}}},redline:{def:1,nf:1,v:{1:{g:7.80,h:0.5772},2:{g:6.54,h:0.5106},3:{g:13.69,h:0.8611},4:{g:7.67,h:0.5508},5:{g:7.70,h:0.5556}}},cool:{g:2.55,h:0.357}},DIST_T=[[50,25,3.00],[100,20,2.75],[500,15,2.40],[1000,10,2.10]],DIST_BUF=2;
 function distRow(id,q,n){const D=DISTP[id],t=DIST_T.find(x=>x[0]===q);if(!D||!t)return null;if(D.v&&!n)n=D.def||1;const d=D.v?D.v[n]:D;if(!d)return null;const k=D.v?id+"#"+n:id,cost=(d.g*0.138+d.h*1.15)*1.05+0.5,raw=Math.ceil(((cost+1.2/q)/(0.968-t[1]/100))/0.05-1e-9)*0.05,ov=(DISTX[k]||{})[q],p0=ov||Math.round((D.nf?raw:Math.max(raw,t[2]))*100)/100,off=(DISTOFF[k]||DISTOFF[id]||{})[q],p=off||p0;return{q,n,p,tot:Math.round(p*q),days:Math.ceil(q*d.h/24-1e-9)+DIST_BUF,old:off&&off<p0?{p:p0,tot:Math.round(p0*q)}:null}}
 const distNs=id=>DISTP[id]&&DISTP[id].v?Object.keys(DISTP[id].v).map(Number):[],distMin=(id,q)=>distNs(id).length?Math.min(...distNs(id).map(n=>distRow(id,q,n).p)):distRow(id,q).p;
 function distSel(id,n){const pn=$("#dpanel");if(!pn)return;pn.dataset.n=n;pn.innerHTML=distPanel(id,+pn.dataset.q,n);document.querySelectorAll(".dsel button").forEach(b=>b.setAttribute("aria-selected",+b.dataset.dn===n));const x=XIMG[id]&&XIMG[id][n-1],p=$("#pv");if(x&&p){p.src=x;document.querySelectorAll(".xth button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.x===x))}}
