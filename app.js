@@ -206,7 +206,7 @@ const distNs=id=>DISTP[id]&&DISTP[id].v?Object.keys(DISTP[id].v).map(Number):[],
 function distSel(id,n){const pn=$("#dpanel");if(!pn)return;pn.dataset.n=n;pn.innerHTML=distPanel(id,+pn.dataset.q,n);document.querySelectorAll(".dsel button").forEach(b=>b.setAttribute("aria-selected",+b.dataset.dn===n));const x=XIMG[id]&&XIMG[id][n-1],p=$("#pv");if(x&&p){p.src=x;document.querySelectorAll(".xth button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.x===x))}}
 function distDays(n){return LANG==="en"?`About ${n} day${n>1?"s":""}`:`نحو ${n} ${n<=2?(n===1?"يوم":"يومين"):n<=10?"أيام":"يومًا"}`}
 /* giveaway add-ons (owner approved 11-19): ONE is mandatory, 3M adhesive is free and preselected; the price per piece is added to the whole order. Same in the invoicing app's giveaway calculator (DIST_ADD). */
-const DIST_ADD=[["m3","3M adhesive","لاصق 3M",0],["key","Keychain","ميدالية",3],["mag","Magnet","مغناطيس",8],["hand","Hand strap 20 cm","تعليقة يد 20 سم",5],["car","Car strap 40 cm","تعليقة سيارة 40 سم",7]];let DAD="m3";
+const DIST_ADD=[["m3","3M adhesive","لاصق 3M",0],["key","Keychain","ميدالية",3],["mag","Magnet","مغناطيس",5.5],["hand","Hand strap 20 cm","تعليقة يد 20 سم",4],["car","Car strap 40 cm","تعليقة سيارة 40 سم",6]];let DAD="m3";
 const dAdd=()=>(DIST_ADD.find(x=>x[0]===DAD)||DIST_ADD[0]);
 function distPanel(id,q,n){const L=LANG==="en",ns=distNs(id),r0=distRow(id,q,n);if(!r0)return"";const ad=dAdd()[3],r=Object.assign({},r0,{p:r0.p+ad,tot:Math.round((r0.p+ad)*q*100)/100,old:r0.old?{p:r0.old.p+ad,tot:Math.round((r0.old.p+ad)*q*100)/100}:r0.old}),o=r.old,S=L?"SAR":"ريال";
  let h=ns.length?`<div class="dp-row"><span>${L?"Design":"التصميم"}</span><b>${L?"No. ":"رقم "}${r.n}</b></div>`:"";
