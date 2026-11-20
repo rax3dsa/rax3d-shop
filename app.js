@@ -861,16 +861,19 @@ let TRKO="",TRKPEND=0;
 async function trackUI(){const L=LANG==="en",box=document.createElement("div");box.id="trk";box.className="trk";$("#pbody").prepend(box);
  /* a guest (e.g. after scanning the QR on the package in Safari) types the mobile of the order: no account needed; a signed-in customer uses his own mobile */
  const ask=(msg)=>{box.innerHTML=`${msg?`<p class="note">${msg}</p>`:`<p>${L?"Type the mobile number of your order to see its stage"+(TRKO?" (ORD-"+esc(TRKO)+")":"")+".":"اكتب رقم جوال الطلب عشان تشوف مرحلته"+(TRKO?" (ORD-"+esc(TRKO)+")":"")+"."}</p>`}<label class="flab" for="trkPh">${L?"Mobile":"رقم الجوال"}</label><input class="fin" id="trkPh" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="05xxxxxxxx" dir="ltr"><button type="button" class="btn gold" id="trkGo">${L?"Show my order":"اعرض طلبي"}</button>${CUST?"":`<button type="button" class="linkbtn" id="trkLogin">${L?"or sign in":"أو سجّل دخولك"}</button>`}`;
+  try{const v=localStorage.getItem("rax3d_trkph");if(v)$("#trkPh").value=v}catch(_){}
   $("#trkGo").onclick=()=>{const p=normPhone($("#trkPh").value);if(!/^05\d{8}$/.test(p)){$("#trkPh").setAttribute("aria-invalid","true");return}run(p)};
   const lg=$("#trkLogin");if(lg)lg.onclick=()=>{TRKPEND=1;$("#pbg").hidden=true;openAcc()}};
  const run=async(phone)=>{box.innerHTML=pldH(L?"Fetching your orders…":"جاري جلب طلباتك…",1);
   let ts=null;if(PAY.ts){try{ts=await tsToken()}catch(_){box.textContent=L?"Security check failed, try again.":"تعذّر التحقق الأمني، جرّب مرة ثانية.";return}}
   try{const r=await fetch(PAY.api+"/orders",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phone,ts})}),j=await r.json();if(!j.ok)throw 0;const l=j.o;
    if(!l.length||(TRKO&&!l.some(o=>String(o.n)===TRKO))){ask(l.length&&TRKO?(L?"ORD-"+esc(TRKO)+" is not on this mobile. Use the mobile written on the invoice.":"ORD-"+esc(TRKO)+" مو على هذا الجوال. اكتب الجوال المكتوب في الفاتورة."):(L?"No orders found on this mobile yet. Check the number or try the one on the invoice.":"ما لقينا طلبات على هذا الجوال بعد. تأكد من الرقم أو جرّب الجوال المكتوب في الفاتورة."));return}
+   try{if(phone&&!(CUST&&normPhone(CUST.p)===phone))localStorage.setItem("rax3d_trkph",phone)}catch(_){}
    box.innerHTML=`<label class="flab" for="trkSel">${L?"Choose your order":"اختر طلبك"}</label><select class="fin" id="trkSel">${l.map((o,i)=>`<option value="${i}">ORD-${esc(String(o.n))} · ${esc(o.d)}</option>`).join("")}</select><div id="trkOut"></div>`;
    const k=l.findIndex(o=>String(o.n)===TRKO);if(k>=0)$("#trkSel").value=k;TRKO="";const show=()=>{$("#trkOut").innerHTML=trkDetail(l[+$("#trkSel").value])};$("#trkSel").onchange=show;show()}
   catch(_){box.textContent=L?"Could not fetch your orders now, try again.":"تعذّر جلب طلباتك الآن، جرّب مرة ثانية."}};
- if(CUST&&CUST.p)run(normPhone(CUST.p));else ask("")}
+ let sv="";try{sv=localStorage.getItem("rax3d_trkph")||""}catch(_){}
+ if(CUST&&CUST.p)run(normPhone(CUST.p));else if(/^05\d{8}$/.test(sv))run(sv);else ask("")}
 document.addEventListener("click",e=>{const t=e.target.closest("button");if(!t)return;
  if(t.dataset.distask){const it=ITEMS.find(x=>x.id===t.dataset.distask),L=LANG==="en";copyText(L?`Hello RAX3D 👋\n\nI'd like to order giveaways:\n\n* Piece: ${tr(it.name)}\n${$("#dpanel")&&+$("#dpanel").dataset.n?`* Design no.: ${$("#dpanel").dataset.n}\n`:""}* Add-on: ${dAdd()[1]}\n* Quantity (50 or more): ${$("#dpanel")?$("#dpanel").dataset.q:""}\n* Occasion / date: `:`مرحبًا RAX3D 👋\n\nأرغب بطلب توزيعات:\n\n* القطعة: ${it.name}\n${$("#dpanel")&&+$("#dpanel").dataset.n?`* رقم التصميم: ${$("#dpanel").dataset.n}\n`:""}* الإضافة: ${dAdd()[2]}\n* العدد (50 حبة فأكثر): ${$("#dpanel")?$("#dpanel").dataset.q:""}\n* المناسبة وموعدها: `);pickChannel(false);$("#cnote").textContent=L?"Your request message is copied — paste it in the chat. On TikTok open our profile and tap Message.":"نسخنا رسالة طلبك، الصقها في المحادثة. في تيك توك ادخل حسابنا واضغط رسالة.";return}
  if(t.dataset.edit){go({v:"edit",id:t.dataset.edit});return}
