@@ -618,7 +618,8 @@ function arLink(){const st=$("#v3dStage"),id=cur&&cur.it.id;let a=$("#arLink"); 
  if(!a){a=document.createElement("a");a.id="arLink";a.rel="ar";a.className="arbtn go";const im=document.createElement("img");im.alt="";im.src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";a.appendChild(im);a.appendChild(document.createTextNode(LANG==="en"?"📱 See it in your room":"📱 شوفها في غرفتك"));st.appendChild(a);
   }   /* installed home-screen page: the native rel=ar link is left to try (no blocking message) */
  a.href="ar/"+id+".usdz"}
-function paintAR(){const b=$("#arBtn");if(!b)return;
+const AR_ON=false;   /* owner 11-20: «الغي هذا الخيار»: the «شوفها في غرفتك» button is switched off (set true to bring it back; code and ar/*.usdz files are kept) */
+function paintAR(){const b=$("#arBtn");if(!b)return;if(!AR_ON){b.hidden=true;const l=$("#arLink");if(l)l.remove();return}
  if(ARIOS&&!ARX){b.hidden=true;arLink();return}
  b.hidden=!(cur&&MODELS[cur.it.id]&&DIM[cur.it.id]&&V.obj&&V.id===cur.it.id&&ARX)}
 function arScene(){const d=DIM[cur.it.id],real=Math.max(d[0],d[1],d[2])/1000,m=V.obj.clone(true),g=new THREE.Group();g.add(m);g.updateMatrixWorld(true);
