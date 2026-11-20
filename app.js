@@ -610,7 +610,7 @@ function nmDraw(){const cv=$("#nmCv");if(!cv)return;const g=cv.getContext("2d"),
 document.addEventListener("input",e=>{if(e.target&&e.target.id==="nmIn")nmDraw()});
 /* ---------- AR «شوفها في غرفتك»: iPhone = Quick Look (USDZ built on the phone, lib/USDZExporter.js loaded only on tap), Android Chrome = WebXR hit-test.
    The piece is shown in the colour on screen at its REAL size (DIM, mm). The button stays hidden where AR is not supported. ---------- */
-const ARIOS=(()=>{try{return(/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1))&&document.createElement("a").relList.supports("ar")}catch(_){return false}})();
+const ARIOS=(()=>{try{return/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)}catch(_){return false}})();   /* iOS = any iPhone/iPad: relList.supports("ar") is false in Safari proper on some versions, which hid the button */
 let ARX=false;try{if(navigator.xr&&navigator.xr.isSessionSupported)navigator.xr.isSessionSupported("immersive-ar").then(v=>{ARX=!!v;paintAR()}).catch(()=>{})}catch(_){}
 const arTris=o=>{let n=0;o.traverse(x=>{if(x.isMesh&&x.geometry.attributes.position)n+=x.geometry.attributes.position.count/3});return n};   /* USDZ is plain text per triangle (about 260 bytes each): keep iPhone files under about 30 MB */
 function arLink(){const st=$("#v3dStage"),id=cur&&cur.it.id;let a=$("#arLink");   /* iPhone: a REAL link to the prebuilt ar/<id>.usdz (tools/build-usdz.py): Quick Look opens it from a real tap */
