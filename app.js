@@ -12,7 +12,7 @@ const DUCK="تعليقة سيارة أو ديكور طبلون", KS="ميدال�
 /* PRICES:START — generated from the invoicing-app formula (print file weight + time, shared settings). [single, wholesale(=set)] */
 const OLD={};
 /* عروض خاصة: DISTOFF = سعر الحبة المخفّض لشريحة توزيعات {id:{الكمية:سعر الحبة}}. أي قطعة لها سعر قديم في OLD أو عرض في DISTOFF تظهر تلقائيًا في قسم «التخفيضات» وعليها شارة «عرض خاص». */
-const DISTOFF={cool:{100:2.99},redline:{100:2.65},"redline#1":{100:2.70},"redline#2":{100:2.45},"redline#3":{100:4.00}},SALE_CAT="التخفيضات",isSale=id=>!!(OLD[id]||(DISTOFF[id]&&Object.keys(DISTOFF[id]).length));
+const DISTOFF={eidcard:{100:3.85},"eidcard#1":{100:5.00},"eidcard#2":{100:3.85},cool:{100:2.99},redline:{100:2.65},"redline#1":{100:2.70},"redline#2":{100:2.45},"redline#3":{100:4.00}},SALE_CAT="التخفيضات",isSale=id=>!!(OLD[id]||(DISTOFF[id]&&Object.keys(DISTOFF[id]).length));
 /* PRICES:END */
 const ITEMS=[
  {id:"eidcard",cat:"التوزيعات",name:"بطاقة العيدية",use:"بطاقة تحمل العيدية بتصميمين لتوزيعات العيد، ابتداءً من 50 حبة",sp:1},
