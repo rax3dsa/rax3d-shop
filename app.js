@@ -601,7 +601,7 @@ function quoteUI(){const L=LANG==="en",f=$("#qtF"),out=$("#qt");if(!f||!out)retu
   catch(e){out.innerHTML=`<p class="note err">${L?"We could not read this file. Make sure it is a valid STL or 3MF.":"ما قدرنا نقرأ الملف. تأكد أنه STL أو 3MF سليم."}</p>`}}}
 /* ---------- «حرف باسمك»: live preview of the typed name (letter + script name) and an automatic order note. 2D approximation: the real piece is printed in 3D with the customer's letter and name. ---------- */
 const nmShade=(h,k)=>{const n=parseInt(h.slice(1),16),f=c=>Math.max(0,Math.min(255,Math.round(c*(1+k))));return "rgb("+f(n>>16&255)+","+f(n>>8&255)+","+f(n&255)+")"};
-const NMFONTS=[["Lily Script One","خط 1"],["Grand Hotel","خط 2"],["Yesteryear","خط 3"],["Kaushan Script","خط 4"]];let NMF=0,NMH=1,NMFL=1;
+const NMFONTS=[["Lily Script One","خط 1"],["Grand Hotel","خط 2"],["Pacifico","خط 3"],["Lobster Two","خط 4"]];let NMF=0,NMH=1,NMFL=1;
 function nmFam(){return "'"+NMFONTS[NMF][0]+"',cursive"}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-nmf]");if(!b)return;NMF=+b.dataset.nmf;document.querySelectorAll("[data-nmf]").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));document.fonts.load("96px '"+NMFONTS[NMF][0]+"'").then(nmDraw)});
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-nmc]");if(!b)return;const k=b.dataset.nmc,i=+b.dataset.i;if(k==="h")NMH=i;else NMFL=i;document.querySelectorAll('[data-nmc="'+k+'"]').forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));nmDraw()});
