@@ -348,7 +348,7 @@ function open3D_(){
    const keep=(m.keep||[]).some(k=>name.includes(k.toLowerCase()));
    const old=o.material&&o.material.color?o.material.color.clone():new THREE.Color(0xffffff);
    o.material=new THREE.MeshStandardMaterial({color:old,roughness:0.5,metalness:0.0,envMapIntensity:(V.LI&&V.env?V.LI.e:0.45),side:THREE.DoubleSide,vertexColors:!!(o.geometry.attributes.color&&keep)});
-   if(m.two&&name==="shade")V.tint2.push(o.material);else if(!keep)V.tint.push(o.material);if(keep&&!(m.two&&name==="shade"))V.parts.push({mat:o.material,orig:old.clone(),vc:o.material.vertexColors})});
+   if(m.two&&name==="shade")V.tint2.push(o.material);else if(!keep)V.tint.push(o.material);if(keep&&!(m.two&&name==="shade"))V.parts.push({mat:o.material,orig:old.clone(),vc:o.material.vertexColors,nm:name})});
   if(!V.tint.length)obj.traverse(o=>{if(o.isMesh)V.tint.push(o.material)});
   obj.rotation.x=m.up?0:-Math.PI/2;if(m.rotZ)obj.rotation.z=m.rotZ;/* print files are Z-up */
   const box=new THREE.Box3().setFromObject(obj),c=box.getCenter(new THREE.Vector3()),s=box.getSize(new THREE.Vector3());
@@ -405,8 +405,9 @@ const PNAMES=[...new Set(Object.values(PN).flat().map(x=>x[0]))];
 const partsTxt=()=>{const o=cur.pc||{},ks=Object.keys(o).filter(k=>o[k]);return ks.length?" · "+ks.map(k=>pname(+k)+": "+COLORS[o[k]][0]).join(" · "):""};
 const ctxt=()=>COLORS[cur.color][0]+""+partsTxt();
 /* part colours: models with extra parts (eyes, text, logo...) get a tab per part. Default = same colour as the main one; the customer may pick any of the colours. */
+function ltrHex(nm){if(!cur||cur.it.id!=="ltr"||!nm)return null;const i=nm.includes("hearts")?NMH:nm.includes("flower")?NMFL:0;return i?COLORS[i][1]:null}
 function applyParts(){V.act=performance.now();if(!cur||!V.parts||V.id!==cur.it.id)return;const pc=cur.pc||{};
- V.parts.forEach((p,k)=>{const hex=pc[k]?COLORS[pc[k]][1]:null;
+ V.parts.forEach((p,k)=>{const hex=pc[k]?COLORS[pc[k]][1]:ltrHex(p.nm);
   if(hex){p.mat.color.copy(new THREE.Color(hex).convertSRGBToLinear());if(p.mat.vertexColors){p.mat.vertexColors=false;p.mat.needsUpdate=true}}
   else{p.mat.color.copy(p.orig);if(p.mat.vertexColors!==p.vc){p.mat.vertexColors=p.vc;p.mat.needsUpdate=true}}})}
 const FIXED_PARTS=new Set(["snoopy"]); /* parts that keep their colour; only the main mesh changes */
@@ -604,16 +605,18 @@ const nmShade=(h,k)=>{const n=parseInt(h.slice(1),16),f=c=>Math.max(0,Math.min(2
 const NMFONTS=[["Lily Script One","خط 1"],["Grand Hotel","خط 2"],["Pacifico","خط 3"],["Lobster Two","خط 4"]];let NMF=0,NMH=1,NMFL=1;
 function nmFam(){return "'"+NMFONTS[NMF][0]+"',cursive"}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-nmf]");if(!b)return;NMF=+b.dataset.nmf;document.querySelectorAll("[data-nmf]").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));document.fonts.load("96px '"+NMFONTS[NMF][0]+"'").then(nmDraw)});
-document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-nmc]");if(!b)return;const k=b.dataset.nmc,i=+b.dataset.i;if(k==="h")NMH=i;else NMFL=i;document.querySelectorAll('[data-nmc="'+k+'"]').forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));nmDraw()});
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-nmc]");if(!b)return;const k=b.dataset.nmc,i=+b.dataset.i;if(k==="h")NMH=i;else NMFL=i;if(window.THREE&&V.obj&&V.id==="ltr")applyParts();document.querySelectorAll('[data-nmc="'+k+'"]').forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));nmDraw()});
 function nmSw(k,cur){const L=LANG==="en";return `<span class="lbl">${k==="h"?(L?"Heart colour":"لون القلب"):(L?"Flower colour":"لون الوردة")}</span><div class="nmf nmc" role="group">${COLORS.slice(1).map((c,j)=>`<button type="button" class="nsw" data-nmc="${k}" data-i="${j+1}" aria-pressed="${j+1===cur}" aria-label="${c[0]}" title="${c[0]}" style="background:${c[1]}"></button>`).join("")}</div>`}
 function nmCard(){const L=LANG==="en";return `<div class="opt nm" id="nmBox"><span class="lbl">${L?"Type your name and see it":"اكتب اسمك وشوفه"}</span><input class="fin" id="nmIn" maxlength="18" autocomplete="off" placeholder="${L?"Your name":"اسمك"}"><span class="lbl">${L?"Font":"نوع الخط"}</span><div class="nmf" role="group">${NMFONTS.map((f,i)=>`<button type="button" data-nmf="${i}" aria-pressed="${i===NMF}" style="font-family:'${f[0]}',cursive">${L?"Name":"Abeer"}</button>`).join("")}</div>${nmSw("h",NMH)}${nmSw("f",NMFL)}<canvas id="nmCv" width="640" height="480" aria-label="${L?"Preview":"معاينة"}"></canvas><p class="note">${L?"Preview in the chosen font. The real piece is printed in 3D with your letter and name in a similar brush script.":"المعاينة بالخط المختار. القطعة الفعلية تنطبع 3D بحرفك واسمك بخط مشابه (قد تختلف التفاصيل قليلًا)."}</p></div>`}
+function nmHeart(g,x,y,s){g.beginPath();g.moveTo(x,y+s*.9);g.bezierCurveTo(x-s*1.6,y-s*.1,x-s*.7,y-s*1.2,x,y-s*.45);g.bezierCurveTo(x+s*.7,y-s*1.2,x+s*1.6,y-s*.1,x,y+s*.9);g.fill()}
+function nmFlower(g,x,y,r){for(let k=0;k<5;k++){const t=k*Math.PI*2/5-Math.PI/2;g.beginPath();g.arc(x+Math.cos(t)*r*.62,y+Math.sin(t)*r*.62,r*.5,0,7);g.fill()}g.save();g.shadowColor="transparent";g.fillStyle="rgba(0,0,0,.18)";g.beginPath();g.arc(x,y,r*.22,0,7);g.fill();g.restore()}
 function nmDraw(){const cv=$("#nmCv");if(!cv)return;const g=cv.getContext("2d"),W=cv.width,H=cv.height,nm=($("#nmIn").value||"").trim().slice(0,18);
  const bg=g.createLinearGradient(0,0,0,H);bg.addColorStop(0,"#ead9bf");bg.addColorStop(1,"#d7c4ab");g.fillStyle=bg;g.fillRect(0,0,W,H);
  const col=(cur&&COLORS[cur.color]&&COLORS[cur.color][1])||"#e8719f",ch=nm?[...nm][0].toUpperCase():"A";
  g.textAlign="center";g.textBaseline="alphabetic";g.font="800 290px 'Readex Pro','IBM Plex Sans Arabic',sans-serif";
  for(let k=22;k>0;k--){g.fillStyle=nmShade(col,-0.38);g.fillText(ch,W/2-70+k*1.1,255+k*1.1)}   /* depth */
  g.fillStyle=col;g.fillText(ch,W/2-70,255);
- g.fillStyle=COLORS[NMH][1];g.shadowColor="rgba(0,0,0,.25)";g.shadowBlur=8;g.shadowOffsetY=3;g.font="700 64px 'IBM Plex Sans Arabic',sans-serif";g.fillText("♥",W-150,130);g.font="700 44px 'IBM Plex Sans Arabic',sans-serif";g.fillText("♥",W-90,185);g.fillStyle=COLORS[NMFL][1];g.font="700 60px sans-serif";g.fillText("✿",W-205,215);
+ g.shadowColor="rgba(0,0,0,.25)";g.shadowBlur=8;g.shadowOffsetY=3;g.fillStyle=COLORS[NMH][1];nmHeart(g,W-150,112,34);nmHeart(g,W-90,170,24);g.fillStyle=COLORS[NMFL][1];nmFlower(g,W-205,198,26);
  let fs=96;g.font=fs+"px "+nmFam();
  const txt=nm||(LANG==="en"?"Your name":"اسمك");let w=g.measureText(txt).width;if(w>W*.86){fs=Math.floor(fs*W*.86/w);g.font=fs+"px "+nmFam()}
  g.fillStyle="#fff";g.shadowColor="rgba(0,0,0,.32)";g.shadowBlur=10;g.shadowOffsetY=4;g.fillText(txt,W/2,448);g.shadowColor="transparent";

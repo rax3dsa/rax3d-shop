@@ -1,1 +1,1 @@
-{"type":"mesh","scale":0.01,"fmt":"dv1","bin":"models/ltr.bin","nv":28392,"ni":[34374,149070],"hasKeep":false,"keeps":[{"color":"#f6f4f0"}]}
+{"type":"mesh","scale":0.01,"fmt":"dv1","bin":"models/ltr.bin","nv":28392,"ni":[34374,62454,25272,61344],"hasKeep":false,"keeps":[{"color":"#f6f4f0","name":"keep-name"},{"color":"#f6f4f0","name":"keep-flower"},{"color":"#f6f4f0","name":"keep-hearts"}]}
