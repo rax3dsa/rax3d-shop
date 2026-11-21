@@ -353,7 +353,7 @@ function open3D_(){
   obj.rotation.x=m.up?0:-Math.PI/2;if(m.rotZ)obj.rotation.z=m.rotZ;/* print files are Z-up */
   const box=new THREE.Box3().setFromObject(obj),c=box.getCenter(new THREE.Vector3()),s=box.getSize(new THREE.Vector3());
   obj.position.sub(c);obj.position.y+=s.y*0.0;const d=Math.max(s.x,s.y,s.z);
-  V.scene.add(obj);obj.updateMatrixWorld(true);V.t0=performance.now();V.controls.autoRotate=true;V.act=V.t0;
+  V.nmMesh=null;V.scene.add(obj);obj.updateMatrixWorld(true);if(V.id==="ltr")setTimeout(nmDraw,0);V.t0=performance.now();V.controls.autoRotate=true;V.act=V.t0;
   {const cv=document.createElement("canvas");cv.width=cv.height=128;const g=cv.getContext("2d"),gr=g.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,"rgba(0,0,0,.34)");gr.addColorStop(.55,"rgba(0,0,0,.14)");gr.addColorStop(1,"rgba(0,0,0,0)");g.fillStyle=gr;g.fillRect(0,0,128,128);
    const tx=new THREE.CanvasTexture(cv),sh=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:tx,transparent:true,depthWrite:false}));
    const r=Math.max(s.x,s.z)*1.5;sh.scale.set(r,r,1);sh.rotation.x=-Math.PI/2;sh.position.y=-s.y/2-d*0.002;sh.renderOrder=-1;V.scene.add(sh);V.shadow=sh}
@@ -607,10 +607,20 @@ function nmFam(){return "'"+NMFONTS[NMF][0]+"',cursive"}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-nmf]");if(!b)return;NMF=+b.dataset.nmf;document.querySelectorAll("[data-nmf]").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));document.fonts.load("96px '"+NMFONTS[NMF][0]+"'").then(nmDraw)});
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-nmc]");if(!b)return;const k=b.dataset.nmc,i=+b.dataset.i;if(k==="h")NMH=i;else NMFL=i;if(window.THREE&&V.obj&&V.id==="ltr")applyParts();document.querySelectorAll('[data-nmc="'+k+'"]').forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));nmDraw()});
 function nmSw(k,cur){const L=LANG==="en";return `<span class="lbl">${k==="h"?(L?"Heart colour":"لون القلب"):(L?"Flower colour":"لون الوردة")}</span><div class="nmf nmc" role="group">${COLORS.slice(1).map((c,j)=>`<button type="button" class="nsw" data-nmc="${k}" data-i="${j+1}" aria-pressed="${j+1===cur}" aria-label="${c[0]}" title="${c[0]}" style="background:${c[1]}"></button>`).join("")}</div>`}
-function nmCard(){const L=LANG==="en";return `<div class="opt nm" id="nmBox"><span class="lbl">${L?"Type your name and see it":"اكتب اسمك وشوفه"}</span><input class="fin" id="nmIn" maxlength="18" autocomplete="off" placeholder="${L?"Your name":"اسمك"}"><span class="lbl">${L?"Font":"نوع الخط"}</span><div class="nmf" role="group">${NMFONTS.map((f,i)=>`<button type="button" data-nmf="${i}" aria-pressed="${i===NMF}" style="font-family:'${f[0]}',cursive">${L?"Name":"Abeer"}</button>`).join("")}</div>${nmSw("h",NMH)}${nmSw("f",NMFL)}<canvas id="nmCv" width="640" height="480" aria-label="${L?"Preview":"معاينة"}"></canvas><p class="note">${L?"Preview in the chosen font. The real piece is printed in 3D with your letter and name in a similar brush script.":"المعاينة بالخط المختار. القطعة الفعلية تنطبع 3D بحرفك واسمك بخط مشابه (قد تختلف التفاصيل قليلًا)."}</p></div>`}
+function nmCard(){const L=LANG==="en";return `<div class="opt nm" id="nmBox"><span class="lbl">${L?"Type your name and see it":"اكتب اسمك وشوفه"}</span><input class="fin" id="nmIn" maxlength="18" autocomplete="off" placeholder="${L?"Your name":"اسمك"}"><span class="lbl">${L?"Font":"نوع الخط"}</span><div class="nmf" role="group">${NMFONTS.map((f,i)=>`<button type="button" data-nmf="${i}" aria-pressed="${i===NMF}" style="font-family:'${f[0]}',cursive">${L?"Name":"Abeer"}</button>`).join("")}</div>${nmSw("h",NMH)}${nmSw("f",NMFL)}<p class="note">${L?"Your name, font and colours show on the 3D piece above (turn it with your finger). The real print uses a similar brush script and details may differ slightly.":"الاسم والخط والألوان تظهر على المجسم أعلاه (لف القطعة بإصبعك). الطباعة الفعلية بحرفك واسمك بخط مشابه وقد تختلف التفاصيل قليلًا."}</p></div>`}
+function nmPlane(){   /* the typed name as a flat plate on the 3D piece (replaces the model's fixed name) */
+ if(!window.THREE||!V.obj||V.id!=="ltr"||!$("#nmIn"))return;
+ const nm=($("#nmIn").value||"").trim().slice(0,18)||"Abeer",c=V.nmCv||(V.nmCv=Object.assign(document.createElement("canvas"),{width:1024,height:456})),g=c.getContext("2d");
+ g.clearRect(0,0,c.width,c.height);let fs=330;g.font=fs+"px "+nmFam();let w=g.measureText(nm).width;if(w>c.width*.94){fs=Math.floor(fs*c.width*.94/w);g.font=fs+"px "+nmFam()}
+ g.textAlign="center";g.textBaseline="middle";g.fillStyle="#f6f4f0";g.fillText(nm,c.width/2,c.height/2);
+ if(!V.nmMesh){const tx=new THREE.CanvasTexture(c);tx.anisotropy=4;V.nmTex=tx;const geo=new THREE.PlaneGeometry(129,57.4);geo.rotateX(Math.PI/2);
+  V.nmMesh=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({map:tx,transparent:true,side:THREE.DoubleSide,depthWrite:false}));V.nmMesh.position.set(80.8,3.9,53.1);V.nmMesh.renderOrder=5;V.obj.add(V.nmMesh);
+  V.obj.traverse(o=>{if(o.isMesh&&(o.name||"").includes("keep-name"))o.visible=false})}
+ V.nmTex.needsUpdate=true;V.act=performance.now()}
 function nmHeart(g,x,y,s){g.beginPath();g.moveTo(x,y+s*.9);g.bezierCurveTo(x-s*1.6,y-s*.1,x-s*.7,y-s*1.2,x,y-s*.45);g.bezierCurveTo(x+s*.7,y-s*1.2,x+s*1.6,y-s*.1,x,y+s*.9);g.fill()}
 function nmFlower(g,x,y,r){for(let k=0;k<5;k++){const t=k*Math.PI*2/5-Math.PI/2;g.beginPath();g.arc(x+Math.cos(t)*r*.62,y+Math.sin(t)*r*.62,r*.5,0,7);g.fill()}g.save();g.shadowColor="transparent";g.fillStyle="rgba(0,0,0,.18)";g.beginPath();g.arc(x,y,r*.22,0,7);g.fill();g.restore()}
-function nmDraw(){const cv=$("#nmCv");if(!cv)return;const g=cv.getContext("2d"),W=cv.width,H=cv.height,nm=($("#nmIn").value||"").trim().slice(0,18);
+let NMOFF=null;
+function nmDraw(){if(!$("#nmIn"))return;const cv=$("#nmCv")||NMOFF||(NMOFF=Object.assign(document.createElement("canvas"),{width:640,height:480}));const g=cv.getContext("2d"),W=cv.width,H=cv.height,nm=($("#nmIn").value||"").trim().slice(0,18);
  const bg=g.createLinearGradient(0,0,0,H);bg.addColorStop(0,"#ead9bf");bg.addColorStop(1,"#d7c4ab");g.fillStyle=bg;g.fillRect(0,0,W,H);
  const col=(cur&&COLORS[cur.color]&&COLORS[cur.color][1])||"#e8719f",ch=nm?[...nm][0].toUpperCase():"A";
  g.textAlign="center";g.textBaseline="alphabetic";g.font="800 290px 'Readex Pro','IBM Plex Sans Arabic',sans-serif";
@@ -620,6 +630,7 @@ function nmDraw(){const cv=$("#nmCv");if(!cv)return;const g=cv.getContext("2d"),
  let fs=96;g.font=fs+"px "+nmFam();
  const txt=nm||(LANG==="en"?"Your name":"اسمك");let w=g.measureText(txt).width;if(w>W*.86){fs=Math.floor(fs*W*.86/w);g.font=fs+"px "+nmFam()}
  g.fillStyle="#fff";g.shadowColor="rgba(0,0,0,.32)";g.shadowBlur=10;g.shadowOffsetY=4;g.fillText(txt,W/2,448);g.shadowColor="transparent";
+ nmPlane();
  if(cur){const t=nm?(LANG==="en"?"Letter: ":"الحرف: ")+ch+(LANG==="en"?" · Name: ":" — الاسم: ")+nm+(LANG==="en"?" · Font: ":" — الخط: ")+NMFONTS[NMF][0]+(LANG==="en"?" · Heart: ":" — القلب: ")+COLORS[NMH][0]+(LANG==="en"?" · Flower: ":" — الوردة: ")+COLORS[NMFL][0]:"";
   if(!cur.note||cur.note===cur.nmAuto){cur.nmAuto=t;cur.note=t;const n=$("#note");if(n){n.value=t;$("#cnt")&&($("#cnt").textContent=t.length)}if(t&&!cur.other){cur.other=true;const ob=$("#otherBox");if(ob)ob.hidden=false;const bt=$("#otherBtn");if(bt){bt.setAttribute("aria-expanded","true");const s=bt.querySelector("span");if(s)s.textContent="−"}}}}}
 document.addEventListener("input",e=>{if(e.target&&e.target.id==="nmIn")nmDraw()});
