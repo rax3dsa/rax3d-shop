@@ -196,9 +196,19 @@
       "g": 85
     },
     "drip": {
-      "n": "أومني دريبر 2 (نيقوشيتر) xBloom Studio",
+      "n": "أومني دريبر (نيقوشيتر) xBloom Studio (تصميم 1)",
       "g": 39,
-      "en": "Omni Dripper 2 (Negociator) xBloom Studio"
+      "en": "Omni Dripper (Negociator) xBloom Studio (Design 1)"
+    },
+    "dripl": {
+      "n": "أومني دريبر (نيقوشيتر) xBloom Studio (تصميم 2)",
+      "g": 35.6,
+      "en": "Omni Dripper (Negociator) xBloom Studio (Design 2)"
+    },
+    "dletters": {
+      "n": "إضافة كتابة حروف على الأومني دريبر",
+      "g": 0,
+      "en": "Letters on top of the Omni Dripper"
     },
     "knobs": {
       "n": "طقم 3 مقابض ريترو xBloom Studio",
