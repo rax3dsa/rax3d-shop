@@ -637,7 +637,7 @@ async function handle(req, env, ctx) {
     if (req.method === 'POST' && path === '/push/notify') {   // app-to-app alerts with FIXED texts only: partner -> owner (new invoice / shopping-list item), owner -> partner (shopping done). The caller must be a registered phone (its unguessable endpoint), 60/hour overall
       let b; try { b = await req.json() } catch { return out({ ok: false }, 400) }
       if (og0 !== APP_ORIGIN) return out({ ok: false }, 403);
-      const M = { inv: ['🧾 فاتورة جديدة', 'أضاف مدخل البيانات فاتورة جديدة', 'orders', 'p'], sl: ['🛒 قائمة الشراء', 'أضاف مدخل البيانات صنفًا جديدًا للقائمة', 'buys', 'p'], bought: ['✅ تم الشراء', 'أنهى المالك شراء المطلوب من قائمة الشراء', 'buys', 'a'] }, m = M[b.kind];
+      const M = { inv: ['🧾 فاتورة جديدة', 'أضاف مدخل البيانات فاتورة جديدة', 'orders', 'p'], sl: ['🛒 قائمة الشراء', 'أضاف مدخل البيانات صنفًا جديدًا للقائمة', 'buys', 'p'], stk: ['🧵 الجرد', 'صنف جديد مطلوب شراؤه من الجرد', 'buys', 'p'], bought: ['✅ تم الشراء', 'أنهى المالك شراء المطلوب من قائمة الشراء', 'buys', 'a'] }, m = M[b.kind];
       if (!m) return out({ ok: false, reason: 'kind' }, 400);
       try { const s = await ghRead(env, 'push_subs.json'), me = s && Array.isArray(s.data) ? s.data.find(x => x && x.endpoint === b.endpoint) : null; if (!me) return out({ ok: false, reason: 'unknown' }, 404);
         if ((me.who === 'partner') !== (m[3] === 'p')) return out({ ok: false, reason: 'role' }, 403);
