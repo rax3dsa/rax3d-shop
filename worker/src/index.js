@@ -37,10 +37,10 @@ async function pushKeys(env) {
   const v = await newVapid(); if (await ghCreate(env, 'push_vapid.json', v, 'مفاتيح إشعارات الطلبات')) return v;
   const again = await ghRead(env, 'push_vapid.json'); return again && again.data;
 }
-async function pushAll(env, text) {
+async function pushAll(env, text, pick) {
   try {
     const [v, s] = await Promise.all([pushKeys(env), ghRead(env, 'push_subs.json')]);
-    const subs = s && Array.isArray(s.data) ? s.data.filter(x => x && x.endpoint && x.keys && x.keys.p256dh && x.keys.auth).slice(0, 10) : [];
+    const subs = s && Array.isArray(s.data) ? s.data.filter(x => x && x.endpoint && x.keys && x.keys.p256dh && x.keys.auth).filter(x => !pick || pick(x)).slice(0, 10) : [];
     if (!v || !subs.length) return 0;
     const subject = 'mailto:' + (env.MAIL_TO || 'rax3d.sa@hotmail.com'), dead = new Set(); let sent = 0;
     await Promise.all(subs.map(async sub => { try { const r = await sendPush(sub, text, v, subject); if (r.ok) sent++; else if (r.status === 404 || r.status === 410) dead.add(sub.endpoint) } catch (_) {} }));
@@ -622,7 +622,7 @@ async function handle(req, env, ctx) {
   {
     // answer CORS for both the bare domain and www (the origin checks below already accept both)
     const og0 = req.headers.get('Origin'), path = new URL(req.url).pathname;
-    const allow = og0 === 'https://www.rax3d.com' ? og0 : (og0 === APP_ORIGIN && (path === '/recovery' || path === '/push/key' || path === '/push/test')) ? og0 : SITE;
+    const allow = og0 === 'https://www.rax3d.com' ? og0 : (og0 === APP_ORIGIN && (path === '/recovery' || path === '/push/key' || path === '/push/test' || path === '/push/notify')) ? og0 : SITE;
     const cors = { 'Access-Control-Allow-Origin': allow, 'Access-Control-Allow-Headers': 'Content-Type', 'Vary': 'Origin' };
     const out = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
@@ -634,6 +634,16 @@ async function handle(req, env, ctx) {
         if (!(await hourCap(env, 'rl_00000003', 10))) return out({ ok: false, reason: 'limit' }, 429);
         const v = await pushKeys(env), r = await sendPush(sub, JSON.stringify({ t: '🔔 تجربة الإشعارات', b: 'الإشعارات تعمل على هذا الجوال ✓', u: 'orders' }), v, 'mailto:' + (env.MAIL_TO || 'rax3d.sa@hotmail.com'));
         return out({ ok: r.ok, status: r.status }) } catch (_) { return out({ ok: false }, 500) } }
+    if (req.method === 'POST' && path === '/push/notify') {   // app-to-app alerts with FIXED texts only: partner -> owner (new invoice / shopping-list item), owner -> partner (shopping done). The caller must be a registered phone (its unguessable endpoint), 60/hour overall
+      let b; try { b = await req.json() } catch { return out({ ok: false }, 400) }
+      if (og0 !== APP_ORIGIN) return out({ ok: false }, 403);
+      const M = { inv: ['🧾 فاتورة جديدة', 'أضاف مدخل البيانات فاتورة جديدة', 'orders', 'p'], sl: ['🛒 قائمة الشراء', 'أضاف مدخل البيانات صنفًا جديدًا للقائمة', 'buys', 'p'], bought: ['✅ تم الشراء', 'أنهى المالك شراء المطلوب من قائمة الشراء', 'buys', 'a'] }, m = M[b.kind];
+      if (!m) return out({ ok: false, reason: 'kind' }, 400);
+      try { const s = await ghRead(env, 'push_subs.json'), me = s && Array.isArray(s.data) ? s.data.find(x => x && x.endpoint === b.endpoint) : null; if (!me) return out({ ok: false, reason: 'unknown' }, 404);
+        if ((me.who === 'partner') !== (m[3] === 'p')) return out({ ok: false, reason: 'role' }, 403);
+        if (!(await hourCap(env, 'rl_00000004', 60))) return out({ ok: false, reason: 'limit' }, 429);
+        const n = await pushAll(env, JSON.stringify({ t: m[0], b: m[1], u: m[2] }), x => (x.who === 'partner') !== (m[3] === 'p'));
+        return out({ ok: true, sent: n }) } catch (_) { return out({ ok: false }, 500) } }
     if (req.method === 'POST' && path === '/recovery') return recovery(req, env, out);
     if (req.method === 'POST' && path === '/webhook') return hook(req, env, out, ctx);
     if (req.method === 'POST' && path === '/cod') return cod(req, env, out);
