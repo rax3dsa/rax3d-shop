@@ -237,7 +237,7 @@ function itemView(id){   /* the piece page: photo + details only. Editing happen
   ${it.sp?"":`<div class="dims"><div class="dims-hd"><b>المقاسات الأصلية</b><button type="button" class="help" id="helpBtn">مم ← سم؟</button></div>
    <div class="axes">${AX.map((a,i)=>`<div class="ax"><span class="k">${a[0]}</span><small>${a[1]}</small><span class="v">${it.d?it.d[i]+" مم":"—"}</span><span class="cm">${it.d?cm(it.d[i])+" سم":"يُضاف قريباً"}</span></div>`).join("")}</div>
    <div class="dims-row"><span>الوزن: ${it.g?`<span class="num">${it.g}</span> غرام`:"يُضاف قريباً"}</span><span>القسم: ${it.cat}</span></div></div>`}
-  </div></div><section class="rev" id="rev" aria-label="التقييمات"></section>${suggestHtml(it)}`;
+  </div></div><section class="rev" id="rev" aria-label="${LANG==="en"?"Reviews":"التقييمات"}"></section>${suggestHtml(it)}`;
 
   renderRev(lead(it).id)}
 function editView(id){   /* customise page: preview (3D when available) + colour, size, quantity, other, then confirm */
@@ -723,7 +723,7 @@ const starsH=a=>`<span class="stars" style="--r:${Math.max(0,Math.min(5,+a||0))}
 function renderRev(id){
   const box=$("#rev");if(!box||!PAY.api)return;
   box.innerHTML=`<h2>تقييمات العملاء</h2><div id="revSum" class="revsum"></div><div id="revList"></div><button type="button" class="btn alt" id="revOpen">✍️ قيّم هذه القطعة</button>
-  <form id="revForm" hidden novalidate><p class="note">${tr("التقييم باسم:")} <b>${CUST?esc(CUST.n):""}</b></p><div class="rstars" role="radiogroup" aria-label="التقييم">${[1,2,3,4,5].map(n=>`<button type="button" role="radio" aria-checked="false" data-rs="${n}" aria-label="${n} من 5">★</button>`).join("")}</div>
+  <form id="revForm" hidden novalidate><p class="note">${tr("التقييم باسم:")} <b>${CUST?esc(CUST.n):""}</b></p><div class="rstars" role="radiogroup" aria-label="${LANG==="en"?"Rating":"التقييم"}">${[1,2,3,4,5].map(n=>`<button type="button" role="radio" aria-checked="false" data-rs="${n}" aria-label="${LANG==="en"?n+" out of 5":n+" من 5"}">★</button>`).join("")}</div>
   <label class="chk"><input type="checkbox" id="rvH"> إخفاء اسمي <small>(يظهر أول حرف من اسمك فقط)</small></label>
   <label>تعليقك <small>(اختياري)</small><textarea id="rvT" maxlength="300" rows="3"></textarea></label>
   <button type="submit" class="btn gold" id="rvGo">أرسل التقييم</button><p class="note" id="rvMsg" role="status"></p></form>`;
