@@ -1117,7 +1117,7 @@ function applyLang(){const en=LANG==="en";document.documentElement.lang=en?"en":
  if(en){trNode(document.body);MO.observe(document.body,{childList:true,subtree:true,characterData:true})}}
 $("#langBtn").onclick=()=>{LANG=LANG==="en"?"ar":"en";try{localStorage.setItem("rax3d_lang",LANG)}catch(_){}
  if(FORCEEN&&LANG==="ar"){const h=hist[hi];location.href=SITE_URL+(h&&(h.v==="item"||h.v==="edit")?"?p="+encodeURIComponent(h.id):"");return}
- if(LANG==="ar"){location.reload();return}applyLang();render(false)};
+ if(LANG==="ar"){try{const h=hist[hi];if(h&&(h.v==="item"||h.v==="cat"||h.v==="edit"))sessionStorage.setItem("rax3d_keepview",JSON.stringify(h))}catch(_){}location.reload();return}applyLang();render(false)};
 /* "how to order": tap a tile to show its step, tap another to switch, tap again to close */
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-hs]");if(!b)return;
  const k=b.dataset.hs,open=b.getAttribute("aria-expanded")==="true";
@@ -1131,6 +1131,7 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
   else{b.style.position=b.style.top=b.style.left=b.style.right=b.style.overflow="";scrollTo(0,y)}};
  const mo=new MutationObserver(sync);ids.forEach(i=>{const e=document.getElementById(i);if(e)mo.observe(e,{attributes:true,attributeFilter:["hidden"]})})})();
 try{const pid=new URLSearchParams(location.search).get("p")||document.documentElement.dataset.p;if(pid&&ITEMS.some(i=>i.id===pid)){hist=[{v:"home"},{v:"item",id:pid}];hi=1}}catch(_){}
+try{const kv=sessionStorage.getItem("rax3d_keepview");if(kv){sessionStorage.removeItem("rax3d_keepview");const h=JSON.parse(kv);if(h&&((h.v==="item"||h.v==="edit")&&ITEMS.some(i=>i.id===h.id)||h.v==="cat"&&typeof h.cat==="string")){hist=[{v:"home"},{v:h.v,id:h.id,cat:h.cat}];hi=1}}}catch(_){}
 /* ---- motion: GSAP + ScrollTrigger + Lenis (skipped for reduced-motion or if libs fail to load) ---- */
 (()=>{
  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
