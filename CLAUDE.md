@@ -380,6 +380,7 @@ For every new or re-priced product, check the wholesale price before publishing:
 - App-to-app Web Push with FIXED texts only (kinds `inv`, `sl`, `stk`: partner -> owner; `bought`: owner -> partner). The caller must be a registered subscription in `push_subs.json` (its endpoint), its `who` decides direction (`partner` vs others), 60/hour overall (`rl_00000004`). Syntax-checked only. Deploys on merge (worker/ touched); each phone must press «🔔 فعّل إشعارات الجوال» once. Details in the invoicing app's CLAUDE.md.
 
 ## بطاقة القائمة تعرض أحدث تصميم (المالك 11-26)
+- (11-26) البطاقة تفتح أيضًا صفحة التصميم الجديد (`CARDOPEN` في app.js، sw v324).
 - في بطاقات القوائم («وصل حديثاً» والأقسام) قطعة `drip` تعرض صورة التصميم 2 (`thumbs/dripl.jpg`، العمود الطويل) عبر `CARDIMG` في app.js؛ السلة وصفحة القطعة وصور التصميم 1 لم تتغير. لقطة آخر تصميم لقطعة بتصميمين: أضفها في `CARDIMG`. sw v323. على الفرع، لم يُنشر.
 
 ## قاعدة دائمة: الصنف الجديد يُضاف دائمًا حتى لو مع صنف قديم (المالك 11-26)
