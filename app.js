@@ -1,3 +1,4 @@
+const FORCEEN=document.documentElement.dataset.lang==="en";   /* static English pages (en.html, en-<id>.html): the language is fixed by the page, not by the stored choice */
 /* PRICE and WEIGHT live in index.html (#pdata): the payment worker re-prices carts by reading them from there. Edit them there only. */
 const _pd=document.getElementById("pdata").textContent;
 const PRICE=JSON.parse(_pd.match(/const PRICE=(\{.*?\});/)[1]);
@@ -133,7 +134,7 @@ function setCanon(u){let e=document.querySelector('link[rel="canonical"]');if(!e
 function seoFor(id){const en=LANG==="en";   // روابط القطع تنشر بصورتها واسمها في واتساب وانستقرام، وبيانات منظمة لمحركات البحث
   const HOMEKW=en?'3D printing, 3D printing Saudi Arabia, 3D print store, printed gifts, desk decor, home decor, vases, keychains, whistles, coffee accessories, xBloom accessories, custom cup, graduation gifts, custom printing, RAX3D':'طباعة ثلاثية الأبعاد, طباعة 3D السعودية, متجر طباعة 3D, هدايا مطبوعة, هدايا مميزة, ديكور مكتب, ديكور منزل, مزهريات, ميداليات, ميدالية مفاتيح, صفارات, إكسسوارات القهوة, إكسسوارات xBloom, كأس مخصص, هدايا تخرج, طباعة حسب الطلب, مجسمات, RAX3D',base='https://rax3d.com/', it=id&&ITEMS.find(i=>i.id===id);
   const T0=en?'RAX3D | 3D printing in Saudi Arabia: gifts, decor and accessories made to order':'RAX3D | طباعة ثلاثية الأبعاد في السعودية: هدايا وديكور وإكسسوارات حسب الطلب',D0=en?'A 3D printing store in Saudi Arabia: vases, gifts, keychains, xBloom coffee accessories, whistles and desk decor. Pick the piece, colour and size and see it in 3D before you order.':'متجر طباعة 3D في السعودية: مزهريات وهدايا وميداليات وإكسسوارات قهوة xBloom وصفارات وديكور مكتب وكؤوس. اختر القطعة واللون والمقاس وشوفها ثلاثية الأبعاد قبل الطلب.';
-  if(!it){document.title=T0;setMeta('meta[name="description"]',D0);setMeta('meta[name="keywords"]',HOMEKW);setMeta('meta[property="og:title"]',T0);setMeta('meta[property="og:description"]',D0);setMeta('meta[property="og:image"]',base+'icon-512.png');setMeta('meta[property="og:url"]',base);setMeta('meta[name="twitter:title"]',T0);setMeta('meta[name="twitter:description"]',D0);setMeta('meta[name="twitter:image"]',base+'icon-512.png');setCanon(base);
+  if(!it){document.title=T0;setMeta('meta[name="description"]',D0);setMeta('meta[name="keywords"]',HOMEKW);setMeta('meta[property="og:title"]',T0);setMeta('meta[property="og:description"]',D0);setMeta('meta[property="og:image"]',base+'icon-512.png');setMeta('meta[property="og:url"]',pageUrl());setMeta('meta[name="twitter:title"]',T0);setMeta('meta[name="twitter:description"]',D0);setMeta('meta[name="twitter:image"]',base+'icon-512.png');setCanon(pageUrl());
    ldSet({"@context":"https://schema.org","@type":"ItemList","name":en?"RAX3D pieces":"قطع RAX3D","itemListElement":ITEMS.map((i,n)=>({"@type":"ListItem","position":n+1,"url":base+"?p="+encodeURIComponent(i.id),"name":en?tr(i.name):i.name}))});return}
   const KWC={"التوزيعات":"توزيعات, توزيعات مناسبات, هدايا توزيع, توزيعات 3D","إكسسوارات السيارة":"إكسسوارات سيارة, تعليقة سيارة","إكسسوارات القهوة":"إكسسوارات قهوة, xBloom, أدوات تحضير القهوة","إكسسوارات المكتب":"إكسسوارات مكتب, ديكور مكتب, هدايا موظفين","الديكور":"ديكور منزل, مزهرية, هدايا ديكور","الإضاءات":"مصباح طاولة, إضاءة ديكور, مصباح LED, إضاءة مكتب","ميداليات":"ميدالية مفاتيح, توزيعات, هدية صغيرة","سناك وضيافة":"ضيافة, حامل شيبس, ديكور طاولة","ألعاب وقيمرز":"ألعاب, صفارة, هدايا أطفال, ألعاب فيديو, فورتنايت, كأس, هدايا قيمرز"},KWE={"التوزيعات":"giveaways, event giveaways, bulk giveaways, 3D giveaways","إكسسوارات السيارة":"car accessories, car hanger","إكسسوارات القهوة":"coffee accessories, xBloom, coffee brewing tools","إكسسوارات المكتب":"office accessories, desk decor, staff gifts","الديكور":"home decor, vase, decor gifts","الإضاءات":"table lamp, decor lighting, LED lamp, desk lighting","ميداليات":"keychain, giveaways, small gift","سناك وضيافة":"hospitality, chips holder, table decor","ألعاب وقيمرز":"toys, whistle, kids gifts, video games, gamer gifts"},kw=(en?[tr(it.name),KWE[it.cat],"3D printing Saudi Arabia","3D printing","RAX3D"]:[it.name,KWC[it.cat],"طباعة ثلاثية الأبعاد السعودية","طباعة 3D","RAX3D"]).filter(Boolean).join(', '),TI={"التوزيعات":"توزيعات مناسبات مطبوعة 3D","إكسسوارات السيارة":"تعليقة سيارة مطبوعة 3D","إكسسوارات القهوة":"إكسسوار قهوة مطبوع 3D","ميداليات":"ميدالية مطبوعة 3D","إكسسوارات المكتب":"ديكور مكتب مطبوع 3D","الديكور":"ديكور منزل مطبوع 3D","الإضاءات":"إضاءة ديكور مطبوعة 3D","سناك وضيافة":"ضيافة مطبوعة 3D","ألعاب وقيمرز":"ألعاب وهدايا قيمرز مطبوعة 3D"},sz=(it.d&&ITEMS.filter(i=>i.name===it.name).length>1)?' ('+Math.round(it.d[2]/10)+(en?' cm)':' سم)'):'',TIE={"التوزيعات":"3D printed giveaways","إكسسوارات السيارة":"3D printed car hanger","إكسسوارات القهوة":"3D printed coffee accessory","ميداليات":"3D printed keychain","إكسسوارات المكتب":"3D printed desk decor","الديكور":"3D printed home decor","الإضاءات":"3D printed decor lamp","سناك وضيافة":"3D printed hospitality","ألعاب وقيمرز":"3D printed toys and gamer gifts"},nm=en?tr(it.name):it.name,t=en?nm+sz+' – '+(TIE[it.cat]||'3D printed')+' | RAX3D':it.name+sz+' – '+(TI[it.cat]||'مطبوع ثلاثي الأبعاد')+' | RAX3D', pr=PRICE[it.id], desc=en?((DESC_EN[it.id]||DESC_EN[lead(it).id]||(tr(it.use||it.name)+sz+'. Order your piece 3D printed in the colours and size you want'))+(pr?' From '+pr[1]+' SAR.':'')):((dsc(it)||((it.use||it.name)+sz+'. اطلب قطعتك بالطباعة ثلاثية الأبعاد بالألوان والمقاس اللي تبيه'))+(pr?' من '+pr[1]+' ريال.':''));
   document.title=t;setMeta('meta[name="description"]',desc);setMeta('meta[name="keywords"]',kw);
@@ -141,11 +142,11 @@ function seoFor(id){const en=LANG==="en";   // روابط القطع تنشر ب
   setMeta('meta[property="og:description"]',desc);
   const img=base+(IMG[it.id]?IMG[it.id].thumb:'icon-512.png');
   setMeta('meta[property="og:image"]',img);
-  setMeta('meta[property="og:url"]',itemUrl(it.id));setMeta('meta[name="twitter:title"]',t);setMeta('meta[name="twitter:description"]',desc);setMeta('meta[name="twitter:image"]',img);
-  setCanon(itemUrl(it.id));
+  setMeta('meta[property="og:url"]',pageUrl(it.id));setMeta('meta[name="twitter:title"]',t);setMeta('meta[name="twitter:description"]',desc);setMeta('meta[name="twitter:image"]',img);
+  setCanon(pageUrl(it.id));
   const o={"@context":"https://schema.org","@type":"Product","name":nm,"description":desc,"image":[base+"hq/"+it.id+"-0.webp",img],"sku":it.id,"keywords":kw,"brand":{"@type":"Brand","name":"RAX3D"},"category":en?tr(it.cat):it.cat};
   if(it.g)o.weight={"@type":"QuantitativeValue","value":it.g,"unitCode":"GRM"};
-  if(pr)o.offers={"@type":"Offer","url":itemUrl(it.id),"priceCurrency":"SAR","price":String(pr[0]),"availability":"https://schema.org/InStock","itemCondition":"https://schema.org/NewCondition","seller":{"@type":"Organization","name":"RAX3D"}};
+  if(pr)o.offers={"@type":"Offer","url":pageUrl(it.id),"priceCurrency":"SAR","price":String(pr[0]),"availability":"https://schema.org/InStock","itemCondition":"https://schema.org/NewCondition","seller":{"@type":"Organization","name":"RAX3D"}};
   ldSet(o);
 }
 function render(scroll){
@@ -787,7 +788,7 @@ function toggleFav(id){if(!CUST){toastMsg("سجّل الدخول عشان تحف
  toastMsg(had?"انحذفت من المفضلة":"انضافت للمفضلة ♥");render(false)}
 function favView(){const l=favs().map(id=>ITEMS.find(i=>i.id===id)).filter(Boolean);cur=null;$("#ttl").textContent="مفضلتي";
  $("#main").innerHTML=`<h2>مفضلتي</h2>`+(l.length?`<div class="grid">${l.map(card).join("")}</div>`:`<p class="note">ما أضفت شي للمفضلة للحين. اضغط ♡ على أي قطعة تعجبك.</p>`)}
-const SITE_URL="https://rax3d.com/";const itemUrl=id=>SITE_URL+"?p="+encodeURIComponent(id);
+const SITE_URL="https://rax3d.com/";const itemUrl=id=>SITE_URL+"?p="+encodeURIComponent(id);const pageUrl=id=>FORCEEN?SITE_URL+(id?"en-"+encodeURIComponent(id)+".html":"en.html"):(id?itemUrl(id):SITE_URL);
 async function copyText2(s){try{await navigator.clipboard.writeText(s);return true}catch(_){try{const a=document.createElement("textarea");a.value=s;a.style.cssText="position:fixed;opacity:0";document.body.appendChild(a);a.select();const ok=document.execCommand("copy");a.remove();return ok}catch(_){return false}}}
 async function copyLink(id){toastMsg(await copyText2(itemUrl(id))?"تم نسخ الرابط ✓":"تعذّر النسخ")}
 async function shareItem(id){const it=ITEMS.find(i=>i.id===id);if(!it)return;const data={title:it.name+" | RAX3D",text:it.name+"، من RAX3D",url:itemUrl(id)};
@@ -1094,7 +1095,7 @@ const RX=[
  [/^اللون: (.+) · المقاس: (.+) · العدد: (\d+)( \(جملة\))?$/,(m,a,b,c,d)=>"Colour: "+tr(a)+" · Size: "+b.replace("مم (الأصلي)","mm (original)").replace("مم","mm").replace("المقاس الأصلي","Original")+" · Qty: "+c+(d?" (wholesale)":"")],
  [/^(\d+) حبة$/,(m,a)=>a+" pcs"],[/^مقاس (.+)$/,(m,a)=>"Size "+a],[/^(.{2,20}): (.+)$/,(m,a,b)=>PNAMES.includes(a)||/^الجزء \d+$/.test(a)?(EN[a]||a.replace("الجزء ","Part "))+": "+tr(b):m]
 ];
-let LANG="ar";try{LANG=localStorage.getItem("rax3d_lang")==="en"?"en":"ar"}catch(_){}
+let LANG="ar";try{LANG=localStorage.getItem("rax3d_lang")==="en"?"en":"ar"}catch(_){}if(FORCEEN)LANG="en";
 function tr(s){if(LANG!=="en"||!s||!/[\u0600-\u06FF]/.test(s))return s;const k=s.trim();if(EN[k]!=null)return s.replace(k,EN[k]);
  for(const [r,f] of RX){if(r.test(k))return s.replace(k,k.replace(r,f))}   /* whole-line patterns first, so "colour · size · qty" summaries are not split apart */
  if(k.includes(" · "))return s.replace(k,k.split(" · ").map(tr).join(" · "));return s}
@@ -1115,6 +1116,7 @@ function applyLang(){const en=LANG==="en";document.documentElement.lang=en?"en":
  const b=$("#langBtn");b.textContent=en?"ع":"EN";b.setAttribute("aria-label",en?"العربية":"English");
  if(en){trNode(document.body);MO.observe(document.body,{childList:true,subtree:true,characterData:true})}}
 $("#langBtn").onclick=()=>{LANG=LANG==="en"?"ar":"en";try{localStorage.setItem("rax3d_lang",LANG)}catch(_){}
+ if(FORCEEN&&LANG==="ar"){const h=hist[hi];location.href=SITE_URL+(h&&(h.v==="item"||h.v==="edit")?"?p="+encodeURIComponent(h.id):"");return}
  if(LANG==="ar"){location.reload();return}applyLang();render(false)};
 /* "how to order": tap a tile to show its step, tap another to switch, tap again to close */
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-hs]");if(!b)return;
@@ -1128,7 +1130,7 @@ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest
   const b=document.body;if(window.LENIS)open?LENIS.stop():LENIS.start();if(open){y=scrollY;b.style.position="fixed";b.style.top=-y+"px";b.style.left="0";b.style.right="0";b.style.overflow="hidden"}
   else{b.style.position=b.style.top=b.style.left=b.style.right=b.style.overflow="";scrollTo(0,y)}};
  const mo=new MutationObserver(sync);ids.forEach(i=>{const e=document.getElementById(i);if(e)mo.observe(e,{attributes:true,attributeFilter:["hidden"]})})})();
-try{const pid=new URLSearchParams(location.search).get("p");if(pid&&ITEMS.some(i=>i.id===pid)){hist=[{v:"home"},{v:"item",id:pid}];hi=1}}catch(_){}
+try{const pid=new URLSearchParams(location.search).get("p")||document.documentElement.dataset.p;if(pid&&ITEMS.some(i=>i.id===pid)){hist=[{v:"home"},{v:"item",id:pid}];hi=1}}catch(_){}
 /* ---- motion: GSAP + ScrollTrigger + Lenis (skipped for reduced-motion or if libs fail to load) ---- */
 (()=>{
  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
