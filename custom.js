@@ -54,8 +54,8 @@
   const pid=q.get("id"),st=q.get("status");
   if(pid&&st){history.replaceState(null,"","/?c="+id);if(st==="paid"){await confirm(pid,null);return}B().innerHTML=`<p class="inote">ما تمت عملية الدفع (${esc(q.get("message")||st)}). تقدر تحاول مرة ثانية من نفس الرابط.</p><button type="button" class="btn" onclick="location.reload()">حاول مرة ثانية</button>`;return}
   try{const r=await fetch(PAY.api+"/custom/"+id,{cache:"no-store"});const c=await r.json();
-   if(!c.ok){B().innerHTML=`<p class="inote">ما لقينا هذا الطلب. تأكد من الرابط أو تواصل معنا على @rax3d.sa</p>`;return}
-   if(c.status!=="open"){B().innerHTML=`<p class="total">هذا الطلب ${c.status==="paid"?"مدفوع":"مسجّل"} ✓</p>${c.num?`<p class="inote">رقم الطلب <b dir="ltr">ORD-${+c.num}</b>. للاستفسار تواصل معنا على @rax3d.sa</p>`:""}`;return}
+   if(!c.ok){B().innerHTML=`<p class="inote">ما لقينا هذا الطلب. تأكد من الرابط أو تواصل معنا على واتساب +966 55 568 1402</p>`;return}
+   if(c.status!=="open"){B().innerHTML=`<p class="total">هذا الطلب ${c.status==="paid"?"مدفوع":"مسجّل"} ✓</p>${c.num?`<p class="inote">رقم الطلب <b dir="ltr">ORD-${+c.num}</b>. للاستفسار تواصل معنا على واتساب +966 55 568 1402</p>`:""}`;return}
    try{await CFGP}catch(_){}
    form(c)}catch(_){B().innerHTML=`<p class="inote">ما فيه اتصال، حدّث الصفحة.</p>`}
  })();
