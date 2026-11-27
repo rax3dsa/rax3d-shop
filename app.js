@@ -757,7 +757,7 @@ function saveAcc(){const n=$("#cn").value.trim().replace(/\s+/g," "),p=normPhone
  if(!n){m.className="dmsg err";m.textContent="اكتب اسمك.";return}
  if(!/^05\d{8}$/.test(p)){m.className="dmsg err";m.textContent="اكتب رقم جوال سعودي صحيح يبدأ بـ 05 (10 أرقام).";return}
  CUST={n:n.slice(0,40),p};try{localStorage.setItem("rax3d_cust",JSON.stringify(CUST))}catch(_){}
- $("#abg").hidden=true;render(false);loadPts();toastMsg("أهلاً "+CUST.n+"، تم التسجيل ✓");if(TRKPEND){TRKPEND=0;setTimeout(()=>openPol("track"),300)}if(VOTEPEND){const o=VOTEPEND;VOTEPEND=null;setTimeout(()=>castVote(o),400)}}
+ $("#abg").hidden=true;render(false);loadPts();toastMsg("أهلاً "+CUST.n+"، تم التسجيل ✓");if(SENDPEND&&Date.now()-SENDPEND.t<18e4){const q=SENDPEND.s;SENDPEND=null;setTimeout(()=>{const b=document.querySelector(q);if(b)b.click()},500)}else SENDPEND=null;if(TRKPEND){TRKPEND=0;setTimeout(()=>openPol("track"),300)}if(VOTEPEND){const o=VOTEPEND;VOTEPEND=null;setTimeout(()=>castVote(o),400)}}
 /* ---------- loyalty balance: read-only, published by the invoicing app as hashed mobiles in points.json ---------- */
 let PTS=null;
 /* loyalty tiers (owner's idea 6): by the customer's total purchases; SAME limits as TIERS in the invoicing app (change both). The worker returns tier and spend from the private data repo. */
@@ -798,7 +798,7 @@ function toastMsg(s){const a=document.createElement("div");a.className="added";a
 document.addEventListener("click",e=>{const f=e.target.closest("[data-fav]");if(!f)return;e.stopImmediatePropagation();e.preventDefault();toggleFav(f.dataset.fav)},true);
 document.addEventListener("click",e=>{const t=e.target.closest("button");if(!t)return;
  if(t.dataset.share)shareItem(t.dataset.share);else if(t.dataset.copylink)copyLink(t.dataset.copylink);else if(t.hasAttribute("data-favs")){closeDrawer();const v=hist[hi];if(v.v!=="fav")go({v:"fav"})}
- else if(t.hasAttribute("data-acc")){closeDrawer();openAcc()}else if(t.id==="aclose")$("#abg").hidden=true;else if(t.id==="asave")saveAcc();else if(t.id==="aout")logoutAcc()});
+ else if(t.hasAttribute("data-acc")){closeDrawer();openAcc()}else if(t.id==="aclose"){SENDPEND=null;$("#abg").hidden=true}else if(t.id==="asave")saveAcc();else if(t.id==="aout")logoutAcc()});
 document.getElementById("abg").addEventListener("click",e=>{if(e.target.id==="abg")e.target.hidden=true});
 document.getElementById("abg").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.classList.contains("fin"))saveAcc()});
 /* consent to terms before ANY order (pay, cash on delivery, or DM): unticked by default, remembered only while the page is open */
@@ -958,7 +958,7 @@ async function trackUI(){const L=LANG==="en",box=document.createElement("div");b
  let sv="";try{sv=localStorage.getItem("rax3d_trkph")||""}catch(_){}
  if(CUST&&CUST.p)run(normPhone(CUST.p));else if(/^05\d{8}$/.test(sv))run(sv);else ask("")}
 document.addEventListener("click",e=>{const t=e.target.closest("button");if(!t)return;
- if(t.dataset.distask){const it=ITEMS.find(x=>x.id===t.dataset.distask),L=LANG==="en";copyText(L?`Hello RAX3D 👋\n\nI'd like to order giveaways:\n\n* Piece: ${tr(it.name)}\n${$("#dpanel")&&+$("#dpanel").dataset.n?`* Design no.: ${$("#dpanel").dataset.n}\n`:""}* Add-on: ${dAdd()[1]}\n* Quantity (50 or more): ${$("#dpanel")?$("#dpanel").dataset.q:""}\n* Occasion / date: `:`مرحبًا RAX3D 👋\n\nأرغب بطلب توزيعات:\n\n* القطعة: ${it.name}\n${$("#dpanel")&&+$("#dpanel").dataset.n?`* رقم التصميم: ${$("#dpanel").dataset.n}\n`:""}* الإضافة: ${dAdd()[2]}\n* العدد (50 حبة فأكثر): ${$("#dpanel")?$("#dpanel").dataset.q:""}\n* المناسبة وموعدها: `);pickChannel(false);return}
+ if(t.dataset.distask){const it=ITEMS.find(x=>x.id===t.dataset.distask),L=LANG==="en";copyText(L?`Hello RAX3D 👋\n\nI'd like to order giveaways:\n\n${CUST?`* Name: ${CUST.n}\n* Mobile: ${CUST.p}\n\n`:""}* Piece: ${tr(it.name)}\n${$("#dpanel")&&+$("#dpanel").dataset.n?`* Design no.: ${$("#dpanel").dataset.n}\n`:""}* Add-on: ${dAdd()[1]}\n* Quantity: ${$("#dpanel")?$("#dpanel").dataset.q:""}\n* Occasion / date: `:`مرحبًا RAX3D 👋\n\nأرغب بطلب توزيعات:\n\n${CUST?`* الاسم: ${CUST.n}\n* الجوال: ${CUST.p}\n\n`:""}* القطعة: ${it.name}\n${$("#dpanel")&&+$("#dpanel").dataset.n?`* رقم التصميم: ${$("#dpanel").dataset.n}\n`:""}* الإضافة: ${dAdd()[2]}\n* الكمية: ${$("#dpanel")?$("#dpanel").dataset.q:""}\n* المناسبة وموعدها: `);pickChannel(false);return}
  if(t.dataset.edit){go({v:"edit",id:t.dataset.edit});return}
  if(t.dataset.pol)openPol(t.dataset.pol);else if(t.id==="pclose"||t.id==="pok")$("#pbg").hidden=true;
  else if(t.hasAttribute("data-shop")){const h=document.getElementById("newHd");if(h)h.scrollIntoView({behavior:"smooth",block:"start"})}});
@@ -988,6 +988,11 @@ function openPtsOffer(){const L=LANG==="en",k=Math.min(Math.floor(PTS/1000),5);
  if(DELIV&&PTS>=3000)h+=`<button type="button" class="btn gold" data-predeem="ship:1" style="margin-top:8px">${L?"Free delivery (3000 points)":"توصيل مجاني (3000 نقطة)"}</button>`;
  if(PTS>=5000)h+=`<button type="button" class="btn gold" data-predeem="free:1" style="margin-top:8px">${L?"Free piece worth up to 250 SAR (5000 points)":"قطعة مجانية بقيمة حتى 250 ريال (5000 نقطة)"}</button>`;
  $("#popts").innerHTML=h;$("#rbg").hidden=false}
+/* owner 11-27: every order message to WhatsApp must carry name + mobile so pasting it into the invoicing app fills the invoice. Not signed in: ask first, then continue the same send */
+let SENDPEND=null;
+document.addEventListener("click",e=>{const el=e.target.closest&&e.target.closest("#sendBtn,#qtSend,#rqSend,[data-distask]");if(!el||CUST)return;if(el.id==="sendBtn"&&!cart.length)return;
+ e.preventDefault();e.stopImmediatePropagation();SENDPEND={s:el.id?"#"+el.id:'[data-distask="'+el.dataset.distask+'"]',t:Date.now()};
+ toastMsg(LANG==="en"?"Add your name and mobile first so your order reaches us complete":"اكتب اسمك وجوالك أول عشان يوصلنا طلبك كاملًا");openAcc()},true);
 /* WhatsApp is the contact channel (owner 11-26); Instagram and TikTok stay only for following us */
 const WA_NUM="966555681402",WA_DISP="+966 55 568 1402";function waUrl(t){return"https://wa.me/"+WA_NUM+(t?"?text="+encodeURIComponent(t):"")}
 function pickChannel(follow){const L=LANG==="en",fresh=!follow&&LASTCP.t&&Date.now()-LASTCP.at<4000;
