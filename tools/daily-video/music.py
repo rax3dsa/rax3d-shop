@@ -3,7 +3,7 @@
 المعلمات (مفتاح، نمط، سرعة، آلة، سلّم) تُشتق من رقم القطعة وتُسجَّل في music-log.json؛ يُرفض أي تطابق مع مقطوعة سابقة."""
 import sys, json, hashlib, os, wave
 import numpy as np
-LOG = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'music-log.json')
+LOG = os.environ.get('MUSIC_LOG') or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'music-log.json')   # في GitHub Actions يشير إلى rax3d-posts/daily/music-log.json ليبقى السجل بين التشغيلات
 MODES = {'major': [0,2,4,5,7,9,11], 'minor': [0,2,3,5,7,8,10], 'dorian': [0,2,3,5,7,9,10], 'lydian': [0,2,4,6,7,9,11], 'mixolydian': [0,2,4,5,7,9,10], 'pent': [0,2,4,7,9], 'phrygian': [0,1,3,5,7,8,10]}
 MOOD = {  # الفئة ← (أسلوب مناسب)
  'الإضاءات': dict(modes=['lydian','major','pent'], bpm=(68,84), inst=['bell','pad']),

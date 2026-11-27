@@ -9,5 +9,38 @@
   "seed": 7148,
   "id": "glring",
   "cat": "ألعاب وقيمرز"
+ },
+ {
+  "root": 11,
+  "mode": "pent",
+  "bpm": 76,
+  "inst": "pad",
+  "pattern": "arp-down",
+  "prog": 5,
+  "seed": 74127,
+  "id": "lamp#colors",
+  "cat": "الإضاءات"
+ },
+ {
+  "root": 8,
+  "mode": "pent",
+  "bpm": 81,
+  "inst": "piano",
+  "pattern": "bass-melody",
+  "prog": 2,
+  "seed": 44800,
+  "id": "vase2#layers",
+  "cat": "الديكور"
+ },
+ {
+  "root": 3,
+  "mode": "lydian",
+  "bpm": 96,
+  "inst": "pluck",
+  "pattern": "arp-pingpong",
+  "prog": 0,
+  "seed": 25831,
+  "id": "kcm#hook",
+  "cat": "ميداليات"
  }
 ]
