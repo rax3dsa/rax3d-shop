@@ -387,13 +387,18 @@ function siteColor(c, strict) {   // «اسود» ← «أسود»، «اخضر 
   const hit = [...new Set(n.toLowerCase().split(/[^a-z]+/).map(x => COL_EN[x]).filter(Boolean))]; if (hit.length === 1) return hit[0];   // two colours (Blue Green): inventory only, never linked to the site   // English as on the filament sticker: "Matte Ice Blue 10100"
   return strict ? '' : String(c);
 }
-function outColours(d) {
+function outColours(d) {   // { out:[names], colors:[{ar,en,h}] } or null
   if (!d || !Array.isArray(d.rows)) return null;
   const linked = new Set((Array.isArray(d.types) ? d.types : []).filter(t => t && t.site).map(t => String(t.name)));
   const by = new Map();
-  // colour = the name first, then the sticker number/code field (BROWN 10100)
-  for (const r of d.rows) { if (!r || !linked.has(String(r.t))) continue; const raw = String(r.c || '').slice(0, 30); if (!raw) continue; const c = siteColor(raw, 1) || siteColor(String(r.code || '').slice(0, 30), 1) || raw; const a = by.get(c) || []; a.push(!!r.buy); by.set(c, a) }
-  return [...by].filter(([, a]) => a.length && a.every(Boolean)).map(([c]) => c);
+  // colour key: the app writes `k` on every row (base colour = its Arabic name; any other name = its own colour 'x:<name>'). Old rows without `k`: the name first, then the sticker code (BROWN 10100)
+  for (const r of d.rows) { if (!r || !linked.has(String(r.t))) continue; const raw = String(r.c || '').slice(0, 30); if (!raw) continue; const c = typeof r.k === 'string' && r.k ? r.k : (siteColor(raw, 1) || siteColor(String(r.code || '').slice(0, 30), 1) || raw); const a = by.get(c) || []; a.push(!!r.buy); by.set(c, a) }
+  const sc = (Array.isArray(d.sc) ? d.sc : []).filter(x => x && typeof x.k === 'string' && typeof x.ar === 'string' && /^#[0-9a-f]{6}$/i.test(String(x.h))).slice(0, 40), nm = k => k.startsWith('x:') ? ((sc.find(x => x.k === k) || {}).ar || '') : k;
+  const out = new Set([...by].filter(([, a]) => a.length && a.every(Boolean)).map(([c]) => nm(c)).filter(Boolean));
+  // a colour that was on the site and has no row left in a linked type (deleted from stock) stays on the site marked unavailable
+  sc.forEach(x => { if (!by.has(x.k)) out.add(x.ar) });
+  (Array.isArray(d.sb) ? d.sb : []).forEach(k => { if (typeof k === 'string' && SITE_COLS.includes(k) && !by.has(k)) out.add(k) });
+  return { out: [...out], colors: sc.map(x => ({ ar: String(x.ar).slice(0, 30), en: String(x.en || x.ar).slice(0, 30), h: String(x.h) })) };
 }
 let SCACHE = { t: 0, d: null };      // per-isolate copy, refreshed at most once a minute
 async function stockOut(env) {
@@ -656,7 +661,7 @@ async function handle(req, env, ctx) {
     if (req.method === 'POST' && path === '/review') return reviewPost(req, env, out);
     if (req.method === 'GET' && path === '/reviews') return reviewsGet(env, out);
     if (path === '/review/act' && (req.method === 'GET' || req.method === 'POST')) return reviewAct(req, env, new URL(req.url));
-    if (req.method === 'GET' && path === '/stock') return out({ ok: true, out: await stockOut(env) });
+    if (req.method === 'GET' && path === '/stock') { const sk = await stockOut(env); return out({ ok: true, out: sk ? sk.out : null, colors: sk ? sk.colors : [] }) }
     if (req.method === 'GET' && path === '/config') return out({ ok: true, ship: SHIP_FEE, codShip: COD_SHIP_FEE, modes: true, turnstile: (env.TURNSTILE_SECRET && env.TURNSTILE_SITEKEY) ? String(env.TURNSTILE_SITEKEY) : null });
     if (req.method !== 'POST' || path !== '/confirm') return out({ ok: false }, 404);
 
