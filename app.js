@@ -852,6 +852,7 @@ const POL={
   <li>واتساب (الأسرع): <a href="https://wa.me/966555681402" target="_blank" rel="noopener" dir="ltr">+966 55 568 1402</a></li>
   <li>انستقرام: <a href="https://www.instagram.com/rax3d.sa/" target="_blank" rel="noopener" dir="ltr">@rax3d.sa</a></li>
   <li>تيك توك: <a href="https://www.tiktok.com/@rax3d.sa" target="_blank" rel="noopener" dir="ltr">@rax3d.sa</a></li>
+  <li>سناب شات: <a href="https://www.snapchat.com/add/rax3d.sa" target="_blank" rel="noopener" dir="ltr">@rax3d.sa</a></li>
   <li>الإيميل: <a href="mailto:rax3d.sa@hotmail.com" dir="ltr">rax3d.sa@hotmail.com</a></li>
   <li>الموقع: المملكة العربية السعودية</li>
   <li>وثيقة العمل الحر: <span dir="ltr">FL-255870895</span></li></ul>
@@ -902,7 +903,7 @@ const POL_EN={
  quote:["Price your file",""],
  req:["Prepare your request",""],
  track:["Track your order",`<p>Once we confirm your order and issue the invoice, your order gets an <b>order number</b> like ORD-125, printed on the invoice.</p><ul><li>Send us your order number by DM any time and we'll reply with your order status.</li><li>Stages: order confirmed → printing → assembly &amp; check → ready for delivery → delivered.</li><li>If you are signed in, your orders and the stage of each one show above.</li><li>On delivery you get an invoice showing your loyalty points balance.</li></ul>`],
- contact:["Contact us",`<ul><li>WhatsApp (fastest): <a href="https://wa.me/966555681402" target="_blank" rel="noopener">+966 55 568 1402</a></li><li>Instagram: <a href="https://www.instagram.com/rax3d.sa/" target="_blank" rel="noopener">@rax3d.sa</a></li><li>TikTok: <a href="https://www.tiktok.com/@rax3d.sa" target="_blank" rel="noopener">@rax3d.sa</a></li><li>Email: <a href="mailto:rax3d.sa@hotmail.com">rax3d.sa@hotmail.com</a></li><li>Location: Saudi Arabia</li><li>Freelance licence: FL-255870895</li></ul><p class="muted">Price, payment and delivery are agreed with you by DM before printing.</p>`],
+ contact:["Contact us",`<ul><li>WhatsApp (fastest): <a href="https://wa.me/966555681402" target="_blank" rel="noopener">+966 55 568 1402</a></li><li>Instagram: <a href="https://www.instagram.com/rax3d.sa/" target="_blank" rel="noopener">@rax3d.sa</a></li><li>TikTok: <a href="https://www.tiktok.com/@rax3d.sa" target="_blank" rel="noopener">@rax3d.sa</a></li><li>Snapchat: <a href="https://www.snapchat.com/add/rax3d.sa" target="_blank" rel="noopener">@rax3d.sa</a></li><li>Email: <a href="mailto:rax3d.sa@hotmail.com">rax3d.sa@hotmail.com</a></li><li>Location: Saudi Arabia</li><li>Freelance licence: FL-255870895</li></ul><p class="muted">Price, payment and delivery are agreed with you by DM before printing.</p>`],
  faq:["FAQ",`<details open><summary><b>How do I order?</b></summary><p>Pick the piece, colour, size and quantity and add it to your order, then send the order by DM on WhatsApp (the message opens ready for you). We reply to confirm your order and the preparation date, and payment is after we agree.</p></details>
 <details><summary><b>Can I choose the colour?</b></summary><p>Yes. Every piece is printed to order in the colour you pick from the store colours.</p></details>
 <details><summary><b>Can I change the size?</b></summary><p>Yes, you can adjust a piece's size up to 255 mm on its page.</p></details>
