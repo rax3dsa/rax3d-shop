@@ -403,7 +403,7 @@ function outColours(d) {   // { out:[names], colors:[{ar,en,h}] } or null
 let SCACHE = { t: 0, d: null };      // per-isolate copy, refreshed at most once a minute
 async function stockOut(env) {
   if (!env.GH_TOKEN || !env.GH_REPO) return null;
-  const now = Date.now(); if (SCACHE.t && now - SCACHE.t < 60000) return SCACHE.d;
+  const now = Date.now(); if (SCACHE.t && now - SCACHE.t < 15000) return SCACHE.d;
   try { const f = await ghRead(env, 'stock.json'); SCACHE = { t: now, d: f ? outColours(f.data) : null } }
   catch (e) { if (!SCACHE.t) return null }   // keep the last copy if GitHub hiccups
   return SCACHE.d;
