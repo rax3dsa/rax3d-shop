@@ -24,8 +24,8 @@ def params(pid, cat, taken):
         h = int(hashlib.sha256(f'{pid}|{salt}'.encode()).hexdigest(), 16)
         p = dict(root=h % 12, mode=mood['modes'][(h >> 4) % len(mood['modes'])], bpm=mood['bpm'][0] + (h >> 8) % (mood['bpm'][1] - mood['bpm'][0] + 1),
                  inst=mood['inst'][(h >> 16) % len(mood['inst'])], pattern=PATTERNS[(h >> 20) % len(PATTERNS)], prog=(h >> 24) % 6, seed=h % 100000)
-        key = (p['root'], p['mode'], p['bpm'], p['inst'], p['pattern'], p['prog'])
-        if all(key != (t['root'], t['mode'], t['bpm'], t['inst'], t['pattern'], t['prog']) for t in taken): return p
+        key = (p['root'], p['mode'], p['pattern'], p['prog'])   # لا نغمة مكررة: يكفي تطابق المفتاح والمقام والإيقاع والأوتار لرفضها (المالك 11-27)
+        if all(key != (t['root'], t['mode'], t['pattern'], t['prog']) for t in taken): return p
     raise SystemExit('لم يُعثر على معلمات فريدة')
 def hz(n): return 440 * 2 ** ((n - 69) / 12)
 def synth(inst, f, length, vel, sr, rng):
@@ -54,9 +54,9 @@ def make(pid, cat, out, dur=31.6):
     def put(m, t0, ln, vel):
         s = synth(p['inst'], hz(m), ln, vel, sr, rng); i = int(t0*sr); e = min(N, i+len(s))
         if i < N: L[i:e] += s[:e-i]
-    bar = beat*4; nb = int(dur/bar)+1
+    bar = beat*4; nb = int(dur/bar)+1; prog2 = PROGS[(p['prog']+3) % 6]; walk = int(rng.integers(2, 6))
     for b in range(nb):
-        c = prog[b % len(prog)]; tri = [deg(c), deg(c+2), deg(c+4)]
+        c = (prog if (b//4) % 2 == 0 else prog2)[b % 4]; tri = [deg(c), deg(c+2), deg(c+4)]   # بعد 4 موازير تتبدل الأوتار فلا تكرر الدورة
         put(deg(c, -1), b*bar, bar*1.05, .45)
         steps = 8
         for k in range(steps):
@@ -73,6 +73,10 @@ def make(pid, cat, out, dur=31.6):
                 m = deg(c+[0,2,4,2,5,4,2,0][k]) + 12
             else: m = tri[(k*2) % 3] + 12 + (12 if k % 5 == 4 else 0)
             put(m, t0, 1.0, .26)
+        # لحن علوي عشوائي مُبذَّر (مشي على السلّم) يختلف في كل مازورة فلا تتكرر النغمة
+        for k in (0, 2, 3, 5, 6):
+            if rng.random() < 0.62:
+                walk = int(np.clip(walk + rng.integers(-2, 3), 1, len(scale)+3)); put(deg(walk, 1) + 12, b*bar + k*e8, 0.9, .17)
         if p['pattern'] in ('arp-up','arp-down','sparkle') and b % 2 == 1: put(deg(c+4, 1), b*bar + e8*6, 1.6, .2)
     # reverb + fades
     ir = rng.standard_normal(int(sr*1.6))*np.exp(-np.arange(int(sr*1.6))/sr*2.8)
