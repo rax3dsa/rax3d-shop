@@ -1,12 +1,12 @@
 [
  {
-  "root": 2,
+  "root": 4,
   "mode": "minor",
-  "bpm": 116,
-  "inst": "synth",
+  "bpm": 108,
+  "inst": "pluck",
   "pattern": "arp-pingpong",
-  "prog": 5,
-  "seed": 63978,
+  "prog": 2,
+  "seed": 7148,
   "id": "glring",
   "cat": "ألعاب وقيمرز"
  }
