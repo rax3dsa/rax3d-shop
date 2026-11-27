@@ -24,6 +24,7 @@ const {build}=require('./tags');
  // 4) موسيقى فريدة + دمج
  cp.execFileSync('python3',[path.join(__dirname,'music.py'),VM==='daily'?id:id+'#'+VM,d.cat,path.join(OUT,'music.wav'),String(dur)],{stdio:'inherit'});
  cp.execFileSync('ffmpeg',['-loglevel','error','-y','-framerate',String(FPS),'-i',path.join(FD,'%04d.png'),'-i',path.join(OUT,'music.wav'),'-t',String(dur),'-vf','format=yuv420p','-c:v','libx264','-crf','18','-preset','medium','-c:a','aac','-b:a','192k','-shortest',path.join(OUT,`${id}${VM==='daily'?'':'-'+VM}.mp4`)]);
+ fs.rmSync(path.join(OUT,'music.wav'),{force:true});   // لا نحفظ الصوت الخام (5 ميجا) في المستودع
  // 5) الوصف والهاشتاقات
  const c=build(d.it,d);fs.writeFileSync(path.join(OUT,'caption.txt'),c.full+'\n\n--- Spotlight ---\n'+c.spotlight+'\n\n--- Keywords ---\n'+c.keywords.join(', ')+'\n');
  fs.rmSync(FD,{recursive:true,force:true});if(process.env.KEEP3D!=='1'){fs.rmSync(TMP,{recursive:true,force:true});fs.rmSync(path.join(SHOP,'_dv_tmp'),{recursive:true,force:true})}
