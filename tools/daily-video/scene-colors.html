@@ -15,11 +15,15 @@ function show(id,a,b,t){const e=$(id);let o=0;if(t>=a-.01&&t<b){o=Math.min(E((t-
 async function loadFrames(d,nf){const FR=[];for(let i=0;i<nf;i++){const im=new Image();im.src=`../../_dv_tmp/${d.id}/${String(i).padStart(3,'0')}.png`;FR.push(im)}await Promise.all([...FR.map(im=>im.decode().catch(()=>{})),document.fonts.ready]);return FR}
 function draw(cv,im){const c=cv.getContext('2d');c.clearRect(0,0,cv.width,cv.height);c.drawImage(im,0,0,cv.width,cv.height)}
 
-let FR=[],D,M;window.DUR=14.6;
-window.init=async(d,nf,meta)=>{D=d;M=meta;$('nm').textContent=d.name;$('sub').textContent=`متوفرة بـ ${meta.colors.length} لونًا`;FR=await loadFrames(d,nf);
+let FRS={},D,M,V=[],SEG=10.1,T0=2.3;window.DUR=14.6;
+window.init=async(d,nf,meta)=>{D=d;M=meta;V=d.vars&&d.vars.length>1?d.vars:[{id:d.id,price:d.price}];SEG=V.length>1?6:10.1;window.DUR=T0+SEG*V.length+2.2;
+ const ids=V.map(v=>v.id);for(const v of ids){const FR=[];for(let i=0;i<nf;i++){const im=new Image();im.src=`../../_dv_tmp/${v}/${String(i).padStart(3,'0')}.png`;FR.push(im)}await Promise.all(FR.map(im=>im.decode().catch(()=>{})));FRS[v]=FR}await document.fonts.ready;
+ $('nm').textContent=d.name;$('sub').textContent=V.length>1?`بتصميمين ومتوفرة بـ ${meta.colors.length} لونًا`:`متوفرة بـ ${meta.colors.length} لونًا`;
  $('sw').innerHTML=meta.colors.map(c=>`<i style="width:44px;height:44px;border-radius:50%;background:${c.h||'#ccc'};border:4px solid rgba(255,255,255,.85);box-shadow:0 4px 12px rgba(0,0,0,.2)"></i>`).join('');
  $('pr').innerHTML=`السعر <b class="gold">${d.price[0]} ريال</b> · لونها حسب اختيارك`};
-window.setT=t=>{show('a',0,2.3,t);const on=show('b',2.3,12.4,t);show('c',12.4,14.6,t);
- if(on){const u=Math.min(.999,(t-2.3)/(12.4-2.3)),i=Math.floor(u*FR.length);draw($('cv'),FR[i]);const k=Math.min(M.colors.length-1,Math.floor(u*M.colors.length)),c=M.colors[k];$('cn').textContent=c.n;$('dot').style.background=c.h||'#ccc';
+window.setT=t=>{const e0=T0+SEG*V.length;show('a',0,T0,t);const on=show('b',T0,e0,t);show('c',e0,e0+2.2,t);
+ if(on){const vi=Math.min(V.length-1,Math.floor((t-T0)/SEG)),v=V[vi],u=Math.min(.999,((t-T0)-vi*SEG)/SEG),FR=FRS[v.id],i=Math.floor(u*FR.length);draw($('cv'),FR[i]);
+  const cs=(V.length>1?D.metas[v.id].colors:M.colors),k=Math.min(cs.length-1,Math.floor(u*cs.length)),c=cs[k];$('cn').textContent=c.n;$('dot').style.background=c.h||'#ccc';
+  if(V.length>1)$('pr').innerHTML=`<b class="gold">${v.vt||'التصميم'} ${vi+1}</b> · السعر <b class="gold">${v.price[0]} ريال</b>`;
   [...$('sw').children].forEach((s,j)=>{s.style.transform=j===k?'scale(1.35)':'scale(1)';s.style.opacity=j===k?1:.6})}};
 </script>
