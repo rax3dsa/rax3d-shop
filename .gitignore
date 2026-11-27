@@ -1,0 +1,4 @@
+
+# temporary frames of the daily video pipeline
+_dv_tmp/
+tools/daily-video/out/
