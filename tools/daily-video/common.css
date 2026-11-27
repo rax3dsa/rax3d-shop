@@ -1,0 +1,18 @@
+@font-face{font-family:P;src:url(../../fonts/IBMPlexSansArabic-600.woff2);font-weight:600}
+@font-face{font-family:P;src:url(../../fonts/IBMPlexSansArabic-500.woff2);font-weight:500}
+@font-face{font-family:L;src:url(../../fonts/ReadexPro-600.woff2)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:1080px;height:1920px;overflow:hidden;font-family:P,sans-serif;color:#2a2118;background:linear-gradient(180deg,#eadcc3,#d6c3a8);position:relative}
+.sc{position:absolute;inset:0;opacity:0}.abs{position:absolute;left:60px;right:60px;text-align:center}
+.tag{display:inline-block;padding:12px 38px;border-radius:999px;background:#2a2118;color:#f1d99a;font-size:44px;font-weight:600}
+.card{position:absolute;left:100px;width:880px;height:880px;border-radius:70px;box-shadow:0 40px 90px rgba(60,40,10,.28);background:#e8d9be;overflow:hidden}
+.card img,.card canvas{width:100%;height:100%;display:block}
+.h1{font-size:96px;font-weight:600;line-height:1.25}.t2{font-size:50px;font-weight:500;color:#5b4a33;line-height:1.55}.gold{color:#9c7420}
+.en{font-family:L,sans-serif;font-size:34px;color:#6b5a40;direction:ltr;letter-spacing:4px}
+.pill{display:inline-block;padding:22px 66px;border-radius:999px;background:linear-gradient(145deg,#d9ad45,#b8902a);color:#fff;font-size:60px;font-weight:600;box-shadow:0 16px 40px rgba(184,144,42,.45)}
+.num{font-family:L,sans-serif;font-size:104px;direction:ltr;letter-spacing:2px}
+.wa{width:150px;height:150px;border-radius:44px;background:#25D366;display:grid;place-items:center;box-shadow:0 26px 60px rgba(37,211,102,.4);margin:0 auto}
+.soc{display:flex;flex-wrap:wrap;justify-content:center;gap:18px;direction:ltr}
+.sch{display:flex;align-items:center;gap:14px;padding:12px 24px 12px 14px;border-radius:999px;background:rgba(255,255,255,.6);box-shadow:0 10px 30px rgba(60,40,10,.15);font-family:L,sans-serif;font-size:34px}
+.ic{width:56px;height:56px;border-radius:16px;display:grid;place-items:center}.ig{background:linear-gradient(45deg,#f9ce34,#ee2a7b 55%,#6228d7)}.tt{background:#000}.sn{background:#FFFC00}
+.price{font-family:L,sans-serif;font-size:190px;line-height:1;direction:ltr}.price small{font-size:64px;color:#9c7420;font-family:P}
